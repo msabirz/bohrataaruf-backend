@@ -5,7 +5,6 @@ import { sql, eq } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { TargetIdSchema } from '@/lib/api/validators';
 import { keysToCamelCase } from '@/lib/api/serialize';
-import { getViewUrl } from '@/lib/storage';
 import { sendPushNotification } from '@/lib/pushNotifications';
 
 export async function POST(request: Request) {
@@ -152,7 +151,9 @@ export async function GET(request: Request) {
         age,
         city: row.city,
         profession: row.profession,
-        photoUri: await getViewUrl(row.photoUri),
+        // Never the real photo in a browsing/pre-match context — only
+        // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
+        photoUri: null,
         interestedAt: row.interestedAt,
       });
     }));

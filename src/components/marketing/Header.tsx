@@ -19,6 +19,7 @@ export function Header() {
   const [resetMessage, setResetMessage] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
   const router = useRouter();
 
   useEffect(() => {
@@ -29,6 +30,19 @@ export function Header() {
         if (data.photoUri) setPhotoUri(data.photoUri);
       })
       .catch(() => setIsAuthenticated(false));
+  }, []);
+
+  // A gated page (e.g. /discover) redirected here with ?redirect=<path> when the
+  // visitor wasn't logged in — auto-open the login modal and remember where to
+  // send them back to after a successful login, instead of dropping them on a
+  // bare homepage they'd have to find the login button on themselves.
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const redirect = params.get('redirect');
+    if (redirect) {
+      setRedirectTarget(redirect);
+      setIsLoginModalOpen(true);
+    }
   }, []);
 
   const handleLogout = async () => {
@@ -53,7 +67,7 @@ export function Header() {
       
       if (res.ok) {
         setIsSuccess(true);
-        router.push('/dashboard');
+        router.push(redirectTarget || '/discover');
       } else {
         setError(data.error || 'Invalid credentials');
       }
@@ -135,11 +149,11 @@ export function Header() {
               <div className="w-20 h-10 animate-pulse bg-muted/20 rounded-full" />
             ) : isAuthenticated ? (
               <div className="flex items-center gap-6">
-                <Link 
-                  href="/dashboard" 
+                <Link
+                  href="/discover"
                   className="text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
-                  Home
+                  Discover
                 </Link>
                 
                 <div className="relative group">
@@ -157,13 +171,13 @@ export function Header() {
                   {/* Dropdown Menu */}
                   <div className="absolute right-0 mt-2 w-56 bg-surface border border-border rounded-2xl shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform origin-top-right scale-95 group-hover:scale-100 z-50">
                     <div className="p-2 space-y-1">
-                      <Link href="/dashboard/edit" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
+                      <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
                         <User className="w-4 h-4 text-primary" />
                         Edit Profile
                       </Link>
-                      <Link href="/dashboard/edit" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
+                      <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
                         <Settings className="w-4 h-4 text-primary" />
-                        Edit Preferences
+                        Settings
                       </Link>
                       <div className="h-[1px] bg-border my-1 mx-2" />
                       <button onClick={handleLogout} className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-danger hover:bg-danger/10 rounded-xl transition-colors text-left">

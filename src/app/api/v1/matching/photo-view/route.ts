@@ -1,9 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db, executeQuery } from '@/lib/db';
-import { sql } from 'drizzle-orm';
+import { sql, eq } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { RecordPhotoViewSchema } from '@/lib/api/validators';
 import { keysToCamelCase } from '@/lib/api/serialize';
+import { profiles } from '@/lib/db/schema';
+import { getViewUrl } from '@/lib/storage';
 
 export async function POST(request: Request) {
   try {
@@ -42,10 +44,21 @@ export async function POST(request: Request) {
 
     const viewsRemaining = Math.max(0, 3 - result.views_used);
 
+    // This is the ONLY place a real, unblurred photo URL is ever handed to a client in a
+    // browsing/pre-match context — and only because the atomic increment above just proved
+    // a legitimate view was actually spent within the 3-view cap.
+    const profile = await db.select({ photoKey: profiles.photoKey })
+      .from(profiles)
+      .where(eq(profiles.userId, profileId))
+      .limit(1)
+      .then(res => res[0]);
+    const photoUri = await getViewUrl(profile?.photoKey);
+
     return NextResponse.json(keysToCamelCase({
       viewsRemaining,
       extraViewRequested: result.extra_view_requested,
-      extraViewApproved: result.extra_view_approved
+      extraViewApproved: result.extra_view_approved,
+      photoUri,
     }));
   } catch (error) {
     console.error('Record photo view error:', error);

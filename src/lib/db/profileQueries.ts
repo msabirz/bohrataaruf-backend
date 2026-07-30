@@ -1,5 +1,4 @@
 import { db } from '@/lib/db';
-import { getViewUrl } from '@/lib/storage';
 import { verifications, preferences } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { computeMatchScore } from '@/lib/matching';
@@ -73,7 +72,11 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
     childrenBoysCount: row.childrenBoysCount,
     childrenGirlsCount: row.childrenGirlsCount,
     childrenLivingStatus: row.childrenLivingStatus,
-    photoUri: await getViewUrl(row.photoUri),
+    // Never the real photo in a browsing/pre-match context — only
+    // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
+    // (matches/[id] explicitly overrides this field with a real, always-on URL afterward —
+    // that override is intentional and unaffected by this.)
+    photoUri: null,
     viewsRemaining,
     matchPercentage: percentage,
     viewerIsVerified,

@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { getViewUrl } from '@/lib/storage';
 import { users, profiles, verifications, preferences } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { sql } from 'drizzle-orm';
@@ -102,7 +101,9 @@ export async function GET(request: Request) {
       profession: result.profession,
       bio: result.bio,
       introLine: result.introLine,
-      photoUri: await getViewUrl(result.photoUri),
+      // Never the real photo in a browsing/pre-match context — only
+      // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
+      photoUri: null,
       viewsRemaining,
       matchPercentage: percentage,
       viewerIsVerified,

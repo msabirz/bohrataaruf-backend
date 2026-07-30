@@ -21,9 +21,20 @@ const publicRoutes = [
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // Page routes (not /api/*) are NOT auth-gated here — middleware's matcher below only
+  // covers the new authenticated app pages for the sole purpose of stamping x-pathname,
+  // so their Server Component layout (src/app/(app)/layout.tsx) can build a
+  // ?redirect=<path> target. The actual auth check for those pages happens independently
+  // and server-side in that layout, not here.
+  if (!pathname.startsWith('/api/')) {
+    const requestHeaders = new Headers(request.headers);
+    requestHeaders.set('x-pathname', pathname);
+    return NextResponse.next({ request: { headers: requestHeaders } });
+  }
+
   // Check if the route is explicitly public
   const isPublic = publicRoutes.some((route) => pathname === route || pathname.startsWith(`${route}/`));
-  
+
   if (isPublic) {
     return NextResponse.next();
   }
@@ -95,7 +106,8 @@ export async function middleware(request: NextRequest) {
   }
 }
 
-// Config to run middleware only on API routes
+// Runs on API routes (auth-gated there) plus the new authenticated app pages
+// (pathname-stamping only for those — see the branch above).
 export const config = {
-  matcher: '/api/:path*',
+  matcher: ['/api/:path*', '/discover/:path*', '/interests/:path*', '/profile/:path*', '/settings/:path*', '/matches/:path*'],
 };

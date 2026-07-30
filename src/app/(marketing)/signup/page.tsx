@@ -372,7 +372,7 @@ function SignupWizard() {
             </div>
           )}
 
-          <button onClick={() => router.push('/dashboard')} className="w-full bg-primary text-surface font-medium py-4 rounded-xl flex items-center justify-center gap-2 mb-3">View Dashboard</button>
+          <button onClick={() => router.push('/discover')} className="w-full bg-primary text-surface font-medium py-4 rounded-xl flex items-center justify-center gap-2 mb-3">Start Browsing</button>
         </div>
       )}
 

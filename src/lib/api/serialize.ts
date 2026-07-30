@@ -73,7 +73,9 @@ export async function serializeInterestedProfile(row: any, viewerPrefs?: any, ca
     age,
     city: row.city,
     profession: row.profession,
-    photoUri: await getViewUrl(row.photoUri),
+    // Never the real photo in a browsing/pre-match context — only
+    // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
+    photoUri: null,
     bio: row.bio,
     introLine: row.introLine,
     matchPercentage,
