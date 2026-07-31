@@ -17,7 +17,7 @@ export async function GET(request: Request) {
     // AND we are not matched (no matches row)
     const query = sql`
       SELECT 
-        u.id, p.alias, p.photo_key as "photoUri", u.city, p.profession, p.education, p.bio_text as "bio", p.intro_line as "introLine",
+        u.id, p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", u.city, p.profession, p.education, p.bio_text as "bio", p.intro_line as "introLine",
         u.date_of_birth as "dob",
         i.created_at as "interestedAt"
       FROM interactions i

@@ -165,9 +165,9 @@ export default function DiscoverPage() {
                 <div className="flex flex-col md:flex-row">
                   {/* Photo panel ~38% */}
                   <div className="relative w-full md:w-[38%] h-72 md:h-auto shrink-0 overflow-hidden">
-                    {revealedPhotoUri ? (
+                    {revealedPhotoUri || current.photoUri ? (
                       <img
-                        src={revealedPhotoUri}
+                        src={revealedPhotoUri || current.photoUri!}
                         alt=""
                         className="w-full h-full object-cover"
                       />

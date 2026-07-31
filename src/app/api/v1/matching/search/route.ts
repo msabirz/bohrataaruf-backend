@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { getViewUrl } from '@/lib/storage';
 import { users, verifications, preferences } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
@@ -80,9 +81,10 @@ export async function GET(request: Request) {
         city: row.city,
         education: row.education,
         profession: row.profession,
-        // Never the real photo in a browsing/pre-match context — only
-        // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
-        photoUri: null,
+        // Pre-generated blurred derivative only — the real photo never appears in a
+        // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
+        // reveals the real one, gated by the 3-view cap.
+        photoUri: await getViewUrl(row.photoUriBlurred),
         viewsRemaining,
         matchPercentage: percentage,
         viewerIsVerified,

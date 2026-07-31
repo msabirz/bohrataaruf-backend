@@ -1,4 +1,5 @@
 import { db } from '@/lib/db';
+import { getViewUrl } from '@/lib/storage';
 import { verifications, preferences } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { computeMatchScore } from '@/lib/matching';
@@ -14,7 +15,7 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
   const query = sql`
     SELECT 
       u.id, u.date_of_birth as "dob", u.city, 
-      p.alias, p.education, p.profession, p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri",
+      p.alias, p.education, p.profession, p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred",
       p.marital_status as "maritalStatus", p.willing_to_relocate as "willingToRelocate", p.field_of_study as "fieldOfStudy", u.jamaat,
       p.brothers_count as "brothersCount", p.brothers_married_count as "brothersMarriedCount",
       p.sisters_count as "sistersCount", p.sisters_married_count as "sistersMarriedCount",
@@ -72,11 +73,12 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
     childrenBoysCount: row.childrenBoysCount,
     childrenGirlsCount: row.childrenGirlsCount,
     childrenLivingStatus: row.childrenLivingStatus,
-    // Never the real photo in a browsing/pre-match context — only
-    // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
-    // (matches/[id] explicitly overrides this field with a real, always-on URL afterward —
-    // that override is intentional and unaffected by this.)
-    photoUri: null,
+    // Pre-generated blurred derivative only — the real photo never appears in a
+    // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
+    // reveals the real one, gated by the 3-view cap. (matches/[id] explicitly overrides
+    // this field with a real, always-on URL afterward — that override is intentional and
+    // unaffected by this.)
+    photoUri: await getViewUrl(row.photoUriBlurred),
     viewsRemaining,
     matchPercentage: percentage,
     viewerIsVerified,

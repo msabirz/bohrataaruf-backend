@@ -4,7 +4,8 @@ import { db } from '@/lib/db';
 import { profiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { UploadPhotoSchema } from '@/lib/api/validators';
-import { getViewUrl, objectExists } from '@/lib/storage';
+import { getViewUrl, objectExists, uploadObject } from '@/lib/storage';
+import { generateBlurredPhotoBuffer, blurredKeyFor } from '@/lib/blurPhoto';
 
 export async function POST(request: Request) {
   try {
@@ -32,7 +33,22 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Photo not found in storage — upload may have failed. Please retry the upload.' }, { status: 400 });
     }
 
-    await db.update(profiles).set({ photoKey }).where(eq(profiles.userId, userId));
+    // Generate the blurred derivative ONCE, here, at upload time — never live/on-demand
+    // per request, which would reintroduce the batch-latency problem. A failure here must
+    // not fail the upload; it just leaves photoKeyBlurred null (falls back to the existing
+    // safe "no photo shown until unlock" behavior) until a retry or backfill fixes it.
+    let photoKeyBlurred: string | null = null;
+    try {
+      const blurredBuffer = await generateBlurredPhotoBuffer(photoKey);
+      if (blurredBuffer) {
+        photoKeyBlurred = blurredKeyFor(photoKey);
+        await uploadObject(photoKeyBlurred, blurredBuffer, 'image/jpeg');
+      }
+    } catch (e) {
+      console.warn('[profile/photo] Failed to generate blurred derivative:', e);
+    }
+
+    await db.update(profiles).set({ photoKey, photoKeyBlurred }).where(eq(profiles.userId, userId));
 
     return NextResponse.json({ photoUri: await getViewUrl(photoKey) });
   } catch (error) {

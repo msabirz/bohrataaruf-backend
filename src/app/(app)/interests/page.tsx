@@ -226,8 +226,18 @@ export default function InterestsPage() {
 function MiniCard({ profile, children }: { profile: MiniProfile; children?: React.ReactNode }) {
   return (
     <div className="bg-surface border border-border rounded-2xl overflow-hidden">
-      <div className="relative h-40 bg-gradient-to-br from-accent-light to-accent/30 flex items-center justify-center">
-        <Lock className="w-6 h-6 text-primary/50" />
+      <div className="relative h-40 bg-gradient-to-br from-accent-light to-accent/30 overflow-hidden">
+        {profile.photoUri ? (
+          <img src={profile.photoUri} alt="" className="w-full h-full object-cover" />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center">
+            <Lock className="w-6 h-6 text-primary/50" />
+          </div>
+        )}
+        <div className="absolute bottom-0 inset-x-0 bg-foreground/60 backdrop-blur-sm text-surface text-[10px] px-2.5 py-1.5 flex items-center gap-1.5">
+          <Lock className="w-3 h-3 shrink-0" />
+          <span>Photo visible only after mutual interest</span>
+        </div>
       </div>
       <div className="p-3">
         <p className="text-sm font-semibold text-foreground truncate">{profile.alias}, {profile.age}</p>

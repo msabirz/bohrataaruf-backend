@@ -8,7 +8,7 @@ export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, 
   return sql`
     SELECT 
       u.id, u.date_of_birth as "dob", u.city, 
-      p.alias, p.education, p.profession, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri",
+      p.alias, p.education, p.profession, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred",
       COALESCE(pv.views_used, 0) as "viewsUsed"
     FROM users u
     JOIN profiles p ON u.id = p.user_id

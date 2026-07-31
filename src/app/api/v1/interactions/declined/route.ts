@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     // We join with the target profile (the person who originally liked me).
     const query = sql`
       SELECT 
-        u.id, p.alias, p.photo_key as "photoUri", u.city, p.profession, p.education, p.bio_text as "bio", p.intro_line as "introLine",
+        u.id, p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", u.city, p.profession, p.education, p.bio_text as "bio", p.intro_line as "introLine",
         u.date_of_birth as "dob",
         i.created_at as "interestedAt"
       FROM interactions i

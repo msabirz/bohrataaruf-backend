@@ -61,3 +61,17 @@ export async function objectExists(key: string): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Uploads a buffer directly to R2 server-side (as opposed to getUploadUrl, which hands
+ * a presigned PUT URL to a client). Used for server-generated derivatives like blurred
+ * photo previews.
+ */
+export async function uploadObject(key: string, body: Buffer, contentType: string): Promise<void> {
+  await s3Client.send(new PutObjectCommand({
+    Bucket: R2_BUCKET_NAME,
+    Key: key,
+    Body: body,
+    ContentType: contentType,
+  }));
+}

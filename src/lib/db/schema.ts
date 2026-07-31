@@ -99,6 +99,7 @@ export const profiles = pgTable('profiles', {
   bioText: text('bio_text'),
   introLine: text('intro_line'),
   photoKey: text('photo_key'),
+  photoKeyBlurred: text('photo_key_blurred'),
   lastAliasRegenerationAt: timestamp('last_alias_regeneration_at'),
   aliasRegenerationCount: integer('alias_regeneration_count').default(0).notNull(),
   brothersCount: integer('brothers_count').default(0),

@@ -1,7 +1,7 @@
 import React from 'react';
-import Link from 'next/link';
-import { ShieldCheck, Search, Heart, Users, ShieldOff, EyeOff, Lock, MessageCircleOff, Link as LinkIcon, Eye, Zap, MapPin } from 'lucide-react';
+import { ShieldCheck, Search, Heart, Users, ShieldOff, EyeOff, Lock, MessageCircleOff, Link as LinkIcon, Eye, Zap, MapPin, ChevronDown } from 'lucide-react';
 import IndiaMap from '@/components/marketing/IndiaMap';
+import RegisteredCounter from '@/components/marketing/RegisteredCounter';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -9,7 +9,7 @@ export default function MarketingHomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. HERO SECTION */}
-      <section className="relative pt-24 pb-32 overflow-hidden px-6">
+      <section className="relative pt-12 md:pt-16 pb-20 overflow-hidden px-6">
         <div className="absolute inset-0 bg-background -z-20" />
         
         {/* Subtle Bronze Dot Matrix Pattern */}
@@ -23,45 +23,68 @@ export default function MarketingHomePage() {
           }}
         />
         
-        <div className="container mx-auto max-w-6xl scroll-reveal grid lg:grid-cols-2 gap-12 items-center">
-          <div className="text-left">
-            <span className="inline-block py-1 px-3 rounded-full bg-accent-light/50 text-primary font-medium text-sm mb-6 border border-accent/20">
-              Exclusively for the Dawoodi Bohra Community
+        <div className="container mx-auto max-w-6xl scroll-reveal flex flex-col items-center text-center">
+          <span className="inline-block py-1 px-3 rounded-full bg-accent-light/50 text-primary font-medium text-sm mb-4 border border-accent/20">
+            Exclusively for the Dawoodi Bohra Community
+          </span>
+          <h1 className="text-2xl md:text-3xl font-semibold tracking-tight text-foreground/80 mb-2 leading-snug">
+            Find your match with <span className="text-primary">trust</span> and <span className="text-primary">privacy</span>.
+          </h1>
+          <p className="text-sm md:text-base text-muted max-w-lg mb-6">
+            A thoughtful space designed for meaningful connections, built entirely around ITS verification and strict privacy controls.
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-8">
+            <span className="inline-flex items-center gap-1.5 text-xs md:text-sm font-medium text-muted">
+              <ShieldCheck className="w-4 h-4 text-primary" />
+              ITS Verified
             </span>
-            <h1 className="text-5xl md:text-6xl font-bold tracking-tight text-foreground mb-6 leading-tight">
-              Find your match with <span className="text-primary">trust</span> and <span className="text-primary">privacy</span>.
-            </h1>
-            <p className="text-lg md:text-xl text-muted max-w-2xl mb-8">
-              A thoughtful space designed for meaningful connections, built entirely around ITS verification and strict privacy controls.
-            </p>
-            
-            <Link href="/signup" className="inline-block bg-primary text-surface font-bold px-8 py-4 rounded-xl hover:opacity-90 transition-opacity shadow-lg text-lg">
-              Join {APP_NAME}
-            </Link>
+            <span className="inline-flex items-center gap-1.5 text-xs md:text-sm font-medium text-muted">
+              <Lock className="w-4 h-4 text-primary" />
+              Privacy Protected
+            </span>
+            <span className="inline-flex items-center gap-1.5 text-xs md:text-sm font-medium text-muted">
+              <Heart className="w-4 h-4 text-primary" />
+              100% Free
+            </span>
           </div>
-          
-          <div className="relative hidden md:block">
-            <IndiaMap />
-            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-surface/80 backdrop-blur-md border border-border px-4 py-2 rounded-full text-xs font-medium text-muted shadow-sm whitespace-nowrap">
-              Active members across India
-            </div>
+
+          <div className="relative w-full">
+            <RegisteredCounter />
           </div>
         </div>
+
+        <a
+          href="#our-cause"
+          aria-label="Scroll down to learn more"
+          className="hidden md:flex absolute bottom-4 left-1/2 -translate-x-1/2 w-10 h-10 rounded-full border border-border bg-surface/80 backdrop-blur items-center justify-center text-muted hover:text-primary hover:border-accent transition-colors animate-bounce"
+        >
+          <ChevronDown className="w-5 h-5" />
+        </a>
       </section>
 
       {/* 2. OUR CAUSE (NEW) */}
-      <section className="py-24 bg-surface px-6">
-        <div className="container mx-auto max-w-4xl text-center scroll-reveal">
-          <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">
-            This isn't a business. It's a response to a real problem.
-          </h2>
-          <div className="text-lg md:text-xl text-muted leading-relaxed space-y-6 text-left">
-            <p>
-              Finding a spouse within our own community has quietly gotten harder — smaller local networks, families spread across cities and countries, and a real hesitation around traditional introductions that don't always respect people's dignity or privacy.
-            </p>
-            <p>
-              {APP_NAME} was built to close that gap — not to profit from it. There's no subscription because there shouldn't be a price tag on helping two people from our community find each other. This is a genuine attempt to make that easier, safer, and more dignified, for our sons and daughters both.
-            </p>
+      <section id="our-cause" className="py-24 bg-surface px-6">
+        <div className="container mx-auto max-w-6xl scroll-reveal grid lg:grid-cols-2 gap-12 items-center">
+          <div className="text-left">
+            <h2 className="text-3xl md:text-5xl font-bold mb-6 text-foreground">
+              This isn't a business. It's a response to a real problem.
+            </h2>
+            <div className="text-lg md:text-xl text-muted leading-relaxed space-y-6">
+              <p>
+                Finding a spouse within our own community has quietly gotten harder — smaller local networks, families spread across cities and countries, and a real hesitation around traditional introductions that don't always respect people's dignity or privacy.
+              </p>
+              <p>
+                {APP_NAME} was built to close that gap — not to profit from it. There's no subscription because there shouldn't be a price tag on helping two people from our community find each other. This is a genuine attempt to make that easier, safer, and more dignified, for our sons and daughters both.
+              </p>
+            </div>
+          </div>
+
+          <div className="relative hidden md:block">
+            <IndiaMap />
+            <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 bg-background backdrop-blur-md border border-border px-4 py-2 rounded-full text-xs font-medium text-muted shadow-sm whitespace-nowrap">
+              Active members across India
+            </div>
           </div>
         </div>
       </section>

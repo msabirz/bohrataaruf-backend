@@ -97,15 +97,19 @@ export function ProfileDetailModal({
           <>
             {/* Photo panel — fixed height, does not scroll */}
             <div className="relative w-full md:w-[38%] h-64 md:h-auto shrink-0 overflow-hidden">
-              {revealedPhotoUri ? (
+              {revealedPhotoUri || profile.photoUri ? (
                 <img
-                  src={revealedPhotoUri}
+                  src={revealedPhotoUri || profile.photoUri!}
                   alt=""
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-gradient-to-br from-accent-light to-accent/30 flex flex-col items-center justify-center gap-3">
+                <div className="w-full h-full bg-gradient-to-br from-accent-light to-accent/30 flex items-center justify-center">
                   <Lock className="w-8 h-8 text-primary/50" />
+                </div>
+              )}
+              {!revealedPhotoUri && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-foreground/10">
                   <button
                     onClick={revealPhoto}
                     disabled={profile.viewsRemaining <= 0 || isRevealing}
@@ -115,6 +119,14 @@ export function ProfileDetailModal({
                   </button>
                 </div>
               )}
+              <div className="absolute bottom-0 inset-x-0 bg-foreground/60 backdrop-blur-sm text-surface text-xs px-4 py-2.5 flex items-center gap-2">
+                <Lock className="w-3.5 h-3.5 shrink-0" />
+                <span>
+                  {revealedPhotoUri
+                    ? 'Photo unlocked for this view'
+                    : `Photo visible only after mutual interest · ${profile.viewsRemaining} views left`}
+                </span>
+              </div>
               {profile.matchPercentage !== null && (
                 <div className="absolute top-4 left-4 bg-surface/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-primary shadow-sm">
                   {profile.matchPercentage}% Compatible

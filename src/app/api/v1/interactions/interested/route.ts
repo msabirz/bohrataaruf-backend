@@ -5,6 +5,7 @@ import { sql, eq } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { TargetIdSchema } from '@/lib/api/validators';
 import { keysToCamelCase } from '@/lib/api/serialize';
+import { getViewUrl } from '@/lib/storage';
 import { sendPushNotification } from '@/lib/pushNotifications';
 
 export async function POST(request: Request) {
@@ -125,7 +126,7 @@ export async function GET(request: Request) {
     const query = sql`
       SELECT 
         u.id, u.city, u.date_of_birth as "dob",
-        p.alias, p.photo_key as "photoUri", p.profession,
+        p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", p.profession,
         i.created_at as "interestedAt"
       FROM interactions i
       JOIN users u ON i.target_id = u.id
@@ -151,9 +152,10 @@ export async function GET(request: Request) {
         age,
         city: row.city,
         profession: row.profession,
-        // Never the real photo in a browsing/pre-match context — only
-        // POST /api/v1/matching/photo-view legitimately reveals it, gated by the 3-view cap.
-        photoUri: null,
+        // Pre-generated blurred derivative only — the real photo never appears in a
+        // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
+        // reveals the real one, gated by the 3-view cap.
+        photoUri: await getViewUrl(row.photoUriBlurred),
         interestedAt: row.interestedAt,
       });
     }));
