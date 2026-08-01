@@ -100,6 +100,7 @@ export async function GET(request: Request) {
       city: result.city,
       education: result.education,
       profession: result.profession,
+      heightCm: result.heightCm,
       bio: result.bio,
       introLine: result.introLine,
       // Pre-generated blurred derivative only — the real photo never appears in a

@@ -36,6 +36,7 @@ export async function POST(request: Request) {
     const profileUpdates: any = {};
     if (data.education !== undefined) profileUpdates.education = data.education;
     if (data.profession !== undefined) profileUpdates.profession = data.profession;
+    if (data.heightCm !== undefined) profileUpdates.heightCm = data.heightCm;
     if (data.willingToRelocate !== undefined) profileUpdates.willingToRelocate = data.willingToRelocate;
     if (data.maritalStatus !== undefined) profileUpdates.maritalStatus = data.maritalStatus;
     if (data.brothersCount !== undefined) profileUpdates.brothersCount = data.brothersCount;

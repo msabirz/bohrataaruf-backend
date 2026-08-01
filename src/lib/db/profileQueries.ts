@@ -15,7 +15,7 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
   const query = sql`
     SELECT 
       u.id, u.date_of_birth as "dob", u.city, 
-      p.alias, p.education, p.profession, p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred",
+      p.alias, p.education, p.profession, p.height_cm as "heightCm", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred",
       p.marital_status as "maritalStatus", p.willing_to_relocate as "willingToRelocate", p.field_of_study as "fieldOfStudy", u.jamaat,
       p.brothers_count as "brothersCount", p.brothers_married_count as "brothersMarriedCount",
       p.sisters_count as "sistersCount", p.sisters_married_count as "sistersMarriedCount",
@@ -62,6 +62,7 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
     education: row.education,
     fieldOfStudy: row.fieldOfStudy,
     profession: row.profession,
+    heightCm: row.heightCm,
     maritalStatus: row.maritalStatus,
     willingToRelocate: row.willingToRelocate,
     brothersCount: row.brothersCount,

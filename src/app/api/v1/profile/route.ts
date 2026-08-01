@@ -91,6 +91,7 @@ export async function PATCH(request: Request) {
     if (updates.education !== undefined) profileUpdates.education = updates.education;
     if (updates.fieldOfStudy !== undefined) profileUpdates.fieldOfStudy = updates.fieldOfStudy;
     if (updates.profession !== undefined) profileUpdates.profession = updates.profession;
+    if (updates.heightCm !== undefined) profileUpdates.heightCm = updates.heightCm;
     if (updates.willingToRelocate !== undefined) profileUpdates.willingToRelocate = updates.willingToRelocate;
     if (updates.maritalStatus !== undefined) profileUpdates.maritalStatus = updates.maritalStatus;
     if (updates.bio !== undefined) profileUpdates.bioText = updates.bio;

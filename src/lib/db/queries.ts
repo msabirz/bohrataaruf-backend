@@ -7,13 +7,14 @@ export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, 
 
   return sql`
     SELECT 
-      u.id, u.date_of_birth as "dob", u.city, 
-      p.alias, p.education, p.profession, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred",
+      u.id, u.date_of_birth as "dob", u.city,
+      p.alias, p.education, p.profession, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", p.height_cm as "heightCm",
       COALESCE(pv.views_used, 0) as "viewsUsed"
     FROM users u
     JOIN profiles p ON u.id = p.user_id
     JOIN verifications v ON u.id = v.user_id
     LEFT JOIN photo_views pv ON pv.viewer_id = ${viewerId} AND pv.profile_id = u.id
+    LEFT JOIN preferences pr ON pr.user_id = u.id
     WHERE u.id != ${viewerId}
       ${excludeSql}
       AND u.is_active = true
@@ -50,6 +51,8 @@ export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, 
 export interface SearchFilters {
   ageMin?: number | null;
   ageMax?: number | null;
+  heightMin?: number | null;
+  heightMax?: number | null;
   cities?: string[];
   education?: string[];
   professions?: string[];
@@ -72,6 +75,12 @@ export function buildSearchFilterSql(filters: SearchFilters): SQL {
     minDob.setFullYear(minDob.getFullYear() - filters.ageMax - 1);
     filterSql = sql`${filterSql} AND u.date_of_birth > ${minDob.toISOString()}`;
   }
+  if (filters.heightMin) {
+    filterSql = sql`${filterSql} AND p.height_cm >= ${filters.heightMin}`;
+  }
+  if (filters.heightMax) {
+    filterSql = sql`${filterSql} AND p.height_cm <= ${filters.heightMax}`;
+  }
   if (filters.cities && filters.cities.length > 0) {
     filterSql = sql`${filterSql} AND u.city IN (${sql.join(filters.cities.map(c => sql`${c}`), sql`, `)})`;
   }
@@ -82,10 +91,13 @@ export function buildSearchFilterSql(filters: SearchFilters): SQL {
     filterSql = sql`${filterSql} AND p.profession IN (${sql.join(filters.professions.map(e => sql`${e}`), sql`, `)})`;
   }
   if (filters.familyExpectation) {
-    filterSql = sql`${filterSql} AND p.family_expectation = ${filters.familyExpectation}`;
+    // family_expectation/practice_level live on preferences (pr), not profiles (p) — this was
+    // previously referencing a nonexistent p.family_expectation column and 500ing every time
+    // this filter was actually used. buildBaseCandidateQuery now LEFT JOINs preferences as pr.
+    filterSql = sql`${filterSql} AND pr.family_expectation = ${filters.familyExpectation}`;
   }
   if (filters.practiceLevel) {
-    filterSql = sql`${filterSql} AND p.practice_level = ${filters.practiceLevel}`;
+    filterSql = sql`${filterSql} AND pr.practice_level = ${filters.practiceLevel}`;
   }
   if (filters.maritalStatus) {
     filterSql = sql`${filterSql} AND p.marital_status = ${filters.maritalStatus}`;

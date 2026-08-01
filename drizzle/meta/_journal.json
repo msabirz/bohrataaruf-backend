@@ -57,6 +57,13 @@
       "when": 1752562000000,
       "tag": "0007_add_photo_key_blurred",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1752563000000,
+      "tag": "0008_add_height_cm",
+      "breakpoints": true
     }
   ]
 }

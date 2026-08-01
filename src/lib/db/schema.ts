@@ -94,6 +94,7 @@ export const profiles = pgTable('profiles', {
   education: text('education'),
   fieldOfStudy: text('field_of_study'),
   profession: text('profession'),
+  heightCm: integer('height_cm'),
   willingToRelocate: relocateEnum('willing_to_relocate'),
   maritalStatus: maritalStatusEnum('marital_status'),
   bioText: text('bio_text'),

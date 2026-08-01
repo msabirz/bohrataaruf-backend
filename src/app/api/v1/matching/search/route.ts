@@ -17,6 +17,8 @@ export async function GET(request: Request) {
     // Parse query params for search filters
     const ageMin = url.searchParams.get('ageMin') ? parseInt(url.searchParams.get('ageMin')!, 10) : null;
     const ageMax = url.searchParams.get('ageMax') ? parseInt(url.searchParams.get('ageMax')!, 10) : null;
+    const heightMin = url.searchParams.get('heightMin') ? parseInt(url.searchParams.get('heightMin')!, 10) : null;
+    const heightMax = url.searchParams.get('heightMax') ? parseInt(url.searchParams.get('heightMax')!, 10) : null;
     const cities = url.searchParams.get('cities')?.split(',').filter(Boolean) || [];
     const education = url.searchParams.get('education')?.split(',').filter(Boolean) || [];
     const professions = url.searchParams.get('professions')?.split(',').filter(Boolean) || [];
@@ -45,7 +47,7 @@ export async function GET(request: Request) {
     const baseQuery = buildBaseCandidateQuery(userId, me.gender);
 
     const searchFilterSql = buildSearchFilterSql({
-      ageMin, ageMax, cities, education, professions,
+      ageMin, ageMax, heightMin, heightMax, cities, education, professions,
       familyExpectation: familyExpectation || undefined,
       practiceLevel: practiceLevel || undefined,
       maritalStatus: maritalStatus || undefined,
@@ -81,6 +83,7 @@ export async function GET(request: Request) {
         city: row.city,
         education: row.education,
         profession: row.profession,
+        heightCm: row.heightCm,
         // Pre-generated blurred derivative only — the real photo never appears in a
         // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
         // reveals the real one, gated by the 3-view cap.
