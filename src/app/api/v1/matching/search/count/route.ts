@@ -22,9 +22,10 @@ export async function GET(request: Request) {
     const practiceLevel = url.searchParams.get('practiceLevel');
     const maritalStatus = url.searchParams.get('maritalStatus');
     const willingToRelocate = url.searchParams.get('willingToRelocate') === 'true';
+    const radiusKm = url.searchParams.get('radiusKm') ? parseFloat(url.searchParams.get('radiusKm')!) : null;
 
     const me = await db
-      .select({ gender: users.gender })
+      .select({ gender: users.gender, latitude: users.latitude, longitude: users.longitude })
       .from(users)
       .where(eq(users.id, userId))
       .limit(1)
@@ -41,6 +42,9 @@ export async function GET(request: Request) {
       practiceLevel: practiceLevel || undefined,
       maritalStatus: maritalStatus || undefined,
       willingToRelocate,
+      viewerLat: me.latitude,
+      viewerLng: me.longitude,
+      radiusKm,
     });
 
     // Wrap in COUNT(*) — no photos, no match scoring, no pagination
@@ -48,8 +52,9 @@ export async function GET(request: Request) {
     const rawResult: any = await db.execute(countQuery);
     const rows = Array.isArray(rawResult) ? rawResult : (rawResult.rows || []);
     const count = parseInt(rows[0]?.count ?? '0', 10);
+    const viewerHasLocation = me.latitude != null && me.longitude != null;
 
-    return NextResponse.json({ count });
+    return NextResponse.json({ count, viewerHasLocation });
   } catch (error) {
     console.error('Error counting search profiles:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

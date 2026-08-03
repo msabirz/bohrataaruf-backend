@@ -5,6 +5,7 @@ import { users, verifications, preferences } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
+import { computeAgeSafe } from '@/lib/api/serialize';
 import { buildBaseCandidateQuery, buildSearchFilterSql } from '@/lib/db/queries';
 
 export async function GET(request: Request) {
@@ -26,6 +27,7 @@ export async function GET(request: Request) {
     const practiceLevel = url.searchParams.get('practiceLevel');
     const maritalStatus = url.searchParams.get('maritalStatus');
     const willingToRelocate = url.searchParams.get('willingToRelocate') === 'true';
+    const radiusKm = url.searchParams.get('radiusKm') ? parseFloat(url.searchParams.get('radiusKm')!) : null;
 
     // Pagination
     const page = parseInt(url.searchParams.get('page') || '1', 10);
@@ -38,7 +40,7 @@ export async function GET(request: Request) {
     const viewerIsVerified = viewerVerificationStatus === 'verified';
 
     const myPrefs = await db.select().from(preferences).where(eq(preferences.userId, userId)).limit(1).then(res => res[0]);
-    const me = await db.select({ gender: users.gender }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]);
+    const me = await db.select({ gender: users.gender, latitude: users.latitude, longitude: users.longitude }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]);
     if (!me || !me.gender) {
       return NextResponse.json({ error: 'Incomplete profile: missing gender' }, { status: 400 });
     }
@@ -52,6 +54,9 @@ export async function GET(request: Request) {
       practiceLevel: practiceLevel || undefined,
       maritalStatus: maritalStatus || undefined,
       willingToRelocate,
+      viewerLat: me.latitude,
+      viewerLng: me.longitude,
+      radiusKm,
     });
 
     const query = sql`${baseQuery} ${searchFilterSql} LIMIT ${limit} OFFSET ${offset}`;
@@ -59,7 +64,7 @@ export async function GET(request: Request) {
     const rows = Array.isArray(rawResult) ? rawResult : (rawResult.rows || []);
 
     const candidates = await Promise.all(rows.map(async (row: any) => {
-      const age = Math.abs(new Date(Date.now() - new Date(row.dob).getTime()).getUTCFullYear() - 1970);
+      const age = computeAgeSafe(row.dob);
       const viewsRemaining = Math.max(0, 3 - row.viewsUsed);
       const candidatePrefs = await db.select().from(preferences).where(eq(preferences.userId, row.id)).limit(1).then(res => res[0]);
       

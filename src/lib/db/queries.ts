@@ -60,6 +60,13 @@ export interface SearchFilters {
   practiceLevel?: string | null;
   maritalStatus?: string | null;
   willingToRelocate?: boolean;
+  // Requester's own coordinates + desired radius — named viewer* (not
+  // latitude/longitude) to keep unambiguous these are the searcher's
+  // position, not a candidate's, since u.latitude/u.longitude below refer
+  // to the candidate row being filtered.
+  viewerLat?: number | null;
+  viewerLng?: number | null;
+  radiusKm?: number | null;
 }
 
 export function buildSearchFilterSql(filters: SearchFilters): SQL {
@@ -104,6 +111,25 @@ export function buildSearchFilterSql(filters: SearchFilters): SQL {
   }
   if (filters.willingToRelocate) {
     filterSql = sql`${filterSql} AND p.willing_to_relocate = true`;
+  }
+  if (filters.radiusKm != null && filters.viewerLat != null && filters.viewerLng != null) {
+    // u.latitude IS NOT NULL guard runs first: in Postgres `false AND NULL`
+    // is `false`, so candidates with no stored coordinates are deterministically
+    // excluded rather than silently included via NULL propagation.
+    // LEAST/GREATEST clamp the acos argument into [-1, 1] since floating-point
+    // rounding can push it just outside that domain when two points are
+    // extremely close, which would otherwise throw a Postgres runtime error.
+    filterSql = sql`${filterSql}
+      AND u.latitude IS NOT NULL AND u.longitude IS NOT NULL
+      AND (
+        6371 * acos(
+          LEAST(1.0, GREATEST(-1.0,
+            cos(radians(${filters.viewerLat})) * cos(radians(u.latitude)) *
+            cos(radians(u.longitude) - radians(${filters.viewerLng})) +
+            sin(radians(${filters.viewerLat})) * sin(radians(u.latitude))
+          ))
+        )
+      ) <= ${filters.radiusKm}`;
   }
 
   return filterSql;
