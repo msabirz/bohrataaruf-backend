@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { reports } from '@/lib/db/schema';
+import { reports, verifications } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { z } from 'zod';
 
@@ -14,6 +15,16 @@ export async function POST(request: Request) {
   try {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Unverified users can't report/flag a profile either.
+    const myVerification = await db.select({ status: verifications.status }).from(verifications).where(eq(verifications.userId, userId)).limit(1).then(res => res[0]);
+    if (!myVerification || myVerification.status !== 'verified') {
+      return NextResponse.json({
+        error: 'NOT_VERIFIED',
+        code: myVerification?.status || 'none',
+        message: 'Complete ITS verification to report a profile.',
+      }, { status: 403 });
+    }
 
     const body = await request.json();
     const parsed = ReportSchema.safeParse(body);
