@@ -11,6 +11,7 @@ const publicRoutes = [
   '/api/v1/auth/otp/request',
   '/api/v1/auth/otp/verify',
   '/api/v1/auth/login',
+  '/api/v1/auth/signup',
   '/api/v1/auth/logout',
   '/api/v1/auth/password/reset-request',
   '/api/v1/auth/password/reset-confirm',

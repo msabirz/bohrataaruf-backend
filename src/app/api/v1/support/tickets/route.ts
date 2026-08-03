@@ -65,7 +65,7 @@ export async function POST(request: Request) {
     const { users } = await import('@/lib/db/schema');
     const { eq: eqFn } = await import('drizzle-orm');
     const user = await dbClient
-      .select({ name: users.name, phone: users.phone })
+      .select({ name: users.name, phone: users.phone, email: users.email })
       .from(users)
       .where(eqFn(users.id, userId))
       .limit(1)
@@ -76,7 +76,10 @@ export async function POST(request: Request) {
     const inserted = await db.insert(contactMessages).values({
       userId,
       name: user.name,
-      email: user.phone, // phone used as contact identifier since email is optional
+      // Phone/email are both optional pre-onboarding now (new ITS-first
+      // signup flow) — prefer phone as the contact identifier, fall back to
+      // email, then a placeholder rather than writing null into a NOT NULL column.
+      email: user.phone ?? user.email ?? 'Not provided',
       subject,
       message,
     }).returning({ id: contactMessages.id });

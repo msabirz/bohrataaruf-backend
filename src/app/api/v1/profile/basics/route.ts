@@ -3,7 +3,7 @@ import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { db } from '@/lib/db';
 import { users, profiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { BasicsSchema } from '@/lib/api/validators';
+import { BasicsSchema, parseDobStrict } from '@/lib/api/validators';
 import { generateUniqueAlias } from '@/lib/alias-generator';
 
 export async function POST(request: Request) {
@@ -21,15 +21,47 @@ export async function POST(request: Request) {
     
     const userUpdates: any = {};
     if (data.name !== undefined && data.name !== null) userUpdates.name = data.name;
-    if (data.dob !== undefined && data.dob !== null) userUpdates.dateOfBirth = new Date(data.dob).toISOString();
+    if (data.dob !== undefined && data.dob !== null) {
+      // BasicsSchema's superRefine already guarantees this parses (strict
+      // DD/MM/YYYY, not JS's locale-ambiguous Date string constructor) —
+      // defensive null-check only, never expected to fire.
+      const parsedDob = parseDobStrict(data.dob);
+      if (parsedDob) {
+        // Build the date-only string from LOCAL getters, not .toISOString()
+        // (which converts through UTC) — on a server running ahead of UTC
+        // (e.g. IST, UTC+5:30), .toISOString() shifts local midnight back
+        // to the previous day, which a `date` column then truncates to,
+        // silently storing the wrong day. Reproduced and confirmed via a
+        // real DB write during verification of this fix.
+        const y = parsedDob.getFullYear();
+        const m = String(parsedDob.getMonth() + 1).padStart(2, '0');
+        const d = String(parsedDob.getDate()).padStart(2, '0');
+        userUpdates.dateOfBirth = `${y}-${m}-${d}`;
+      }
+    }
     if (data.gender !== undefined && data.gender !== null) userUpdates.gender = data.gender;
     if (data.city !== undefined && data.city !== null) userUpdates.city = data.city;
+    if (data.latitude !== undefined) userUpdates.latitude = data.latitude;
+    if (data.longitude !== undefined) userUpdates.longitude = data.longitude;
     if (data.email !== undefined && data.email !== null) userUpdates.email = data.email === '' ? null : data.email;
+    if (data.phone !== undefined && data.phone !== null) userUpdates.phone = data.phone;
+    if (data.countryCode !== undefined && data.countryCode !== null) userUpdates.countryCode = data.countryCode;
     if (data.jamaat !== undefined && data.jamaat !== null) userUpdates.jamaat = data.jamaat;
     if (data.preferredLanguage !== undefined && data.preferredLanguage !== null) userUpdates.preferredLanguage = data.preferredLanguage;
 
     if (Object.keys(userUpdates).length > 0) {
-      await db.update(users).set(userUpdates).where(eq(users.id, userId));
+      try {
+        await db.update(users).set(userUpdates).where(eq(users.id, userId));
+      } catch (err: any) {
+        const dbErrorCode = err?.code || err?.cause?.code;
+        if (dbErrorCode === '23505') {
+          return NextResponse.json({
+            error: 'DUPLICATE_PHONE',
+            message: 'This phone number is already registered to another account.',
+          }, { status: 409 });
+        }
+        throw err;
+      }
     }
 
     // Update profiles table
