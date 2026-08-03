@@ -7,6 +7,7 @@ import {
   timestamp,
   pgEnum,
   integer,
+  doublePrecision,
   unique,
   index,
   jsonb,
@@ -41,14 +42,17 @@ export const childrenAcceptanceEnum = pgEnum('children_acceptance', ['yes', 'ope
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
-  phone: text('phone').unique().notNull(),
+  phone: text('phone'),
+  countryCode: text('country_code').notNull().default('+91'),
   email: text('email'),
   itsNumberHash: text('its_number_hash').unique(),
   passwordHash: text('password_hash'),
   name: text('name').notNull(),
   gender: genderEnum('gender'),
-  dateOfBirth: date('date_of_birth').notNull(),
-  city: text('city').notNull(),
+  dateOfBirth: date('date_of_birth'),
+  city: text('city'),
+  latitude: doublePrecision('latitude'),
+  longitude: doublePrecision('longitude'),
   jamaat: text('jamaat'),
   preferredLanguage: languageEnum('preferred_language').default('gu'),
   isActive: boolean('is_active').default(true),
@@ -56,7 +60,9 @@ export const users = pgTable('users', {
   isTestAccount: boolean('is_test_account').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
-});
+}, (table) => ({
+  phoneCountryCodeUnique: unique('users_phone_country_code_unique').on(table.phone, table.countryCode),
+}));
 
 export const volunteers = pgTable('volunteers', {
   id: uuid('id').primaryKey().defaultRandom(),
