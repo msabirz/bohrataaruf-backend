@@ -20,6 +20,14 @@ export function keysToCamelCase(obj: any): any {
 import { getViewUrl } from '@/lib/storage';
 import { computeMatchScore } from '@/lib/matching';
 
+// dob is nullable now that onboarding no longer collects it up-front —
+// null-guard rather than silently computing a nonsense ~56yo from
+// `new Date(null)` (epoch).
+export function computeAgeSafe(dobValue: unknown): number | null {
+  if (!dobValue) return null;
+  return Math.abs(new Date(Date.now() - new Date(dobValue as string).getTime()).getUTCFullYear() - 1970);
+}
+
 // Higher level serializers specifically for the contract
 export async function serializeProfile(dbProfile: any, dbUser: any, dbPreferences?: any): Promise<any> {
   const base = {
@@ -59,7 +67,7 @@ export async function serializeProfile(dbProfile: any, dbUser: any, dbPreference
 }
 
 export async function serializeInterestedProfile(row: any, viewerPrefs?: any, candidatePrefs?: any): Promise<any> {
-  const age = Math.abs(new Date(Date.now() - new Date(row.dob).getTime()).getUTCFullYear() - 1970);
+  const age = computeAgeSafe(row.dob);
   
   let matchPercentage = undefined;
   if (viewerPrefs) {
@@ -101,7 +109,7 @@ export async function serializeMutualMatch(dbMatch: any, otherUser: any, otherPr
     handoffStatus = 'waiting_on_me';
   }
 
-  const age = Math.abs(new Date(Date.now() - new Date(otherUser.date_of_birth).getTime()).getUTCFullYear() - 1970);
+  const age = computeAgeSafe(otherUser.date_of_birth);
   
   let matchPercentage = undefined;
   if (viewerPrefs) {

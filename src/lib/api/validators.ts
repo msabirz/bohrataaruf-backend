@@ -1,17 +1,61 @@
 import { z } from 'zod';
 
+// Single wire format accepted for DOB across every client (mobile + marketing
+// website) — DD/MM/YYYY. The website's native <input type="date"> emits ISO
+// and must convert client-side before POSTing; the backend never learns a
+// second format. Mirrors mobile's src/lib/dob.ts parseDobString logic.
+const DOB_REGEX = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+
+export function parseDobStrict(value: string): Date | null {
+  const match = DOB_REGEX.exec(value.trim());
+  if (!match) return null;
+  const day = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  const year = parseInt(match[3], 10);
+  const date = new Date(year, month - 1, day);
+  if (date.getFullYear() !== year || date.getMonth() !== month - 1 || date.getDate() !== day) {
+    return null;
+  }
+  return date;
+}
+
+const MIN_AGE_MALE = 20;
+const MIN_AGE_FEMALE = 18;
+const MAX_AGE = 100;
+
+function computeAge(dob: Date): number {
+  const today = new Date();
+  let age = today.getFullYear() - dob.getFullYear();
+  const monthDiff = today.getMonth() - dob.getMonth();
+  if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+    age--;
+  }
+  return age;
+}
+
 export const RequestOtpSchema = z.object({
-  phone: z.string().min(10),
+  phone: z.string().regex(/^\d{6,14}$/, 'phone must be digits only (no country code)'),
+  countryCode: z.string().regex(/^\+\d{1,4}$/, 'countryCode must be like +91'),
 });
 
 export const VerifyOtpSchema = z.object({
-  phone: z.string().min(10),
+  phone: z.string().regex(/^\d{6,14}$/, 'phone must be digits only (no country code)'),
+  countryCode: z.string().regex(/^\+\d{1,4}$/, 'countryCode must be like +91'),
   code: z.string().length(6),
 });
 
 export const LoginSchema = z.object({
-  itsNumber: z.string().min(8),
+  itsNumber: z.string().length(8).regex(/^\d{8}$/, 'ITS number must be exactly 8 digits'),
   password: z.string().min(6),
+});
+
+// Min 8 chars, at least one lowercase, one uppercase, one digit, one symbol.
+export const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const PASSWORD_MESSAGE = 'Password must be at least 8 characters and include an uppercase letter, a lowercase letter, a number, and a symbol.';
+
+export const SignupSchema = z.object({
+  itsNumber: z.string().length(8).regex(/^\d{8}$/, 'ITS number must be exactly 8 digits'),
+  password: z.string().regex(PASSWORD_REGEX, PASSWORD_MESSAGE),
 });
 
 export const SetPasswordSchema = z.object({
@@ -19,29 +63,33 @@ export const SetPasswordSchema = z.object({
 });
 
 export const ResetPasswordRequestSchema = z.object({
-  itsNumber: z.string().min(8),
+  itsNumber: z.string().length(8).regex(/^\d{8}$/, 'ITS number must be exactly 8 digits'),
 });
 
 export const ResetPasswordConfirmSchema = z.object({
-  itsNumber: z.string().min(8),
+  itsNumber: z.string().length(8).regex(/^\d{8}$/, 'ITS number must be exactly 8 digits'),
   otp: z.string().length(6),
   newPassword: z.string().min(6),
 });
 
 export const BasicsSchema = z.object({
-  name: z.string().nullable().optional(),
+  name: z.string().max(100).nullable().optional(),
   dob: z.string().nullable().optional(),
-  gender: z.enum(['male', 'female']),
-  city: z.string().nullable().optional(),
+  gender: z.enum(['male', 'female']).nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
   email: z.string().email().nullable().optional().or(z.literal('')),
-  jamaat: z.string().nullable().optional(),
+  phone: z.string().regex(/^\d{6,14}$/, 'phone must be digits only (no country code)').nullable().optional(),
+  countryCode: z.string().regex(/^\+\d{1,4}$/, 'countryCode must be like +91').nullable().optional(),
+  jamaat: z.string().max(100).nullable().optional(),
   preferredLanguage: z.enum(['en', 'gu', 'ur']).nullable().optional(),
-  education: z.string().nullable().optional(),
-  fieldOfStudy: z.string().nullable().optional(),
-  profession: z.string().nullable().optional(),
+  education: z.string().max(100).nullable().optional(),
+  fieldOfStudy: z.string().max(100).nullable().optional(),
+  profession: z.string().max(100).nullable().optional(),
   heightCm: z.number().int().min(100).max(250).nullable().optional(),
   willingToRelocate: z.enum(['yes', 'no', 'depends']).nullable().optional(),
   maritalStatus: z.enum(['never_married', 'divorced', 'widowed']).nullable().optional(),
+  latitude: z.number().min(-90).max(90).nullable().optional(),
+  longitude: z.number().min(-180).max(180).nullable().optional(),
   brothersCount: z.number().nullable().optional(),
   brothersMarriedCount: z.number().nullable().optional(),
   sistersCount: z.number().nullable().optional(),
@@ -51,6 +99,29 @@ export const BasicsSchema = z.object({
   childrenBoysCount: z.number().nullable().optional(),
   childrenGirlsCount: z.number().nullable().optional(),
   childrenLivingStatus: z.enum(['with_me', 'not_with_me', 'adults_independent']).nullable().optional(),
+}).superRefine((data, ctx) => {
+  if (!data.dob || !data.gender) return;
+
+  const parsed = parseDobStrict(data.dob);
+  if (!parsed) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['dob'], message: 'dob must be in DD/MM/YYYY format' });
+    return;
+  }
+
+  const age = computeAge(parsed);
+  if (age > MAX_AGE) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['dob'], message: 'dob is not a valid age' });
+    return;
+  }
+
+  const minAge = data.gender === 'male' ? MIN_AGE_MALE : MIN_AGE_FEMALE;
+  if (age < minAge) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      path: ['dob'],
+      message: `Minimum age for ${data.gender} applicants is ${minAge}`,
+    });
+  }
 });
 
 export const PreferencesSchema = z.object({
@@ -71,24 +142,24 @@ export const HandoffSchema = z.object({
 
 export const ItsCardSchema = z.object({
   cardImageKey: z.string().min(1),
-  itsNumber: z.string().min(8),
+  itsNumber: z.string().length(8).regex(/^\d{8}$/, 'ITS number must be exactly 8 digits'),
 });
 
 export const UpdateProfileSchema = z.object({
-  name: z.string().nullable().optional(),
+  name: z.string().max(100).nullable().optional(),
   email: z.string().email().nullable().optional().or(z.literal('')),
-  city: z.string().nullable().optional(),
-  jamaat: z.string().nullable().optional(),
+  city: z.string().max(100).nullable().optional(),
+  jamaat: z.string().max(100).nullable().optional(),
   preferredLanguage: z.enum(['en', 'gu', 'ur']).nullable().optional(),
-  alias: z.string().nullable().optional(),
-  education: z.string().nullable().optional(),
-  fieldOfStudy: z.string().nullable().optional(),
-  profession: z.string().nullable().optional(),
+  alias: z.string().max(100).nullable().optional(),
+  education: z.string().max(100).nullable().optional(),
+  fieldOfStudy: z.string().max(100).nullable().optional(),
+  profession: z.string().max(100).nullable().optional(),
   heightCm: z.number().int().min(100).max(250).nullable().optional(),
   willingToRelocate: z.enum(['yes', 'no', 'depends']).nullable().optional(),
   maritalStatus: z.enum(['never_married', 'divorced', 'widowed']).nullable().optional(),
-  bio: z.string().nullable().optional(),
-  introLine: z.string().nullable().optional(),
+  bio: z.string().max(300).nullable().optional(),
+  introLine: z.string().max(100).nullable().optional(),
   brothersCount: z.number().nullable().optional(),
   brothersMarriedCount: z.number().nullable().optional(),
   sistersCount: z.number().nullable().optional(),
@@ -105,8 +176,8 @@ export const UploadPhotoSchema = z.object({
 });
 
 export const SaveBioSchema = z.object({
-  bio: z.string().optional(),
-  introLine: z.string().optional(),
+  bio: z.string().max(300).optional(),
+  introLine: z.string().max(100).optional(),
 });
 
 export const GenerateBioSchema = z.object({

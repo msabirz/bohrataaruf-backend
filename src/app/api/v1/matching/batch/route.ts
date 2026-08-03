@@ -6,6 +6,7 @@ import { eq, sql } from 'drizzle-orm';
 import { buildBaseCandidateQuery } from '@/lib/db/queries';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
+import { computeAgeSafe } from '@/lib/api/serialize';
 
 export async function POST(request: Request) {
   try {
@@ -108,7 +109,7 @@ export async function POST(request: Request) {
     }
 
     const candidates = await Promise.all(results.map(async (result) => {
-      const age = Math.abs(new Date(Date.now() - new Date(result.dob).getTime()).getUTCFullYear() - 1970);
+      const age = computeAgeSafe(result.dob);
       const viewsRemaining = Math.max(0, 3 - result.viewsUsed);
 
       const candidatePrefs = await db.select().from(preferences).where(eq(preferences.userId, result.id)).limit(1).then(res => res[0]);

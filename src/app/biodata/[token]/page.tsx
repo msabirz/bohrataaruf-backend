@@ -77,7 +77,8 @@ async function getPublicProfile(userId: string) {
   return rows[0] ?? null;
 }
 
-function computeAge(dateOfBirth: string): number {
+function computeAge(dateOfBirth: string | null): number | null {
+  if (!dateOfBirth) return null;
   const dob = new Date(dateOfBirth);
   const now = new Date();
   let age = now.getFullYear() - dob.getFullYear();
@@ -168,7 +169,7 @@ export default async function BiodataPage({
   const blurredPhotoDataUri = await fetchAndBlurPhoto(profile.photoKey);
 
   const displayName = profile.name;
-  const description = `${age} years old · ${profile.city}${profile.education ? ` · ${profile.education}` : ''}${profile.profession ? ` · ${profile.profession}` : ''}`;
+  const description = `${age !== null ? `${age} years old · ` : ''}${profile.city}${profile.education ? ` · ${profile.education}` : ''}${profile.profession ? ` · ${profile.profession}` : ''}`;
 
   return (
     <>
@@ -283,7 +284,7 @@ export default async function BiodataPage({
                 </p>
               )}
               <p style={{ margin: 0, fontSize: 14, color: '#666' }}>
-                {age} years old &middot; {profile.city}
+                {age !== null ? `${age} years old · ` : ''}{profile.city}
               </p>
             </div>
 

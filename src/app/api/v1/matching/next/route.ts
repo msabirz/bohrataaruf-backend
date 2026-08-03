@@ -7,6 +7,7 @@ import { sql } from 'drizzle-orm';
 import { buildBaseCandidateQuery } from '@/lib/db/queries';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
+import { computeAgeSafe } from '@/lib/api/serialize';
 
 export async function GET(request: Request) {
   try {
@@ -81,7 +82,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ message: 'No more candidates available at this time.' }, { status: 404 });
     }
 
-    const age = Math.abs(new Date(Date.now() - new Date(result.dob).getTime()).getUTCFullYear() - 1970);
+    const age = computeAgeSafe(result.dob);
     const viewsRemaining = Math.max(0, 3 - result.viewsUsed);
 
     // Fetch candidate's preferences to compute the score

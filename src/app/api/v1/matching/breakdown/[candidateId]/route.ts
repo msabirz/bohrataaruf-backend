@@ -4,6 +4,7 @@ import { users, profiles, preferences } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
+import { computeAgeSafe } from '@/lib/api/serialize';
 
 export async function GET(
   request: Request,
@@ -28,7 +29,7 @@ export async function GET(
     const candidatePrefs = await db.select().from(preferences).where(eq(preferences.userId, candidateId)).limit(1).then(res => res[0]);
 
     // Compute age
-    const age = Math.abs(new Date(Date.now() - new Date(candidateUser.dateOfBirth).getTime()).getUTCFullYear() - 1970);
+    const age = computeAgeSafe(candidateUser.dateOfBirth);
     const candidateUserWithAge = { ...candidateUser, age };
 
     const score = computeMatchScore(viewerPrefs, candidateUserWithAge, candidateProfile || {}, candidatePrefs);
