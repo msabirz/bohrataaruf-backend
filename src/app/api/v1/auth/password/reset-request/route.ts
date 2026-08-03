@@ -43,7 +43,7 @@ export async function POST(request: Request) {
     // We only generate an OTP if the user exists.
     if (userRow && userRow.phone) {
       try {
-        const responseBody = await generateAndSendOtp(userRow.phone, 'password_reset');
+        const responseBody = await generateAndSendOtp(`${userRow.countryCode}${userRow.phone}`, 'password_reset');
         devOtp = responseBody.devOtp;
       } catch (err: any) {
         // If rate limited by the OTP logic itself (60 seconds), we can safely swallow it or return the generic success

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { users, profiles, preferences } from '@/lib/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, and } from 'drizzle-orm';
 import { VerifyOtpSchema } from '@/lib/api/validators';
 import { signToken } from '@/lib/api/auth';
 import { verifyOtp } from '@/lib/api/otp';
@@ -15,10 +15,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 });
     }
     
-    const { phone, code } = parsed.data;
+    const { phone, countryCode, code } = parsed.data;
+    const fullPhone = `${countryCode}${phone}`;
 
     try {
-      await verifyOtp(phone, code, 'login');
+      await verifyOtp(fullPhone, code, 'login');
     } catch (err: any) {
       const msg = err.message;
       if (msg.includes('No OTP') || msg.includes('expired')) {
@@ -31,7 +32,7 @@ export async function POST(request: Request) {
     }
 
     // Find or create user
-    let userRow = await db.select().from(users).where(eq(users.phone, phone)).limit(1).then(res => res[0]);
+    let userRow = await db.select().from(users).where(and(eq(users.phone, phone), eq(users.countryCode, countryCode))).limit(1).then(res => res[0]);
     
     if (userRow && userRow.abandonedAt) {
       console.log(`[otp/verify] Account ${userRow.id} was abandoned at ${userRow.abandonedAt}. Clearing abandoned_at to allow resuming onboarding...`);
@@ -45,17 +46,18 @@ export async function POST(request: Request) {
         // itsNumberHash is legitimately null at this point
         const insertRes = await db.insert(users).values({
           phone,
+          countryCode,
           name: 'New User',
           dateOfBirth: new Date('2000-01-01').toISOString(),
           city: '',
         }).returning();
-        
+
         userRow = insertRes[0];
       } catch (err: any) {
         const dbErrorCode = err?.code || err?.cause?.code;
         if (dbErrorCode === '23505') {
           console.warn('[otp/verify] Unique violation on user insert, fetching existing user instead...');
-          const existingRow = await db.select().from(users).where(eq(users.phone, phone)).limit(1).then(res => res[0]);
+          const existingRow = await db.select().from(users).where(and(eq(users.phone, phone), eq(users.countryCode, countryCode))).limit(1).then(res => res[0]);
           if (!existingRow) {
              throw new Error('Hit unique constraint but row still missing');
           }

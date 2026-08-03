@@ -29,7 +29,7 @@ export async function POST(request: Request) {
 
     try {
       // Re-use strict OTP verification logic
-      await verifyOtp(userRow.phone, otp, 'password_reset');
+      await verifyOtp(`${userRow.countryCode}${userRow.phone}`, otp, 'password_reset');
     } catch (err: any) {
       const msg = err.message;
       if (msg.includes('No OTP') || msg.includes('expired') || msg.includes('Invalid OTP purpose')) {

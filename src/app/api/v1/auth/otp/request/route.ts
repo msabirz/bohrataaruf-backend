@@ -11,10 +11,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 });
     }
     
-    const { phone } = parsed.data;
+    const { phone, countryCode } = parsed.data;
+    const fullPhone = `${countryCode}${phone}`;
 
     try {
-      const responseBody = await generateAndSendOtp(phone, 'login');
+      const responseBody = await generateAndSendOtp(fullPhone, 'login');
       return NextResponse.json(responseBody);
     } catch (err: any) {
       if (err.message === 'Please wait 60 seconds before requesting another OTP') {
