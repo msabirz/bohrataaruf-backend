@@ -87,7 +87,13 @@ export async function verifyOtp(phone: string, code: string, purpose: OtpPurpose
 
   const codeHash = crypto.createHash('sha256').update(code).digest('hex');
 
-  const isValid = codeHash === latestOtp.codeHash;
+  // Timing-safe comparison — both sides are fixed-length (32-byte) SHA-256
+  // digests, so a length check before timingSafeEqual is just defensive
+  // (guards the rare case latestOtp.codeHash is malformed) rather than
+  // something that can legitimately differ in normal operation.
+  const codeHashBuf = Buffer.from(codeHash, 'hex');
+  const storedHashBuf = Buffer.from(latestOtp.codeHash, 'hex');
+  const isValid = codeHashBuf.length === storedHashBuf.length && crypto.timingSafeEqual(codeHashBuf, storedHashBuf);
 
   if (!isValid) {
     await db.update(otps).set({ attempts: latestOtp.attempts! + 1 }).where(eq(otps.id, latestOtp.id));
