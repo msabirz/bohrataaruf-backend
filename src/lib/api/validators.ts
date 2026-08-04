@@ -169,6 +169,7 @@ export const UpdateProfileSchema = z.object({
   childrenBoysCount: z.number().nullable().optional(),
   childrenGirlsCount: z.number().nullable().optional(),
   childrenLivingStatus: z.enum(['with_me', 'not_with_me', 'adults_independent']).nullable().optional(),
+  photoPrivacyMode: z.enum(['always', 'three_then_request', 'request_only', 'blur_until_match']).optional(),
 });
 
 export const UploadPhotoSchema = z.object({
@@ -188,6 +189,15 @@ export const GenerateBioSchema = z.object({
 export const RecordPhotoViewSchema = z.object({
   profileId: z.string().uuid(),
 });
+
+export const RequestPhotoViewSchema = z.object({
+  profileId: z.string().uuid(),
+});
+
+export const RespondPhotoViewRequestSchema = z.discriminatedUnion('decision', [
+  z.object({ decision: z.literal('approve'), duration: z.enum(['24h', '48h', 'permanent']) }),
+  z.object({ decision: z.literal('deny') }),
+]);
 
 export const TargetIdSchema = z.object({
   profileId: z.string().uuid(),

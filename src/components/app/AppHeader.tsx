@@ -17,6 +17,7 @@ type Notification = {
   type: string;
   title: string;
   body: string;
+  relatedId: string | null;
   isRead: boolean;
   createdAt: string;
 };
@@ -70,6 +71,19 @@ export function AppHeader() {
     setUnreadCount(prev => Math.max(0, prev - 1));
     try {
       await fetch(`/api/v1/notifications/${id}/read`, { method: 'PATCH' });
+    } catch {}
+  };
+
+  const respondToPhotoRequest = async (notification: Notification, decision: 'approve' | 'deny') => {
+    if (!notification.relatedId) return;
+    markRead(notification.id);
+    setNotifications(prev => prev.filter(n => n.id !== notification.id));
+    try {
+      await fetch(`/api/v1/matching/photo-view-request/${notification.relatedId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(decision === 'approve' ? { decision: 'approve', duration: '48h' } : { decision: 'deny' }),
+      });
     } catch {}
   };
 
@@ -133,14 +147,38 @@ export function AppHeader() {
                 ) : (
                   <div className="p-1.5">
                     {notifications.map(n => (
-                      <button
-                        key={n.id}
-                        onClick={() => markRead(n.id)}
-                        className={`w-full text-left p-3 rounded-xl transition-colors ${n.isRead ? 'hover:bg-background' : 'bg-accent-light/30 hover:bg-accent-light/50'}`}
-                      >
-                        <p className="text-sm font-medium text-foreground">{n.title}</p>
-                        <p className="text-xs text-muted mt-0.5 line-clamp-2">{n.body}</p>
-                      </button>
+                      n.type === 'photo_view_request' ? (
+                        <div
+                          key={n.id}
+                          className={`p-3 rounded-xl ${n.isRead ? '' : 'bg-accent-light/30'}`}
+                        >
+                          <p className="text-sm font-medium text-foreground">{n.title}</p>
+                          <p className="text-xs text-muted mt-0.5 line-clamp-2">{n.body}</p>
+                          <div className="flex gap-2 mt-2">
+                            <button
+                              onClick={() => respondToPhotoRequest(n, 'approve')}
+                              className="flex-1 bg-primary text-surface text-xs font-semibold py-1.5 rounded-lg"
+                            >
+                              Approve
+                            </button>
+                            <button
+                              onClick={() => respondToPhotoRequest(n, 'deny')}
+                              className="flex-1 border border-border text-foreground text-xs font-medium py-1.5 rounded-lg"
+                            >
+                              Decline
+                            </button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button
+                          key={n.id}
+                          onClick={() => markRead(n.id)}
+                          className={`w-full text-left p-3 rounded-xl transition-colors ${n.isRead ? 'hover:bg-background' : 'bg-accent-light/30 hover:bg-accent-light/50'}`}
+                        >
+                          <p className="text-sm font-medium text-foreground">{n.title}</p>
+                          <p className="text-xs text-muted mt-0.5 line-clamp-2">{n.body}</p>
+                        </button>
+                      )
                     ))}
                   </div>
                 )}

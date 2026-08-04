@@ -16,6 +16,9 @@ type Candidate = {
   introLine: string | null;
   photoUri: string | null;
   viewsRemaining: number;
+  photoPrivacyMode: 'always' | 'three_then_request' | 'request_only' | 'blur_until_match';
+  photoRequestStatus: 'not_applicable' | 'none' | 'pending' | 'approved' | 'denied';
+  photoGrantedUntil: string | null;
   matchPercentage: number | null;
 };
 
@@ -31,6 +34,7 @@ export default function DiscoverPage() {
   const [isRevealing, setIsRevealing] = useState(false);
   const [modalProfileId, setModalProfileId] = useState<string | null>(null);
   const [exhausted, setExhausted] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   const fetchBatch = useCallback(async (excludeIds: string[]): Promise<Candidate[]> => {
     const res = await fetch('/api/v1/matching/batch', {
@@ -121,6 +125,23 @@ export default function DiscoverPage() {
     }
   };
 
+  const requestPhoto = async () => {
+    if (!current || isRequesting) return;
+    setIsRequesting(true);
+    try {
+      const res = await fetch('/api/v1/matching/photo-view-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: current.profileId }),
+      });
+      if (res.ok) {
+        setQueue(prev => prev.map((c, i) => i === index ? { ...c, photoRequestStatus: 'pending' } : c));
+      }
+    } finally {
+      setIsRequesting(false);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-80px)] bg-background px-6 pt-8 pb-24">
       <div className="container mx-auto max-w-3xl">
@@ -165,6 +186,9 @@ export default function DiscoverPage() {
                 <div className="flex flex-col md:flex-row">
                   {/* Photo panel ~38% */}
                   <div className="relative w-full md:w-[38%] h-72 md:h-auto shrink-0 overflow-hidden">
+                    {/* The backend always resolves an actual (blurred-derivative or real)
+                        photo URL per the owner's mode — never a placeholder, unless the
+                        profile genuinely has no photo uploaded at all. */}
                     {revealedPhotoUri || current.photoUri ? (
                       <img
                         src={revealedPhotoUri || current.photoUri!}
@@ -181,15 +205,27 @@ export default function DiscoverPage() {
                         {current.matchPercentage}% Compatible
                       </div>
                     )}
-                    <div className="absolute bottom-0 inset-x-0 bg-foreground/60 backdrop-blur-sm text-surface text-xs px-4 py-2.5 flex items-center gap-2">
-                      <Lock className="w-3.5 h-3.5 shrink-0" />
-                      <span>
-                        {revealedPhotoUri
-                          ? 'Photo unlocked for this view'
-                          : `Photo visible only after mutual interest · ${current.viewsRemaining} views left`}
-                      </span>
-                    </div>
-                    {!revealedPhotoUri && current.viewsRemaining > 0 && (
+                    {current.photoPrivacyMode !== 'always' && (
+                      <div className="absolute bottom-0 inset-x-0 bg-foreground/60 backdrop-blur-sm text-surface text-xs px-4 py-2.5 flex items-center gap-2">
+                        <Lock className="w-3.5 h-3.5 shrink-0" />
+                        <span>
+                          {revealedPhotoUri
+                            ? 'Photo unlocked for this view'
+                            : current.photoRequestStatus === 'approved'
+                            ? current.photoGrantedUntil
+                              ? `You can view this photo until ${new Date(current.photoGrantedUntil).toLocaleString()}`
+                              : 'You have permanent access to this photo'
+                            : current.photoRequestStatus === 'pending'
+                            ? 'Photo request sent — awaiting response'
+                            : current.photoPrivacyMode === 'blur_until_match'
+                            ? 'Photo unlocks after a mutual match'
+                            : current.photoPrivacyMode === 'three_then_request' && current.viewsRemaining > 0
+                            ? `Photo visible only after mutual interest · ${current.viewsRemaining} views left`
+                            : 'Photo only visible by request'}
+                        </span>
+                      </div>
+                    )}
+                    {!revealedPhotoUri && current.photoPrivacyMode === 'three_then_request' && current.viewsRemaining > 0 && (
                       <button
                         onClick={revealPhoto}
                         disabled={isRevealing}
@@ -198,6 +234,19 @@ export default function DiscoverPage() {
                       >
                         <span className="bg-surface/90 backdrop-blur px-4 py-2 rounded-full text-xs font-semibold text-foreground shadow-sm">
                           {isRevealing ? 'Revealing...' : 'Tap to view'}
+                        </span>
+                      </button>
+                    )}
+                    {(current.photoPrivacyMode === 'request_only' || (current.photoPrivacyMode === 'three_then_request' && current.viewsRemaining === 0))
+                      && (current.photoRequestStatus === 'none' || current.photoRequestStatus === 'denied') && (
+                      <button
+                        onClick={requestPhoto}
+                        disabled={isRequesting}
+                        className="absolute inset-0 flex items-center justify-center"
+                        aria-label="Request to view photo"
+                      >
+                        <span className="bg-surface/90 backdrop-blur px-4 py-2 rounded-full text-xs font-semibold text-foreground shadow-sm">
+                          {isRequesting ? 'Sending...' : 'Request a view'}
                         </span>
                       </button>
                     )}

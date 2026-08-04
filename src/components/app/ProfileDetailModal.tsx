@@ -23,6 +23,9 @@ type RichProfile = {
   childrenLivingStatus: string | null;
   photoUri: string | null;
   viewsRemaining: number;
+  photoPrivacyMode: 'always' | 'three_then_request' | 'request_only' | 'blur_until_match';
+  photoRequestStatus: 'not_applicable' | 'none' | 'pending' | 'approved' | 'denied';
+  photoGrantedUntil: string | null;
   matchPercentage: number | null;
   preferences: { practiceLevel: string | null; familyExpectation: string | null } | null;
 };
@@ -49,6 +52,7 @@ export function ProfileDetailModal({
   // POST /matching/photo-view call — it's never present in the profile data itself.
   const [revealedPhotoUri, setRevealedPhotoUri] = useState<string | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
+  const [isRequesting, setIsRequesting] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -75,6 +79,23 @@ export function ProfileDetailModal({
       }
     } finally {
       setIsRevealing(false);
+    }
+  };
+
+  const requestPhoto = async () => {
+    if (!profile || isRequesting) return;
+    setIsRequesting(true);
+    try {
+      const res = await fetch('/api/v1/matching/photo-view-request', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profileId: profile.profileId }),
+      });
+      if (res.ok) {
+        setProfile(prev => prev ? { ...prev, photoRequestStatus: 'pending' } : prev);
+      }
+    } finally {
+      setIsRequesting(false);
     }
   };
 
@@ -108,25 +129,50 @@ export function ProfileDetailModal({
                   <Lock className="w-8 h-8 text-primary/50" />
                 </div>
               )}
-              {!revealedPhotoUri && (
+              {!revealedPhotoUri && profile.photoPrivacyMode === 'three_then_request' && profile.viewsRemaining > 0 && (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-foreground/10">
                   <button
                     onClick={revealPhoto}
-                    disabled={profile.viewsRemaining <= 0 || isRevealing}
+                    disabled={isRevealing}
                     className="bg-surface/90 backdrop-blur px-5 py-2.5 rounded-full text-sm font-semibold text-foreground shadow-sm disabled:opacity-50"
                   >
-                    {isRevealing ? 'Revealing...' : profile.viewsRemaining > 0 ? `Tap to view photo (${profile.viewsRemaining} left)` : 'No views left'}
+                    {isRevealing ? 'Revealing...' : `Tap to view photo (${profile.viewsRemaining} left)`}
                   </button>
                 </div>
               )}
-              <div className="absolute bottom-0 inset-x-0 bg-foreground/60 backdrop-blur-sm text-surface text-xs px-4 py-2.5 flex items-center gap-2">
-                <Lock className="w-3.5 h-3.5 shrink-0" />
-                <span>
-                  {revealedPhotoUri
-                    ? 'Photo unlocked for this view'
-                    : `Photo visible only after mutual interest · ${profile.viewsRemaining} views left`}
-                </span>
-              </div>
+              {!revealedPhotoUri
+                && (profile.photoPrivacyMode === 'request_only' || (profile.photoPrivacyMode === 'three_then_request' && profile.viewsRemaining === 0))
+                && (profile.photoRequestStatus === 'none' || profile.photoRequestStatus === 'denied') && (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-foreground/10">
+                  <button
+                    onClick={requestPhoto}
+                    disabled={isRequesting}
+                    className="bg-surface/90 backdrop-blur px-5 py-2.5 rounded-full text-sm font-semibold text-foreground shadow-sm disabled:opacity-50"
+                  >
+                    {isRequesting ? 'Sending...' : 'Request a view'}
+                  </button>
+                </div>
+              )}
+              {profile.photoPrivacyMode !== 'always' && (
+                <div className="absolute bottom-0 inset-x-0 bg-foreground/60 backdrop-blur-sm text-surface text-xs px-4 py-2.5 flex items-center gap-2">
+                  <Lock className="w-3.5 h-3.5 shrink-0" />
+                  <span>
+                    {revealedPhotoUri
+                      ? 'Photo unlocked for this view'
+                      : profile.photoRequestStatus === 'approved'
+                      ? profile.photoGrantedUntil
+                        ? `You can view this photo until ${new Date(profile.photoGrantedUntil).toLocaleString()}`
+                        : 'You have permanent access to this photo'
+                      : profile.photoRequestStatus === 'pending'
+                      ? 'Photo request sent — awaiting response'
+                      : profile.photoPrivacyMode === 'blur_until_match'
+                      ? 'Photo unlocks after a mutual match'
+                      : profile.photoPrivacyMode === 'three_then_request' && profile.viewsRemaining > 0
+                      ? `Photo visible only after mutual interest · ${profile.viewsRemaining} views left`
+                      : 'Photo only visible by request'}
+                  </span>
+                </div>
+              )}
               {profile.matchPercentage !== null && (
                 <div className="absolute top-4 left-4 bg-surface/90 backdrop-blur px-3 py-1.5 rounded-full text-xs font-bold text-primary shadow-sm">
                   {profile.matchPercentage}% Compatible

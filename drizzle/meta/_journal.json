@@ -85,6 +85,13 @@
       "when": 1752566000000,
       "tag": "0011_nullable_signup_fields",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1752567000000,
+      "tag": "0012_add_photo_privacy",
+      "breakpoints": true
     }
   ]
 }

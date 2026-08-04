@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { db } from '@/lib/db';
-import { users, profiles, preferences, verifications } from '@/lib/db/schema';
+import { users, profiles, preferences, verifications, photoPrivacyGenderRules } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { serializeProfile, keysToCamelCase } from '@/lib/api/serialize';
 import { computeProfileCompletion } from '@/lib/profileCompletion';
@@ -105,6 +105,18 @@ export async function PATCH(request: Request) {
     if (updates.childrenBoysCount !== undefined) profileUpdates.childrenBoysCount = updates.childrenBoysCount;
     if (updates.childrenGirlsCount !== undefined) profileUpdates.childrenGirlsCount = updates.childrenGirlsCount;
     if (updates.childrenLivingStatus !== undefined) profileUpdates.childrenLivingStatus = updates.childrenLivingStatus;
+
+    if (updates.photoPrivacyMode !== undefined) {
+      const me = await db.select({ gender: users.gender }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]);
+      if (!me?.gender) {
+        return NextResponse.json({ error: 'Gender must be set before choosing a photo privacy mode' }, { status: 400 });
+      }
+      const rule = await db.select().from(photoPrivacyGenderRules).where(eq(photoPrivacyGenderRules.gender, me.gender)).limit(1).then(res => res[0]);
+      if (!rule || !rule.allowedModes.includes(updates.photoPrivacyMode)) {
+        return NextResponse.json({ error: `Photo privacy mode "${updates.photoPrivacyMode}" is not available for your gender` }, { status: 400 });
+      }
+      profileUpdates.photoPrivacyMode = updates.photoPrivacyMode;
+    }
 
     if (Object.keys(profileUpdates).length > 0) {
       await db.update(profiles).set(profileUpdates).where(eq(profiles.userId, userId));

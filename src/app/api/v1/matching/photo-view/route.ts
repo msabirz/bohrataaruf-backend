@@ -21,6 +21,18 @@ export async function POST(request: Request) {
 
     const { profileId } = parsed.data;
 
+    // Self-serve peeking is only meaningful for three_then_request. request_only
+    // and blur_until_match never grant free views — block here too, not just in
+    // the UI, since this endpoint is otherwise directly reachable.
+    const targetProfile = await db.select({ photoPrivacyMode: profiles.photoPrivacyMode })
+      .from(profiles)
+      .where(eq(profiles.userId, profileId))
+      .limit(1)
+      .then(res => res[0]);
+    if (targetProfile && (targetProfile.photoPrivacyMode === 'request_only' || targetProfile.photoPrivacyMode === 'blur_until_match')) {
+      return NextResponse.json({ error: 'Self-serve photo views are not available for this profile' }, { status: 403 });
+    }
+
     // Atomic increment up to 3 views.
     const query = sql`
       INSERT INTO photo_views (viewer_id, profile_id, views_used)

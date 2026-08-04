@@ -10,6 +10,7 @@ const UpdatePrefsSchema = z.object({
   receivedInterestsEnabled: z.boolean().optional(),
   verificationUpdatesEnabled: z.boolean().optional(),
   handoffUpdatesEnabled: z.boolean().optional(),
+  photoRequestsEnabled: z.boolean().optional(),
 });
 
 /** Get or create (with defaults) the user's push preferences */
@@ -41,6 +42,7 @@ export async function GET(request: Request) {
       receivedInterestsEnabled: prefs.receivedInterestsEnabled,
       verificationUpdatesEnabled: prefs.verificationUpdatesEnabled,
       handoffUpdatesEnabled: prefs.handoffUpdatesEnabled,
+      photoRequestsEnabled: prefs.photoRequestsEnabled,
     });
   } catch (error) {
     console.error('[notifications/preferences GET] Error:', error);
@@ -68,6 +70,7 @@ export async function PATCH(request: Request) {
     if (parsed.data.receivedInterestsEnabled !== undefined) updates.receivedInterestsEnabled = parsed.data.receivedInterestsEnabled;
     if (parsed.data.verificationUpdatesEnabled !== undefined) updates.verificationUpdatesEnabled = parsed.data.verificationUpdatesEnabled;
     if (parsed.data.handoffUpdatesEnabled !== undefined) updates.handoffUpdatesEnabled = parsed.data.handoffUpdatesEnabled;
+    if (parsed.data.photoRequestsEnabled !== undefined) updates.photoRequestsEnabled = parsed.data.photoRequestsEnabled;
 
     const [updated] = await db
       .update(pushPreferences)
@@ -80,6 +83,7 @@ export async function PATCH(request: Request) {
       receivedInterestsEnabled: updated.receivedInterestsEnabled,
       verificationUpdatesEnabled: updated.verificationUpdatesEnabled,
       handoffUpdatesEnabled: updated.handoffUpdatesEnabled,
+      photoRequestsEnabled: updated.photoRequestsEnabled,
     });
   } catch (error) {
     console.error('[notifications/preferences PATCH] Error:', error);

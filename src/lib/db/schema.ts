@@ -37,6 +37,7 @@ export const otpPurposeEnum = pgEnum('otp_purpose', ['login', 'password_reset'])
 export const genderRouteEnum = pgEnum('gender_route', ['MALE', 'FEMALE', 'NEUTRAL']);
 export const childrenLivingStatusEnum = pgEnum('children_living_status', ['with_me', 'not_with_me', 'adults_independent']);
 export const childrenAcceptanceEnum = pgEnum('children_acceptance', ['yes', 'open', 'prefer_not']);
+export const photoPrivacyModeEnum = pgEnum('photo_privacy_mode', ['always', 'three_then_request', 'request_only', 'blur_until_match']);
 
 // ── Tables ────────────────────────────────────────────────────────────
 
@@ -107,6 +108,7 @@ export const profiles = pgTable('profiles', {
   introLine: text('intro_line'),
   photoKey: text('photo_key'),
   photoKeyBlurred: text('photo_key_blurred'),
+  photoPrivacyMode: photoPrivacyModeEnum('photo_privacy_mode').default('three_then_request').notNull(),
   lastAliasRegenerationAt: timestamp('last_alias_regeneration_at'),
   aliasRegenerationCount: integer('alias_regeneration_count').default(0).notNull(),
   brothersCount: integer('brothers_count').default(0),
@@ -195,6 +197,12 @@ export const photoViews = pgTable('photo_views', {
   viewsUsed: integer('views_used').default(0),
   extraViewRequested: boolean('extra_view_requested').default(false),
   extraViewApproved: boolean('extra_view_approved'),
+  // Absolute instant (a deadline), not a wall-clock value — must carry an
+  // explicit timezone. A plain `timestamp` column round-trips incorrectly:
+  // confirmed via direct testing that both the driver's default Date
+  // serialization on write AND naive-string parsing on raw-SQL read each
+  // introduce a ~5.5h (IST server offset) error in opposite directions.
+  extraViewApprovedUntil: timestamp('extra_view_approved_until', { withTimezone: true }),
   lastViewedAt: timestamp('last_viewed_at'),
 }, (table) => {
   return {
@@ -284,6 +292,22 @@ export const pushPreferences = pgTable('push_preferences', {
   handoffUpdatesEnabled: boolean('handoff_updates_enabled').default(true).notNull(),
   securityAlertsEnabled: boolean('security_alerts_enabled').default(true).notNull(),
   supportAlertsEnabled: boolean('support_alerts_enabled').default(true).notNull(),
+  photoRequestsEnabled: boolean('photo_requests_enabled').default(true).notNull(),
+});
+
+// ── Photo Privacy ────────────────────────────────────────────────────
+
+/**
+ * Admin-configurable: which photo privacy modes each gender is allowed to
+ * pick, and which mode new profiles of that gender default to. Editable via
+ * the admin panel — never hardcode a gender→mode mapping in application code,
+ * always read this table.
+ */
+export const photoPrivacyGenderRules = pgTable('photo_privacy_gender_rules', {
+  gender: genderEnum('gender').primaryKey(),
+  allowedModes: photoPrivacyModeEnum('allowed_modes').array().notNull(),
+  defaultMode: photoPrivacyModeEnum('default_mode').notNull(),
+  updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 });
 
 export const contactMessages = pgTable('contact_messages', {

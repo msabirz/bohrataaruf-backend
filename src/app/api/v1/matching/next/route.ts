@@ -8,6 +8,7 @@ import { buildBaseCandidateQuery } from '@/lib/db/queries';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
 import { computeAgeSafe } from '@/lib/api/serialize';
+import { resolvePhotoAccess } from '@/lib/photoAccess';
 
 export async function GET(request: Request) {
   try {
@@ -83,7 +84,7 @@ export async function GET(request: Request) {
     }
 
     const age = computeAgeSafe(result.dob);
-    const viewsRemaining = Math.max(0, 3 - result.viewsUsed);
+    const access = resolvePhotoAccess(result);
 
     // Fetch candidate's preferences to compute the score
     const candidatePrefs = await db.select().from(preferences).where(eq(preferences.userId, result.id)).limit(1).then(res => res[0]);
@@ -104,11 +105,14 @@ export async function GET(request: Request) {
       heightCm: result.heightCm,
       bio: result.bio,
       introLine: result.introLine,
-      // Pre-generated blurred derivative only — the real photo never appears in a
-      // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
-      // reveals the real one, gated by the 3-view cap.
-      photoUri: await getViewUrl(result.photoUriBlurred),
-      viewsRemaining,
+      // Resolved per the owner's photo privacy mode — real key only for
+      // `always` mode or an active request grant, blurred derivative
+      // otherwise, never a placeholder.
+      photoUri: await getViewUrl(access.photoKeyToServe),
+      viewsRemaining: access.viewsRemaining,
+      photoPrivacyMode: result.photoPrivacyMode,
+      photoRequestStatus: access.photoRequestStatus,
+      photoGrantedUntil: access.photoGrantedUntil,
       matchPercentage: percentage,
       viewerIsVerified,
       viewerVerificationStatus,

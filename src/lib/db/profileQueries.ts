@@ -3,6 +3,7 @@ import { getViewUrl } from '@/lib/storage';
 import { verifications, preferences } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { computeMatchScore } from '@/lib/matching';
+import { resolvePhotoAccess } from '@/lib/photoAccess';
 
 export async function fetchRichCandidateProfile(viewerId: string, candidateId: string) {
   // Fetch requester verification status
@@ -22,7 +23,11 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
       p.has_children as "hasChildren", p.children_count as "childrenCount",
       p.children_boys_count as "childrenBoysCount", p.children_girls_count as "childrenGirlsCount",
       p.children_living_status as "childrenLivingStatus",
-      COALESCE(pv.views_used, 0) as "viewsUsed"
+      p.photo_privacy_mode as "photoPrivacyMode",
+      COALESCE(pv.views_used, 0) as "viewsUsed",
+      pv.extra_view_requested as "extraViewRequested",
+      pv.extra_view_approved as "extraViewApproved",
+      pv.extra_view_approved_until as "extraViewApprovedUntil"
     FROM users u
     JOIN profiles p ON u.id = p.user_id
     LEFT JOIN photo_views pv ON pv.viewer_id = ${viewerId} AND pv.profile_id = u.id
@@ -37,7 +42,7 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
   }
 
   const age = Math.abs(new Date(Date.now() - new Date(row.dob).getTime()).getUTCFullYear() - 1970);
-  const viewsRemaining = Math.max(0, 3 - row.viewsUsed);
+  const access = resolvePhotoAccess(row);
   const candidatePrefs = await db.select().from(preferences).where(eq(preferences.userId, row.id)).limit(1).then(res => res[0]);
   
   let percentage: number | null = null;
@@ -74,13 +79,16 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
     childrenBoysCount: row.childrenBoysCount,
     childrenGirlsCount: row.childrenGirlsCount,
     childrenLivingStatus: row.childrenLivingStatus,
-    // Pre-generated blurred derivative only — the real photo never appears in a
-    // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
-    // reveals the real one, gated by the 3-view cap. (matches/[id] explicitly overrides
-    // this field with a real, always-on URL afterward — that override is intentional and
-    // unaffected by this.)
-    photoUri: await getViewUrl(row.photoUriBlurred),
-    viewsRemaining,
+    // Resolved per the owner's photo privacy mode — real key only for
+    // `always` mode or an active request grant, blurred derivative
+    // otherwise. (matches/[id] explicitly overrides this field with a real,
+    // always-on URL afterward — that override is intentional and unaffected
+    // by this.)
+    photoUri: await getViewUrl(access.photoKeyToServe),
+    viewsRemaining: access.viewsRemaining,
+    photoPrivacyMode: row.photoPrivacyMode,
+    photoRequestStatus: access.photoRequestStatus,
+    photoGrantedUntil: access.photoGrantedUntil,
     matchPercentage: percentage,
     viewerIsVerified,
     viewerVerificationStatus,

@@ -3,7 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LayoutGrid, ShieldCheck, LogOut, Users, UserCheck, Mail, Flag } from 'lucide-react';
+import { LayoutGrid, ShieldCheck, LogOut, Users, UserCheck, Mail, Flag, Image as ImageIcon } from 'lucide-react';
 import { AdminSessionPayload } from '@/lib/adminAuth';
 
 interface AdminSidebarProps {
@@ -18,6 +18,7 @@ const NAV_ITEMS = [
   { label: 'Messages', href: '/admin/messages', icon: Mail },
   { label: 'Reports', href: '/admin/reports', icon: Flag },
   { label: 'Aliases', href: '/admin/alias-frameworks', icon: LayoutGrid },
+  { label: 'Photo Privacy', href: '/admin/photo-privacy-rules', icon: ImageIcon },
 ];
 
 export default function AdminSidebar({ session }: AdminSidebarProps) {

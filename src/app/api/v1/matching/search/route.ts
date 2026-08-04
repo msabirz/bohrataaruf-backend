@@ -6,6 +6,7 @@ import { eq, sql } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
 import { computeAgeSafe } from '@/lib/api/serialize';
+import { resolvePhotoAccess } from '@/lib/photoAccess';
 import { buildBaseCandidateQuery, buildSearchFilterSql } from '@/lib/db/queries';
 
 export async function GET(request: Request) {
@@ -65,7 +66,7 @@ export async function GET(request: Request) {
 
     const candidates = await Promise.all(rows.map(async (row: any) => {
       const age = computeAgeSafe(row.dob);
-      const viewsRemaining = Math.max(0, 3 - row.viewsUsed);
+      const access = resolvePhotoAccess(row);
       const candidatePrefs = await db.select().from(preferences).where(eq(preferences.userId, row.id)).limit(1).then(res => res[0]);
       
       let percentage: number | null = null;
@@ -89,11 +90,14 @@ export async function GET(request: Request) {
         education: row.education,
         profession: row.profession,
         heightCm: row.heightCm,
-        // Pre-generated blurred derivative only — the real photo never appears in a
-        // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
-        // reveals the real one, gated by the 3-view cap.
-        photoUri: await getViewUrl(row.photoUriBlurred),
-        viewsRemaining,
+        // Resolved per the owner's photo privacy mode — real key only for
+        // `always` mode or an active request grant, blurred derivative
+        // otherwise, never a placeholder.
+        photoUri: await getViewUrl(access.photoKeyToServe),
+        viewsRemaining: access.viewsRemaining,
+        photoPrivacyMode: row.photoPrivacyMode,
+        photoRequestStatus: access.photoRequestStatus,
+        photoGrantedUntil: access.photoGrantedUntil,
         matchPercentage: percentage,
         viewerIsVerified,
         viewerVerificationStatus,

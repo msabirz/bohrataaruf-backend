@@ -9,7 +9,11 @@ export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, 
     SELECT 
       u.id, u.date_of_birth as "dob", u.city,
       p.alias, p.education, p.profession, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", p.height_cm as "heightCm",
-      COALESCE(pv.views_used, 0) as "viewsUsed"
+      p.photo_privacy_mode as "photoPrivacyMode",
+      COALESCE(pv.views_used, 0) as "viewsUsed",
+      pv.extra_view_requested as "extraViewRequested",
+      pv.extra_view_approved as "extraViewApproved",
+      pv.extra_view_approved_until as "extraViewApprovedUntil"
     FROM users u
     JOIN profiles p ON u.id = p.user_id
     JOIN verifications v ON u.id = v.user_id

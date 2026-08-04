@@ -17,7 +17,8 @@ export type PushCategory =
   | 'verification_updates'
   | 'handoff_updates'
   | 'security_alerts'
-  | 'support_alerts';
+  | 'support_alerts'
+  | 'photo_requests';
 
 const CATEGORY_TO_PREF_FIELD: Record<PushCategory, keyof typeof pushPreferences.$inferSelect> = {
   matches: 'matchesEnabled',
@@ -26,6 +27,7 @@ const CATEGORY_TO_PREF_FIELD: Record<PushCategory, keyof typeof pushPreferences.
   handoff_updates: 'handoffUpdatesEnabled',
   security_alerts: 'securityAlertsEnabled',
   support_alerts: 'supportAlertsEnabled',
+  photo_requests: 'photoRequestsEnabled',
 };
 
 const CATEGORY_TO_LOG_TYPE: Record<PushCategory, string> = {
@@ -35,6 +37,7 @@ const CATEGORY_TO_LOG_TYPE: Record<PushCategory, string> = {
   handoff_updates: 'handoff',
   security_alerts: 'security_alert',
   support_alerts: 'support_reply',
+  photo_requests: 'photo_view_request',
 };
 
 interface ExpoTicket {
@@ -50,10 +53,11 @@ export async function sendPushNotification(
   title: string,
   body: string,
   data?: Record<string, unknown>,
+  logTypeOverride?: string,
 ): Promise<void> {
   try {
     // 0. Insert in-app notification history record (irrespective of push preferences/tokens)
-    const logType = CATEGORY_TO_LOG_TYPE[category] || 'security_alert';
+    const logType = logTypeOverride || CATEGORY_TO_LOG_TYPE[category] || 'security_alert';
     const relatedId = (data?.matchId || data?.profileId || data?.ticketId || data?.relatedId) as string | undefined;
 
     await db.insert(notificationsLog).values({

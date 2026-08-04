@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bell, Lock, LogOut, Trash2 } from 'lucide-react';
+import Link from 'next/link';
+import { Bell, Lock, LogOut, Trash2, Image as ImageIcon, ChevronRight } from 'lucide-react';
 
 type PushPrefs = {
   matchesEnabled: boolean;
   receivedInterestsEnabled: boolean;
   verificationUpdatesEnabled: boolean;
   handoffUpdatesEnabled: boolean;
+  photoRequestsEnabled: boolean;
 };
 
 const TOGGLE_LABELS: { key: keyof PushPrefs; label: string; description: string }[] = [
@@ -16,7 +18,17 @@ const TOGGLE_LABELS: { key: keyof PushPrefs; label: string; description: string 
   { key: 'receivedInterestsEnabled', label: 'Received interest', description: 'When someone expresses interest in you' },
   { key: 'verificationUpdatesEnabled', label: 'Verification updates', description: 'Status changes on your ITS verification' },
   { key: 'handoffUpdatesEnabled', label: 'Connection updates', description: 'When a match shares their contact details' },
+  { key: 'photoRequestsEnabled', label: 'Photo requests', description: 'New requests to view your photo, and responses to yours' },
 ];
+
+type Mode = 'always' | 'three_then_request' | 'request_only' | 'blur_until_match';
+
+const MODE_LABELS: Record<Mode, { label: string; description: string }> = {
+  always: { label: 'Show my photo', description: 'Always visible to everyone, no blur' },
+  three_then_request: { label: 'Show 3 times, then allow request', description: 'Free peeks first, then viewers can ask for more' },
+  request_only: { label: 'Show only on request', description: 'Every view must be requested and approved by you' },
+  blur_until_match: { label: 'Blur until match', description: 'Photo stays blurred until you mutually match' },
+};
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
@@ -36,6 +48,12 @@ export default function SettingsPage() {
   const [prefs, setPrefs] = useState<PushPrefs | null>(null);
   const [prefsMessage, setPrefsMessage] = useState('');
 
+  const [photoMode, setPhotoMode] = useState<Mode | null>(null);
+  const [allowedModes, setAllowedModes] = useState<Mode[]>([]);
+  const [photoModeMessage, setPhotoModeMessage] = useState('');
+  const [isSavingPhotoMode, setIsSavingPhotoMode] = useState(false);
+  const [pendingRequestCount, setPendingRequestCount] = useState(0);
+
   const [newPassword, setNewPassword] = useState('');
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState('');
@@ -46,7 +64,36 @@ export default function SettingsPage() {
 
   useEffect(() => {
     fetch('/api/v1/notifications/preferences').then(r => r.json()).then(setPrefs).catch(() => {});
+    fetch('/api/v1/profile/photo-privacy-options').then(r => r.json()).then(d => {
+      if (d.allowedModes) setAllowedModes(d.allowedModes);
+    }).catch(() => {});
+    fetch('/api/v1/profile').then(r => r.json()).then(d => {
+      if (d.photoPrivacyMode) setPhotoMode(d.photoPrivacyMode);
+    }).catch(() => {});
+    fetch('/api/v1/matching/photo-view-requests').then(r => r.json()).then(d => {
+      setPendingRequestCount((d.requests || []).length);
+    }).catch(() => {});
   }, []);
+
+  const savePhotoMode = async (mode: Mode) => {
+    const prevMode = photoMode;
+    setPhotoMode(mode);
+    setPhotoModeMessage('');
+    setIsSavingPhotoMode(true);
+    try {
+      const res = await fetch('/api/v1/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoPrivacyMode: mode }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setPhotoMode(prevMode);
+      setPhotoModeMessage('Failed to update — please try again.');
+    } finally {
+      setIsSavingPhotoMode(false);
+    }
+  };
 
   const togglePref = async (key: keyof PushPrefs) => {
     if (!prefs) return;
@@ -128,6 +175,48 @@ export default function SettingsPage() {
                 </div>
               ))}
               {prefsMessage && <p className="text-danger text-xs">{prefsMessage}</p>}
+            </div>
+          )}
+        </section>
+
+        <section className="bg-surface p-8 rounded-3xl border border-border shadow-sm">
+          <div className="flex items-center gap-2 mb-6">
+            <ImageIcon className="w-5 h-5 text-primary" />
+            <h2 className="text-lg font-bold text-foreground">Photo Privacy</h2>
+          </div>
+          {!photoMode || allowedModes.length === 0 ? (
+            <div className="w-6 h-6 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          ) : (
+            <div className="space-y-3">
+              {allowedModes.map((mode) => (
+                <label
+                  key={mode}
+                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${photoMode === mode ? 'border-primary bg-accent-light/20' : 'border-border hover:bg-background'}`}
+                >
+                  <input
+                    type="radio"
+                    name="photoMode"
+                    checked={photoMode === mode}
+                    onChange={() => savePhotoMode(mode)}
+                    disabled={isSavingPhotoMode}
+                    className="mt-1"
+                  />
+                  <div>
+                    <p className="text-sm font-medium text-foreground">{MODE_LABELS[mode].label}</p>
+                    <p className="text-xs text-muted">{MODE_LABELS[mode].description}</p>
+                  </div>
+                </label>
+              ))}
+              {photoModeMessage && <p className="text-danger text-xs">{photoModeMessage}</p>}
+              <Link
+                href="/photo-requests"
+                className="flex items-center justify-between px-4 py-3 rounded-xl border border-border hover:bg-background transition-colors mt-2"
+              >
+                <span className="text-sm font-medium text-foreground">
+                  {pendingRequestCount > 0 ? `${pendingRequestCount} pending photo request${pendingRequestCount === 1 ? '' : 's'}` : 'Manage photo requests & access'}
+                </span>
+                <ChevronRight className="w-4 h-4 text-muted" />
+              </Link>
             </div>
           )}
         </section>

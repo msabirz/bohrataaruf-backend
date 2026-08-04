@@ -54,6 +54,7 @@ async function main() {
     handoff_updates: "You can now connect!",
     security_alerts: "Security alert",
     support_alerts: "Support replied to your ticket",
+    photo_requests: "Photo request update",
   };
 
   const bodies: Record<PushCategory, string> = {
@@ -62,6 +63,7 @@ async function main() {
     verification_updates: "Your ITS verification was approved. You can now browse and connect with others.",
     handoff_updates: "You've both shared your details. Check your matches to continue the conversation.",
     security_alerts: "An unusual login was detected on your account.",
+    photo_requests: "Someone requested to view your photo.",
     support_alerts: "Your inquiry has been answered. Tap to view the reply.",
   };
 
