@@ -6,7 +6,19 @@ import { sql, SQL } from 'drizzle-orm';
 // pass when the normal (false) query comes back empty, so a genuinely
 // fresh pool always wins first; skips only resurface once nothing new is
 // left to show.
-export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, excludeIds?: string[], includeSkipped: boolean = false) {
+// viewerLat/viewerLng: optional — when both are provided, adds a
+// "distanceKm" column computed via the same haversine formula
+// buildSearchFilterSql's radius filter already uses. Only the resulting
+// km distance is ever exposed to a client, never the candidate's raw
+// coordinates (u.latitude/u.longitude are deliberately not selected).
+export function buildBaseCandidateQuery(
+  viewerId: string,
+  viewerGender: string,
+  excludeIds?: string[],
+  includeSkipped: boolean = false,
+  viewerLat?: number | null,
+  viewerLng?: number | null
+) {
   const excludeSql = excludeIds && excludeIds.length > 0
     ? sql`AND u.id NOT IN (${sql.join(excludeIds.map(id => sql`${id}`), sql`, `)})`
     : sql``;
@@ -15,12 +27,25 @@ export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, 
     ? sql`i.user_id = ${viewerId} AND i.target_id = u.id AND i.action != 'skip'`
     : sql`i.user_id = ${viewerId} AND i.target_id = u.id`;
 
+  const distanceSql = viewerLat != null && viewerLng != null
+    ? sql`,
+      CASE WHEN u.latitude IS NULL OR u.longitude IS NULL THEN NULL ELSE (
+        6371 * acos(
+          LEAST(1, GREATEST(-1,
+            cos(radians(${viewerLat})) * cos(radians(u.latitude)) *
+            cos(radians(u.longitude) - radians(${viewerLng})) +
+            sin(radians(${viewerLat})) * sin(radians(u.latitude))
+          ))
+        )
+      ) END as "distanceKm"`
+    : sql``;
+
   return sql`
-    SELECT 
+    SELECT
       u.id, u.date_of_birth as "dob", u.city,
       p.alias, p.education, p.profession, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine", p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", p.height_cm as "heightCm",
       p.photo_privacy_mode as "photoPrivacyMode",
-      p.lifestyle_answers as "lifestyleAnswers",
+      p.lifestyle_answers as "lifestyleAnswers"${distanceSql},
       COALESCE(pv.views_used, 0) as "viewsUsed",
       pv.extra_view_requested as "extraViewRequested",
       pv.extra_view_approved as "extraViewApproved",

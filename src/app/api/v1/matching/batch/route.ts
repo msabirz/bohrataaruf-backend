@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Incomplete profile: missing gender' }, { status: 400 });
     }
 
-    const baseQuery = buildBaseCandidateQuery(userId, me.gender, excludeIds);
+    const baseQuery = buildBaseCandidateQuery(userId, me.gender, excludeIds, false, me.latitude, me.longitude);
 
     // Merge body.filters over myPrefs securely
     const filters = body.filters || {};
@@ -115,7 +115,7 @@ export async function POST(request: Request) {
     // previously-skipped candidates. Interested/withdrawn/declined/matched/
     // reported stay excluded regardless.
     if (results.length === 0) {
-      const recycleBaseQuery = buildBaseCandidateQuery(userId, me.gender, excludeIds, true);
+      const recycleBaseQuery = buildBaseCandidateQuery(userId, me.gender, excludeIds, true, me.latitude, me.longitude);
       const recycleQuery = hasExplicitFilters
         ? sql`${recycleBaseQuery} ${strictFilterSql} LIMIT ${limit}`
         : sql`${recycleBaseQuery} ORDER BY (CASE WHEN (TRUE ${strictFilterSql}) THEN 0 ELSE 1 END) LIMIT ${limit}`;
@@ -156,6 +156,7 @@ export async function POST(request: Request) {
         bio: result.bio,
         introLine: result.introLine,
         lifestyleAnswers: result.lifestyleAnswers,
+        distanceKm: result.distanceKm != null ? Math.round(result.distanceKm * 10) / 10 : null,
         // Resolved per the owner's photo privacy mode — real key only for
         // `always` mode or an active request grant, blurred derivative
         // otherwise, never a placeholder.
