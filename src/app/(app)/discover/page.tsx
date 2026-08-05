@@ -4,9 +4,12 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Filter, ChevronDown, Lock, X as XIcon, Heart, GraduationCap, MapPin } from 'lucide-react';
 import { ProfileDetailModal } from '@/components/app/ProfileDetailModal';
-import { FilterPanel, DEFAULT_FILTERS, buildFilterPayload, type FilterState } from '@/components/app/FilterPanel';
+import { FilterPanel, DEFAULT_FILTERS, buildFilterPayload, RADIUS_MIN, RADIUS_MAX, type FilterState } from '@/components/app/FilterPanel';
 import { LifestyleBadges } from '@/components/app/LifestyleBadges';
 import type { TraitPair } from '@/components/app/LifestyleToggle';
+import { WebRangeSlider } from '@/components/app/WebRangeSlider';
+
+const NEARBY_DEFAULT_RADIUS_KM = 25;
 
 type Candidate = {
   profileId: string;
@@ -44,10 +47,46 @@ export default function DiscoverPage() {
   const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
   const [filterPanelOpen, setFilterPanelOpen] = useState(false);
   const [traitPairs, setTraitPairs] = useState<TraitPair[]>([]);
+  const [feedMode, setFeedMode] = useState<'forYou' | 'nearby'>('forYou');
+  // Defaults true so the toggle doesn't flash a disabled radius slider
+  // before the first check lands — same convention as FilterPanel's own
+  // radius slider and mobile's Nearby toggle.
+  const [viewerHasLocation, setViewerHasLocation] = useState(true);
+  const [isRequestingLocation, setIsRequestingLocation] = useState(false);
 
   useEffect(() => {
     fetch('/api/v1/lifestyle-traits').then(r => r.json()).then(d => setTraitPairs(d.pairs || [])).catch(() => {});
+    fetch('/api/v1/profile').then(r => r.json()).then(d => setViewerHasLocation(d.latitude != null && d.longitude != null)).catch(() => {});
   }, []);
+
+  const handleFeedModeChange = (mode: 'forYou' | 'nearby') => {
+    setFeedMode(mode);
+    setFilters(f => ({ ...f, radiusKm: mode === 'nearby' ? NEARBY_DEFAULT_RADIUS_KM : RADIUS_MAX }));
+  };
+
+  const requestLocationForNearby = () => {
+    if (isRequestingLocation || !navigator.geolocation) return;
+    setIsRequestingLocation(true);
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          await fetch('/api/v1/profile/basics', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ latitude: position.coords.latitude, longitude: position.coords.longitude }),
+          });
+          setViewerHasLocation(true);
+        } finally {
+          setIsRequestingLocation(false);
+        }
+      },
+      () => {
+        setIsRequestingLocation(false);
+        alert('Location access was denied. Enable it in your browser settings to see nearby profiles.');
+      },
+      { timeout: 8000 }
+    );
+  };
 
   const fetchBatch = useCallback(async (excludeIds: string[]): Promise<Candidate[]> => {
     const res = await fetch('/api/v1/matching/batch', {
@@ -174,6 +213,43 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-background px-6 pt-8 pb-24">
       <div className="container mx-auto max-w-3xl">
+        {/* For You / Nearby toggle */}
+        <div className="mb-6">
+          <div className="flex items-center gap-4">
+            <button
+              onClick={() => handleFeedModeChange('forYou')}
+              className={`text-sm transition-colors ${feedMode === 'forYou' ? 'bg-primary text-surface font-bold px-5 py-2 rounded-full' : 'text-muted hover:text-foreground font-semibold px-1 py-2'}`}
+            >
+              For you
+            </button>
+            <button
+              onClick={() => handleFeedModeChange('nearby')}
+              className={`text-sm transition-colors ${feedMode === 'nearby' ? 'bg-primary text-surface font-bold px-5 py-2 rounded-full' : 'text-muted hover:text-foreground font-semibold px-1 py-2'}`}
+            >
+              Nearby
+            </button>
+          </div>
+          {feedMode === 'nearby' && (
+            <div className="mt-4 max-w-xs">
+              <WebRangeSlider
+                label="Within Distance"
+                min={RADIUS_MIN}
+                max={RADIUS_MAX}
+                values={[filters.radiusKm]}
+                onChange={(v) => setFilters(f => ({ ...f, radiusKm: v[0] }))}
+                unit=" km"
+                disabled={!viewerHasLocation}
+                onDisabledClick={requestLocationForNearby}
+              />
+              {!viewerHasLocation && (
+                <p className="text-xs text-muted mt-2">
+                  {isRequestingLocation ? 'Requesting location access…' : 'Click the slider to enable — Nearby needs your location.'}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+
         {/* Filters / sort */}
         <div className="flex items-center justify-between mb-8">
           <button
