@@ -3,7 +3,7 @@ import { db } from '@/lib/db';
 import { getViewUrl } from '@/lib/storage';
 import { users, profiles, verifications, preferences } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
-import { buildBaseCandidateQuery } from '@/lib/db/queries';
+import { buildBaseCandidateQuery, buildSearchFilterSql } from '@/lib/db/queries';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
 import { computeAgeSafe } from '@/lib/api/serialize';
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     const [myVerification, myPrefs, me] = await Promise.all([
       db.select().from(verifications).where(eq(verifications.userId, userId)).limit(1).then(res => res[0]),
       db.select().from(preferences).where(eq(preferences.userId, userId)).limit(1).then(res => res[0]),
-      db.select({ gender: users.gender }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]),
+      db.select({ gender: users.gender, latitude: users.latitude, longitude: users.longitude }).from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]),
     ]);
     const viewerVerificationStatus = myVerification ? myVerification.status : 'unsubmitted';
     const viewerIsVerified = viewerVerificationStatus === 'verified';
@@ -41,44 +41,49 @@ export async function POST(request: Request) {
 
     const baseQuery = buildBaseCandidateQuery(userId, me.gender, excludeIds);
 
-    let strictFilterSql = sql``;
-    
     // Merge body.filters over myPrefs securely
     const filters = body.filters || {};
     console.log('[Backend matching/batch] received explicit filters:', filters);
 
-    // If a filter is explicitly null, it means 'Any' in the UI. If it's undefined, it means fall back to myPrefs.
+    // If a filter is explicitly null/undefined-but-absent, it means 'Any' in
+    // the UI and falls back to the viewer's saved preferences. heightMin/
+    // heightMax/radiusKm have no saved-preference equivalent (the
+    // preferences table has no such columns) — direct passthrough only.
     const effectivePrefs = myPrefs ? {
       ageMin: filters.ageMin !== undefined ? filters.ageMin : myPrefs.ageMin,
       ageMax: filters.ageMax !== undefined ? filters.ageMax : myPrefs.ageMax,
-      preferredCities: filters.city !== undefined ? (filters.city ? [filters.city] : null) : myPrefs.preferredCities,
-      preferredEducation: body.teaser ? undefined : myPrefs.preferredEducation,
+      heightMin: filters.heightMin,
+      heightMax: filters.heightMax,
+      cities: filters.preferredCities !== undefined ? filters.preferredCities : (filters.city ? [filters.city] : myPrefs.preferredCities),
+      education: body.teaser ? undefined : (filters.preferredEducation !== undefined ? filters.preferredEducation : myPrefs.preferredEducation),
+      professions: filters.preferredProfessions !== undefined ? filters.preferredProfessions : myPrefs.preferredProfessions,
+      practiceLevel: filters.practiceLevel !== undefined ? filters.practiceLevel : myPrefs.practiceLevel,
+      radiusKm: filters.radiusKm,
     } : {
       ageMin: filters.ageMin,
       ageMax: filters.ageMax,
-      preferredCities: filters.city ? [filters.city] : undefined,
+      heightMin: filters.heightMin,
+      heightMax: filters.heightMax,
+      cities: filters.preferredCities !== undefined ? filters.preferredCities : (filters.city ? [filters.city] : undefined),
+      education: filters.preferredEducation,
+      professions: filters.preferredProfessions,
+      practiceLevel: filters.practiceLevel,
+      radiusKm: filters.radiusKm,
     };
 
-    if (effectivePrefs) {
-      if (effectivePrefs.ageMin) {
-        const maxDob = new Date();
-        maxDob.setFullYear(maxDob.getFullYear() - effectivePrefs.ageMin);
-        strictFilterSql = sql`${strictFilterSql} AND u.date_of_birth <= ${maxDob.toISOString()}`;
-      }
-      if (effectivePrefs.ageMax) {
-        const minDob = new Date();
-        minDob.setFullYear(minDob.getFullYear() - effectivePrefs.ageMax - 1);
-        strictFilterSql = sql`${strictFilterSql} AND u.date_of_birth > ${minDob.toISOString()}`;
-      }
-      if (effectivePrefs.preferredCities && effectivePrefs.preferredCities.length > 0) {
-        const cityConditions = effectivePrefs.preferredCities.map(c => sql`TRIM(LOWER(u.city)) = TRIM(LOWER(${c}))`);
-        strictFilterSql = sql`${strictFilterSql} AND (${sql.join(cityConditions, sql` OR `)})`;
-      }
-      if (effectivePrefs.preferredEducation && effectivePrefs.preferredEducation.length > 0) {
-        const eduConditions = effectivePrefs.preferredEducation.map(e => sql`TRIM(LOWER(p.education)) = TRIM(LOWER(${e}))`);
-        strictFilterSql = sql`${strictFilterSql} AND (${sql.join(eduConditions, sql` OR `)})`;
-      }
-    }
+    const strictFilterSql = buildSearchFilterSql({
+      ageMin: effectivePrefs.ageMin,
+      ageMax: effectivePrefs.ageMax,
+      heightMin: effectivePrefs.heightMin,
+      heightMax: effectivePrefs.heightMax,
+      cities: effectivePrefs.cities || undefined,
+      education: effectivePrefs.education || undefined,
+      professions: effectivePrefs.professions || undefined,
+      practiceLevel: effectivePrefs.practiceLevel || undefined,
+      radiusKm: effectivePrefs.radiusKm,
+      viewerLat: me.latitude,
+      viewerLng: me.longitude,
+    });
 
     // A filters object only counts as an explicit choice if it actually carries a key —
     // an empty {} (e.g. a client always sending a filters object) must behave identically
@@ -136,6 +141,7 @@ export async function POST(request: Request) {
         heightCm: result.heightCm,
         bio: result.bio,
         introLine: result.introLine,
+        lifestyleAnswers: result.lifestyleAnswers,
         // Resolved per the owner's photo privacy mode — real key only for
         // `always` mode or an active request grant, blurred derivative
         // otherwise, never a placeholder.

@@ -4,6 +4,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Filter, ChevronDown, Lock, X as XIcon, Heart, GraduationCap, MapPin } from 'lucide-react';
 import { ProfileDetailModal } from '@/components/app/ProfileDetailModal';
+import { FilterPanel, DEFAULT_FILTERS, buildFilterPayload, type FilterState } from '@/components/app/FilterPanel';
+import { LifestyleBadges } from '@/components/app/LifestyleBadges';
+import type { TraitPair } from '@/components/app/LifestyleToggle';
 
 type Candidate = {
   profileId: string;
@@ -20,6 +23,9 @@ type Candidate = {
   photoRequestStatus: 'not_applicable' | 'none' | 'pending' | 'approved' | 'denied';
   photoGrantedUntil: string | null;
   matchPercentage: number | null;
+  lifestyleAnswers?: Record<string, string> | null;
+  viewerIsVerified?: boolean;
+  viewerVerificationStatus?: string;
 };
 
 export default function DiscoverPage() {
@@ -35,20 +41,33 @@ export default function DiscoverPage() {
   const [modalProfileId, setModalProfileId] = useState<string | null>(null);
   const [exhausted, setExhausted] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [filters, setFilters] = useState<FilterState>(DEFAULT_FILTERS);
+  const [filterPanelOpen, setFilterPanelOpen] = useState(false);
+  const [traitPairs, setTraitPairs] = useState<TraitPair[]>([]);
+
+  useEffect(() => {
+    fetch('/api/v1/lifestyle-traits').then(r => r.json()).then(d => setTraitPairs(d.pairs || [])).catch(() => {});
+  }, []);
 
   const fetchBatch = useCallback(async (excludeIds: string[]): Promise<Candidate[]> => {
     const res = await fetch('/api/v1/matching/batch', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ limit: 10, excludeIds }),
+      body: JSON.stringify({ limit: 10, excludeIds, filters: buildFilterPayload(filters) }),
     });
     if (!res.ok) return [];
     const data = await res.json();
     return data.candidates || [];
-  }, []);
+  }, [filters]);
 
+  // Re-fires whenever `filters` changes (fetchBatch's identity depends on
+  // it) — resets the queue from scratch, exactly the "Apply Filters"
+  // behavior we want, not just the initial mount fetch.
   useEffect(() => {
     let mounted = true;
+    setIsLoading(true);
+    setIndex(0);
+    setRevealedPhotoUri(null);
     (async () => {
       const candidates = await fetchBatch([]);
       if (!mounted) return;
@@ -60,6 +79,16 @@ export default function DiscoverPage() {
   }, [fetchBatch]);
 
   const current = queue[index];
+
+  const activeFilterCount = [
+    filters.ageRange[0] > DEFAULT_FILTERS.ageRange[0] || filters.ageRange[1] < DEFAULT_FILTERS.ageRange[1],
+    filters.heightRange[0] > DEFAULT_FILTERS.heightRange[0] || filters.heightRange[1] < DEFAULT_FILTERS.heightRange[1],
+    filters.radiusKm < DEFAULT_FILTERS.radiusKm,
+    filters.cities.length > 0,
+    filters.education.length > 0,
+    filters.professions.length > 0,
+    !!filters.practiceLevel,
+  ].filter(Boolean).length;
 
   const advance = useCallback(async () => {
     setRevealedPhotoUri(null);
@@ -145,11 +174,19 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-background px-6 pt-8 pb-24">
       <div className="container mx-auto max-w-3xl">
-        {/* Filters / sort — visual shell only for this pass */}
+        {/* Filters / sort */}
         <div className="flex items-center justify-between mb-8">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-surface text-sm font-medium text-foreground hover:bg-background transition-colors">
+          <button
+            onClick={() => setFilterPanelOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-surface text-sm font-medium text-foreground hover:bg-background transition-colors"
+          >
             <Filter className="w-4 h-4" />
             Filters
+            {activeFilterCount > 0 && (
+              <span className="w-[18px] h-[18px] rounded-full bg-primary text-surface text-[10px] font-bold flex items-center justify-center">
+                {activeFilterCount}
+              </span>
+            )}
           </button>
           <div className="flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-surface text-sm font-medium text-foreground">
             <span className="text-muted">Sort by:</span>
@@ -282,7 +319,7 @@ export default function DiscoverPage() {
                     )}
 
                     {current.education && (
-                      <div className="flex flex-wrap gap-2 mb-6">
+                      <div className="flex flex-wrap gap-2 mb-3">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-accent-light/40 border border-accent/20 text-xs font-medium text-primary">
                           <GraduationCap className="w-3.5 h-3.5" />
                           {current.education}
@@ -290,20 +327,47 @@ export default function DiscoverPage() {
                       </div>
                     )}
 
-                    <div className="mt-auto flex gap-3">
-                      <button
-                        onClick={() => act('interested', current.profileId)}
-                        className="flex-1 bg-primary text-surface font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-                      >
-                        <Heart className="w-4 h-4" /> I&apos;m Interested
-                      </button>
-                      <button
-                        onClick={() => act('skip', current.profileId)}
-                        className="flex-1 border border-border text-foreground font-medium py-3 rounded-xl hover:bg-background transition-colors"
-                      >
-                        Skip Profile
-                      </button>
+                    <div className="mb-6">
+                      <LifestyleBadges answers={current.lifestyleAnswers} traitPairs={traitPairs} />
                     </div>
+
+                    {current.viewerIsVerified === false ? (
+                      // Real enforcement for viewing full profile detail lives
+                      // server-side (NOT_VERIFIED on /matching/profile/[id]);
+                      // this inline block matches mobile's card-level treatment
+                      // so an unverified viewer sees an explanation up front
+                      // instead of a silently-swallowed failed action.
+                      <div className="mt-auto space-y-2">
+                        <div className="bg-accent-light/40 border border-accent/20 rounded-xl px-4 py-3 text-center">
+                          <p className="text-xs font-medium text-muted">
+                            {current.viewerVerificationStatus === 'pending'
+                              ? 'Your verification is pending volunteer review.'
+                              : 'Complete ITS verification in the Bohra Taaruf mobile app to express interest.'}
+                          </p>
+                        </div>
+                        <button
+                          onClick={() => act('skip', current.profileId)}
+                          className="w-full border border-border text-foreground font-medium py-3 rounded-xl hover:bg-background transition-colors"
+                        >
+                          Skip Profile
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="mt-auto flex gap-3">
+                        <button
+                          onClick={() => act('interested', current.profileId)}
+                          className="flex-1 bg-primary text-surface font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                        >
+                          <Heart className="w-4 h-4" /> I&apos;m Interested
+                        </button>
+                        <button
+                          onClick={() => act('skip', current.profileId)}
+                          className="flex-1 border border-border text-foreground font-medium py-3 rounded-xl hover:bg-background transition-colors"
+                        >
+                          Skip Profile
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
@@ -328,6 +392,13 @@ export default function DiscoverPage() {
           onSkip={(id) => act('skip', id)}
         />
       )}
+
+      <FilterPanel
+        visible={filterPanelOpen}
+        onClose={() => setFilterPanelOpen(false)}
+        onApply={(newFilters) => setFilters(newFilters)}
+        initialFilters={filters}
+      />
     </div>
   );
 }

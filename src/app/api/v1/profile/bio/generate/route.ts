@@ -6,6 +6,16 @@ import { users, profiles, preferences, bioChunks } from '@/lib/db/schema';
 import { eq, and } from 'drizzle-orm';
 import { generateUniqueAlias } from '@/lib/alias-generator';
 
+// SaveBioSchema caps bio at 300 chars and introLine at 100 — chunk
+// concatenation below can exceed either, so trim to the last full word
+// within the limit rather than saving a payload the save endpoint rejects.
+function truncateToLength(text: string, maxLen: number): string {
+  if (text.length <= maxLen) return text;
+  const cut = text.slice(0, maxLen);
+  const lastSpace = cut.lastIndexOf(' ');
+  return (lastSpace > 0 ? cut.slice(0, lastSpace) : cut).trim();
+}
+
 function fillWildcards(template: string, userData: any): string | null {
   let filled = template;
   const matches = [...template.matchAll(/\*_([A-Z_]+)_\*/g)];
@@ -39,6 +49,8 @@ export async function POST(request: Request) {
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 });
     }
+
+    const { shortForm } = parsed.data;
 
     // 1. Fetch user data
     const userRow = await db.select().from(users).where(eq(users.id, userId)).limit(1).then(res => res[0]);
@@ -144,14 +156,17 @@ export async function POST(request: Request) {
 
       // Assembly
       const bioStr = selectedChunks.join(' ');
-      
-      const introChunks = [opening, family || partnerPref].filter(Boolean);
+
+      // shortForm asks for just the opening line, not opening+family/partnerPref
+      // stitched together — the combined form routinely ran past introLine's
+      // 100-char save limit (SaveBioSchema), causing every save to be rejected.
+      const introChunks = shortForm ? [opening].filter(Boolean) : [opening, family || partnerPref].filter(Boolean);
       introLineStr = introChunks.join(' ');
 
       // Fallback if somehow completely empty
       candidates.push({
-        bio: bioStr || `Hi, I'm excited to join ${process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf'}!`,
-        introLine: introLineStr || `Hi, I'm excited to join ${process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf'}!`,
+        bio: truncateToLength(bioStr || `Hi, I'm excited to join ${process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf'}!`, 300),
+        introLine: truncateToLength(introLineStr || `Hi, I'm excited to join ${process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf'}!`, 100),
       });
     }
 

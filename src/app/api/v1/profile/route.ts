@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { db } from '@/lib/db';
-import { users, profiles, preferences, verifications, photoPrivacyGenderRules } from '@/lib/db/schema';
+import { users, profiles, preferences, verifications, photoPrivacyGenderRules, lifestyleTraitPairs } from '@/lib/db/schema';
 import { eq, sql } from 'drizzle-orm';
 import { serializeProfile, keysToCamelCase } from '@/lib/api/serialize';
 import { computeProfileCompletion } from '@/lib/profileCompletion';
@@ -116,6 +116,27 @@ export async function PATCH(request: Request) {
         return NextResponse.json({ error: `Photo privacy mode "${updates.photoPrivacyMode}" is not available for your gender` }, { status: 400 });
       }
       profileUpdates.photoPrivacyMode = updates.photoPrivacyMode;
+    }
+
+    if (updates.lifestyleAnswers !== undefined) {
+      if (updates.lifestyleAnswers === null || Object.keys(updates.lifestyleAnswers).length === 0) {
+        profileUpdates.lifestyleAnswers = null;
+      } else {
+        // Slugs/option keys are admin-configurable data, not a fixed enum —
+        // validate against currently-active pairs rather than trusting the client.
+        const activePairs = await db.select().from(lifestyleTraitPairs).where(eq(lifestyleTraitPairs.active, true));
+        const pairsBySlug = new Map(activePairs.map(p => [p.slug, p]));
+        for (const [slug, optionKey] of Object.entries(updates.lifestyleAnswers)) {
+          const pair = pairsBySlug.get(slug);
+          if (!pair) {
+            return NextResponse.json({ error: `Unknown lifestyle trait "${slug}"` }, { status: 400 });
+          }
+          if (optionKey !== pair.leftOptionKey && optionKey !== pair.rightOptionKey) {
+            return NextResponse.json({ error: `Invalid answer "${optionKey}" for lifestyle trait "${slug}"` }, { status: 400 });
+          }
+        }
+        profileUpdates.lifestyleAnswers = updates.lifestyleAnswers;
+      }
     }
 
     if (Object.keys(profileUpdates).length > 0) {

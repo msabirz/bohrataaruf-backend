@@ -35,6 +35,11 @@ export async function serializeProfile(dbProfile: any, dbUser: any, dbPreference
     ...keysToCamelCase(dbProfile),
     photoUri: await getViewUrl(dbProfile.photoKey),
     bio: dbProfile.bioText, // Map explicit frontend 'bio' field
+    // keysToCamelCase recurses into nested objects — lifestyleAnswers' inner
+    // keys are lifestyleTraitPairs.slug values (e.g. "coffee_or_chai"), not
+    // DB column names, so they must pass through unmangled or every client
+    // lookup against the slug from GET /lifestyle-traits silently breaks.
+    lifestyleAnswers: dbProfile.lifestyleAnswers ?? null,
   };
   
   // Calculate age if not present

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Heart, X as XIcon, Briefcase, Lock } from 'lucide-react';
+import { ProfileDetailModal } from '@/components/app/ProfileDetailModal';
 
 type MiniProfile = {
   profileId: string;
@@ -38,6 +39,7 @@ export default function InterestsPage() {
   const [sent, setSent] = useState<MiniProfile[] | null>(null);
   const [matched, setMatched] = useState<MatchItem[] | null>(null);
   const [busyId, setBusyId] = useState<string | null>(null);
+  const [modalProfileId, setModalProfileId] = useState<string | null>(null);
 
   const loadReceived = useCallback(async () => {
     const res = await fetch('/api/v1/interactions/received');
@@ -137,7 +139,7 @@ export default function InterestsPage() {
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
               {received.map(p => (
-                <MiniCard key={p.profileId} profile={p}>
+                <MiniCard key={p.profileId} profile={p} onClickName={() => setModalProfileId(p.profileId)}>
                   <div className="flex gap-2 mt-3">
                     <button
                       onClick={() => respondToReceived(p.profileId, 'interested')}
@@ -169,7 +171,7 @@ export default function InterestsPage() {
           ) : (
             <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-6">
               {sent.map(p => (
-                <MiniCard key={p.profileId} profile={p}>
+                <MiniCard key={p.profileId} profile={p} onClickName={() => setModalProfileId(p.profileId)}>
                   <button
                     onClick={() => withdrawSent(p.profileId)}
                     disabled={busyId === p.profileId}
@@ -219,11 +221,22 @@ export default function InterestsPage() {
           )
         )}
       </div>
+
+      {modalProfileId && (
+        <ProfileDetailModal
+          profileId={modalProfileId}
+          onClose={() => setModalProfileId(null)}
+          variant={activeTab === 'sent' ? 'sent' : 'received'}
+          onInterested={(id) => { setModalProfileId(null); respondToReceived(id, 'interested'); }}
+          onSkip={(id) => { setModalProfileId(null); respondToReceived(id, 'decline'); }}
+          onWithdraw={(id) => { setModalProfileId(null); withdrawSent(id); }}
+        />
+      )}
     </div>
   );
 }
 
-function MiniCard({ profile, children }: { profile: MiniProfile; children?: React.ReactNode }) {
+function MiniCard({ profile, onClickName, children }: { profile: MiniProfile; onClickName: () => void; children?: React.ReactNode }) {
   return (
     <div className="bg-surface border border-border rounded-2xl overflow-hidden">
       <div className="relative h-40 bg-gradient-to-br from-accent-light to-accent/30 overflow-hidden">
@@ -240,7 +253,9 @@ function MiniCard({ profile, children }: { profile: MiniProfile; children?: Reac
         </div>
       </div>
       <div className="p-3">
-        <p className="text-sm font-semibold text-foreground truncate">{profile.alias}, {profile.age}</p>
+        <button onClick={onClickName} className="text-sm font-semibold text-foreground truncate hover:text-primary transition-colors text-left">
+          {profile.alias}, {profile.age}
+        </button>
         {profile.profession && (
           <span className="inline-flex items-center gap-1 mt-1 text-xs text-muted truncate">
             <Briefcase className="w-3 h-3 shrink-0" /> {profile.profession}

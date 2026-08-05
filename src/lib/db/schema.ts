@@ -120,6 +120,10 @@ export const profiles = pgTable('profiles', {
   childrenBoysCount: integer('children_boys_count'),
   childrenGirlsCount: integer('children_girls_count'),
   childrenLivingStatus: childrenLivingStatusEnum('children_living_status'),
+  // { [lifestyleTraitPairs.slug]: selectedOptionKey } — no FK, no join table.
+  // An absent key means the user hasn't answered that pair yet (distinct
+  // from an empty-string answer, which never happens).
+  lifestyleAnswers: jsonb('lifestyle_answers'),
   updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 });
 
@@ -308,6 +312,34 @@ export const photoPrivacyGenderRules = pgTable('photo_privacy_gender_rules', {
   allowedModes: photoPrivacyModeEnum('allowed_modes').array().notNull(),
   defaultMode: photoPrivacyModeEnum('default_mode').notNull(),
   updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
+});
+
+// ── Lifestyle & Personality ──────────────────────────────────────────
+
+/**
+ * Admin-configurable: the set of binary trait-pair questions shown in
+ * Edit Profile's "Lifestyle & Personality" section (e.g. "Coffee or
+ * Chai?"). New pairs can be added without a migration or app deploy —
+ * mobile/website both fetch this list at render time. A user's answer to
+ * a pair is stored on profiles.lifestyleAnswers keyed by `slug`, not via
+ * a foreign key, so removing/deactivating a pair here never requires a
+ * data migration on profiles.
+ */
+export const lifestyleTraitPairs = pgTable('lifestyle_trait_pairs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').unique().notNull(),
+  questionLabel: text('question_label').notNull(),
+  leftOptionKey: text('left_option_key').notNull(),
+  leftOptionLabel: text('left_option_label').notNull(),
+  leftIconMobile: text('left_icon_mobile').notNull(), // Feather icon name, or "custom:<name>"
+  leftIconWeb: text('left_icon_web').notNull(), // lucide-react icon name, or "custom:<name>"
+  rightOptionKey: text('right_option_key').notNull(),
+  rightOptionLabel: text('right_option_label').notNull(),
+  rightIconMobile: text('right_icon_mobile').notNull(),
+  rightIconWeb: text('right_icon_web').notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  active: boolean('active').default(true).notNull(),
+  createdAt: timestamp('created_at').defaultNow(),
 });
 
 export const contactMessages = pgTable('contact_messages', {

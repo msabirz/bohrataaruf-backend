@@ -50,6 +50,17 @@ body {
   to { opacity: 1; transform: translateY(0); }
 }
 
+/* Lifestyle & Personality trait-toggle icon badges — gentle breathing pulse,
+   staggered per badge via inline animation-delay so they ripple across the
+   row rather than moving in unison. */
+@keyframes lifestyle-badge-pulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(201, 169, 110, 0); }
+  50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(201, 169, 110, 0.18); }
+}
+.lifestyle-badge-pulse {
+  animation: lifestyle-badge-pulse 1.8s ease-in-out infinite;
+}
+
 @supports (animation-timeline: scroll()) {
   .parallax-bg {
     animation: parallax-down linear;

@@ -23,6 +23,7 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
       p.has_children as "hasChildren", p.children_count as "childrenCount",
       p.children_boys_count as "childrenBoysCount", p.children_girls_count as "childrenGirlsCount",
       p.children_living_status as "childrenLivingStatus",
+      p.lifestyle_answers as "lifestyleAnswers",
       p.photo_privacy_mode as "photoPrivacyMode",
       COALESCE(pv.views_used, 0) as "viewsUsed",
       pv.extra_view_requested as "extraViewRequested",
@@ -79,6 +80,7 @@ export async function fetchRichCandidateProfile(viewerId: string, candidateId: s
     childrenBoysCount: row.childrenBoysCount,
     childrenGirlsCount: row.childrenGirlsCount,
     childrenLivingStatus: row.childrenLivingStatus,
+    lifestyleAnswers: row.lifestyleAnswers,
     // Resolved per the owner's photo privacy mode — real key only for
     // `always` mode or an active request grant, blurred derivative
     // otherwise. (matches/[id] explicitly overrides this field with a real,

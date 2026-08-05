@@ -105,6 +105,7 @@ export async function GET(request: Request) {
       heightCm: result.heightCm,
       bio: result.bio,
       introLine: result.introLine,
+      lifestyleAnswers: result.lifestyleAnswers,
       // Resolved per the owner's photo privacy mode — real key only for
       // `always` mode or an active request grant, blurred derivative
       // otherwise, never a placeholder.

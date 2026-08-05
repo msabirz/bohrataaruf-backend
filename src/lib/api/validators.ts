@@ -170,6 +170,10 @@ export const UpdateProfileSchema = z.object({
   childrenGirlsCount: z.number().nullable().optional(),
   childrenLivingStatus: z.enum(['with_me', 'not_with_me', 'adults_independent']).nullable().optional(),
   photoPrivacyMode: z.enum(['always', 'three_then_request', 'request_only', 'blur_until_match']).optional(),
+  // { [lifestyleTraitPairs.slug]: selectedOptionKey } — further validated
+  // against currently-active pairs in the route handler itself, since the
+  // valid slugs/option keys are admin-configurable data, not a fixed enum.
+  lifestyleAnswers: z.record(z.string(), z.string()).nullable().optional(),
 });
 
 export const UploadPhotoSchema = z.object({

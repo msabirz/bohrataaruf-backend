@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, Lock, LogOut, Trash2, Image as ImageIcon, ChevronRight } from 'lucide-react';
+import { Bell, Lock, LogOut, Trash2, Image as ImageIcon, ChevronRight, Sparkles } from 'lucide-react';
+import { LifestyleToggle, TraitPair } from '@/components/app/LifestyleToggle';
 
 type PushPrefs = {
   matchesEnabled: boolean;
@@ -54,6 +55,10 @@ export default function SettingsPage() {
   const [isSavingPhotoMode, setIsSavingPhotoMode] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
 
+  const [traitPairs, setTraitPairs] = useState<TraitPair[]>([]);
+  const [lifestyleAnswers, setLifestyleAnswers] = useState<Record<string, string>>({});
+  const [lifestyleMessage, setLifestyleMessage] = useState('');
+
   const [newPassword, setNewPassword] = useState('');
   const [isSavingPassword, setIsSavingPassword] = useState(false);
   const [passwordMessage, setPasswordMessage] = useState('');
@@ -69,9 +74,13 @@ export default function SettingsPage() {
     }).catch(() => {});
     fetch('/api/v1/profile').then(r => r.json()).then(d => {
       if (d.photoPrivacyMode) setPhotoMode(d.photoPrivacyMode);
+      if (d.lifestyleAnswers) setLifestyleAnswers(d.lifestyleAnswers);
     }).catch(() => {});
     fetch('/api/v1/matching/photo-view-requests').then(r => r.json()).then(d => {
       setPendingRequestCount((d.requests || []).length);
+    }).catch(() => {});
+    fetch('/api/v1/lifestyle-traits').then(r => r.json()).then(d => {
+      setTraitPairs(d.pairs || []);
     }).catch(() => {});
   }, []);
 
@@ -110,6 +119,24 @@ export default function SettingsPage() {
     } catch {
       setPrefs(prefs); // revert on failure
       setPrefsMessage('Failed to update — please try again.');
+    }
+  };
+
+  const handleLifestyleChange = async (slug: string, optionKey: string) => {
+    const prev = lifestyleAnswers;
+    const next = { ...lifestyleAnswers, [slug]: optionKey };
+    setLifestyleAnswers(next);
+    setLifestyleMessage('');
+    try {
+      const res = await fetch('/api/v1/profile', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lifestyleAnswers: next }),
+      });
+      if (!res.ok) throw new Error();
+    } catch {
+      setLifestyleAnswers(prev); // revert on failure
+      setLifestyleMessage('Failed to update — please try again.');
     }
   };
 
@@ -220,6 +247,27 @@ export default function SettingsPage() {
             </div>
           )}
         </section>
+
+        {traitPairs.length > 0 && (
+          <section className="bg-surface p-8 rounded-3xl border border-border shadow-sm">
+            <div className="flex items-center gap-2 mb-6">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <h2 className="text-lg font-bold text-foreground">Lifestyle & Personality</h2>
+            </div>
+            <div className="space-y-6">
+              {traitPairs.map((pair, index) => (
+                <LifestyleToggle
+                  key={pair.id}
+                  pair={pair}
+                  value={lifestyleAnswers[pair.slug]}
+                  onChange={(optionKey) => handleLifestyleChange(pair.slug, optionKey)}
+                  badgeDelay={index * 0.8}
+                />
+              ))}
+              {lifestyleMessage && <p className="text-danger text-xs">{lifestyleMessage}</p>}
+            </div>
+          </section>
+        )}
 
         <section className="bg-surface p-8 rounded-3xl border border-border shadow-sm">
           <div className="flex items-center gap-2 mb-6">

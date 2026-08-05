@@ -2,6 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { X, ShieldCheck, GraduationCap, Briefcase, MapPin, Heart, Home, Users, Baby, Sparkles, Lock } from 'lucide-react';
+import { LifestyleBadges } from '@/components/app/LifestyleBadges';
+import type { TraitPair } from '@/components/app/LifestyleToggle';
 
 type RichProfile = {
   profileId: string;
@@ -28,6 +30,7 @@ type RichProfile = {
   photoGrantedUntil: string | null;
   matchPercentage: number | null;
   preferences: { practiceLevel: string | null; familyExpectation: string | null } | null;
+  lifestyleAnswers?: Record<string, string> | null;
 };
 
 function labelize(value: string | null | undefined): string | null {
@@ -40,11 +43,20 @@ export function ProfileDetailModal({
   onClose,
   onInterested,
   onSkip,
+  variant = 'discover',
+  onWithdraw,
 }: {
   profileId: string;
   onClose: () => void;
   onInterested: (id: string) => void;
   onSkip: (id: string) => void;
+  // Available actions differ by where the modal was opened from — Discover
+  // offers Interested/Skip, Received offers Interested/Decline (reusing the
+  // same two callbacks, different labels), Sent only offers Withdraw (no
+  // Interested/Skip action makes sense for someone you've already sent
+  // interest to).
+  variant?: 'discover' | 'received' | 'sent';
+  onWithdraw?: (id: string) => void;
 }) {
   const [profile, setProfile] = useState<RichProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,15 +65,32 @@ export function ProfileDetailModal({
   const [revealedPhotoUri, setRevealedPhotoUri] = useState<string | null>(null);
   const [isRevealing, setIsRevealing] = useState(false);
   const [isRequesting, setIsRequesting] = useState(false);
+  const [traitPairs, setTraitPairs] = useState<TraitPair[]>([]);
+  // Set when the backend rejects the fetch with NOT_VERIFIED (real
+  // enforcement boundary on /matching/profile/[id]) — the raw error object
+  // was previously being set as `profile` itself (no res.ok check), which
+  // rendered a broken-looking, mostly-blank modal instead of an explanation.
+  const [notVerifiedStatus, setNotVerifiedStatus] = useState<string | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     fetch(`/api/v1/matching/profile/${profileId}`)
-      .then(r => r.json())
-      .then(d => { if (isMounted) setProfile(d); })
+      .then(async (r) => {
+        const d = await r.json();
+        if (!isMounted) return;
+        if (!r.ok) {
+          if (d.error === 'NOT_VERIFIED') setNotVerifiedStatus(d.code || 'unsubmitted');
+          return;
+        }
+        setProfile(d);
+      })
       .finally(() => { if (isMounted) setIsLoading(false); });
     return () => { isMounted = false; };
   }, [profileId]);
+
+  useEffect(() => {
+    fetch('/api/v1/lifestyle-traits').then(r => r.json()).then(d => setTraitPairs(d.pairs || [])).catch(() => {});
+  }, []);
 
   const revealPhoto = async () => {
     if (!profile || profile.viewsRemaining <= 0 || isRevealing) return;
@@ -110,9 +139,23 @@ export function ProfileDetailModal({
           <X className="w-4 h-4" />
         </button>
 
-        {isLoading || !profile ? (
+        {isLoading ? (
           <div className="w-full h-96 flex items-center justify-center">
             <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
+          </div>
+        ) : notVerifiedStatus ? (
+          <div className="w-full h-96 flex flex-col items-center justify-center gap-3 px-8 text-center">
+            <ShieldCheck className="w-10 h-10 text-muted" />
+            <h3 className="text-lg font-bold text-foreground">Verification required</h3>
+            <p className="text-sm text-muted max-w-xs">
+              {notVerifiedStatus === 'pending'
+                ? 'Your verification is pending volunteer review. You can view profiles once verified.'
+                : 'Complete ITS verification in the Bohra Taaruf mobile app to view profiles.'}
+            </p>
+          </div>
+        ) : !profile ? (
+          <div className="w-full h-96 flex items-center justify-center">
+            <p className="text-sm text-muted">Profile not found.</p>
           </div>
         ) : (
           <>
@@ -246,20 +289,38 @@ export function ProfileDetailModal({
                 )}
               </div>
 
-              <div className="flex gap-3 pt-4 border-t border-border">
-                <button
-                  onClick={() => onInterested(profile.profileId)}
-                  className="flex-1 bg-primary text-surface font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
-                >
-                  <Heart className="w-4 h-4" /> I&apos;m Interested
-                </button>
-                <button
-                  onClick={() => onSkip(profile.profileId)}
-                  className="flex-1 border border-border text-foreground font-medium py-3 rounded-xl hover:bg-background transition-colors"
-                >
-                  Skip Profile
-                </button>
-              </div>
+              {profile.lifestyleAnswers && Object.keys(profile.lifestyleAnswers).length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-xs font-bold uppercase tracking-wide text-muted mb-2">Lifestyle & Personality</h3>
+                  <LifestyleBadges answers={profile.lifestyleAnswers} traitPairs={traitPairs} />
+                </div>
+              )}
+
+              {variant === 'sent' ? (
+                <div className="pt-4 border-t border-border">
+                  <button
+                    onClick={() => onWithdraw?.(profile.profileId)}
+                    className="w-full border border-border text-muted font-medium py-3 rounded-xl hover:bg-background transition-colors"
+                  >
+                    Withdraw Interest
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-3 pt-4 border-t border-border">
+                  <button
+                    onClick={() => onInterested(profile.profileId)}
+                    className="flex-1 bg-primary text-surface font-bold py-3 rounded-xl hover:bg-primary/90 transition-colors flex items-center justify-center gap-2"
+                  >
+                    <Heart className="w-4 h-4" /> I&apos;m Interested
+                  </button>
+                  <button
+                    onClick={() => onSkip(profile.profileId)}
+                    className="flex-1 border border-border text-foreground font-medium py-3 rounded-xl hover:bg-background transition-colors"
+                  >
+                    {variant === 'received' ? 'Decline' : 'Skip Profile'}
+                  </button>
+                </div>
+              )}
             </div>
           </>
         )}
