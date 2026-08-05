@@ -1,9 +1,7 @@
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
-import { matches } from '@/lib/db/schema';
-import { and, eq, or } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { fetchRichCandidateProfile } from '@/lib/db/profileQueries';
+import { requireVerifiedOrMatched } from '@/lib/api/verificationGate';
 
 export async function GET(
   request: Request,
@@ -23,25 +21,13 @@ export async function GET(
     // Unverified users can't view any (pre-match) profile — the mobile app
     // already prevents navigating here in that case, but this is the real
     // enforcement boundary since the endpoint itself is otherwise reachable
-    // directly. Mutual matches are exempt: the app deliberately reveals full
-    // profile data for confirmed matches regardless of the viewer's own
-    // verification status (a separate, already-completed relationship
-    // stage), so that flow must keep working here.
-    if (!candidate.viewerIsVerified) {
-      const isMutualMatch = await db.select({ id: matches.id }).from(matches).where(
-        or(
-          and(eq(matches.userA, userId), eq(matches.userB, candidateId)),
-          and(eq(matches.userA, candidateId), eq(matches.userB, userId))
-        )
-      ).limit(1).then(res => res.length > 0);
-
-      if (!isMutualMatch) {
-        return NextResponse.json({
-          error: 'NOT_VERIFIED',
-          code: candidate.viewerVerificationStatus,
-          message: 'Complete ITS verification to view profiles.',
-        }, { status: 403 });
-      }
+    // directly. Mutual matches are exempt via requireVerifiedOrMatched.
+    const gate = await requireVerifiedOrMatched(userId, candidateId);
+    if (gate.blocked) {
+      return NextResponse.json(
+        { ...gate.body, message: 'Complete ITS verification to view profiles.' },
+        { status: gate.status }
+      );
     }
 
     return NextResponse.json(candidate);

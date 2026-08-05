@@ -75,7 +75,19 @@ export async function GET(request: Request) {
       console.log('LOOSE ROWS RETURNED:', looseRows.length, looseRows);
       result = looseRows[0];
     }
-    
+
+    // Skip-recycling: only once nothing genuinely new is left, lift the
+    // exclusion on previously-skipped candidates (interested/withdrawn/
+    // declined/matched/reported stay excluded regardless — see
+    // buildBaseCandidateQuery's includeSkipped param).
+    if (!result) {
+      const recycleQuery = sql`${buildBaseCandidateQuery(userId, me.gender, excludeId ? [excludeId] : [], true)} LIMIT 1`;
+      const rawRecycleResult: any = await db.execute(recycleQuery);
+      const recycleRows = Array.isArray(rawRecycleResult) ? rawRecycleResult : (rawRecycleResult.rows || []);
+      console.log('RECYCLED-SKIP ROWS RETURNED:', recycleRows.length);
+      result = recycleRows[0];
+    }
+
     console.log('FINAL RESULT OBJECT:', !!result);
     console.log('--------------------------------\n');
 

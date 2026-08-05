@@ -110,6 +110,20 @@ export async function POST(request: Request) {
 
     console.log(`[Backend matching/batch] results count: ${results.length}`);
 
+    // Skip-recycling: only once nothing genuinely new is left (under the
+    // same filters, if any were explicitly chosen), lift the exclusion on
+    // previously-skipped candidates. Interested/withdrawn/declined/matched/
+    // reported stay excluded regardless.
+    if (results.length === 0) {
+      const recycleBaseQuery = buildBaseCandidateQuery(userId, me.gender, excludeIds, true);
+      const recycleQuery = hasExplicitFilters
+        ? sql`${recycleBaseQuery} ${strictFilterSql} LIMIT ${limit}`
+        : sql`${recycleBaseQuery} ORDER BY (CASE WHEN (TRUE ${strictFilterSql}) THEN 0 ELSE 1 END) LIMIT ${limit}`;
+      const rawRecycleResult: any = await db.execute(recycleQuery);
+      results = Array.isArray(rawRecycleResult) ? rawRecycleResult : (rawRecycleResult.rows || []);
+      console.log(`[Backend matching/batch] recycled-skip results count: ${results.length}`);
+    }
+
     if (results.length === 0) {
       return NextResponse.json({ candidates: [] });
     }

@@ -1,9 +1,19 @@
 import { sql, SQL } from 'drizzle-orm';
 
-export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, excludeIds?: string[]) {
+// includeSkipped: false (default) excludes every past interaction, same as
+// always. true lifts the exclusion for 'skip' only — interested/withdrawn/
+// declined always stay excluded regardless. Callers use this as a second
+// pass when the normal (false) query comes back empty, so a genuinely
+// fresh pool always wins first; skips only resurface once nothing new is
+// left to show.
+export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, excludeIds?: string[], includeSkipped: boolean = false) {
   const excludeSql = excludeIds && excludeIds.length > 0
     ? sql`AND u.id NOT IN (${sql.join(excludeIds.map(id => sql`${id}`), sql`, `)})`
     : sql``;
+
+  const myInteractionExclusion = includeSkipped
+    ? sql`i.user_id = ${viewerId} AND i.target_id = u.id AND i.action != 'skip'`
+    : sql`i.user_id = ${viewerId} AND i.target_id = u.id`;
 
   return sql`
     SELECT 
@@ -29,7 +39,7 @@ export function buildBaseCandidateQuery(viewerId: string, viewerGender: string, 
       AND u.gender IS DISTINCT FROM ${viewerGender}
       AND v.status = 'verified'
       AND NOT EXISTS (
-        SELECT 1 FROM interactions i WHERE i.user_id = ${viewerId} AND i.target_id = u.id
+        SELECT 1 FROM interactions i WHERE ${myInteractionExclusion}
       )
       AND NOT EXISTS (
         SELECT 1 FROM reports r 

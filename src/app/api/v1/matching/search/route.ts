@@ -62,7 +62,17 @@ export async function GET(request: Request) {
 
     const query = sql`${baseQuery} ${searchFilterSql} LIMIT ${limit} OFFSET ${offset}`;
     const rawResult: any = await db.execute(query);
-    const rows = Array.isArray(rawResult) ? rawResult : (rawResult.rows || []);
+    let rows = Array.isArray(rawResult) ? rawResult : (rawResult.rows || []);
+
+    // Skip-recycling: only once nothing genuinely new is left under these
+    // same filters, lift the exclusion on previously-skipped candidates.
+    // Interested/withdrawn/declined/matched/reported stay excluded regardless.
+    if (rows.length === 0) {
+      const recycleBaseQuery = buildBaseCandidateQuery(userId, me.gender, undefined, true);
+      const recycleQuery = sql`${recycleBaseQuery} ${searchFilterSql} LIMIT ${limit} OFFSET ${offset}`;
+      const rawRecycleResult: any = await db.execute(recycleQuery);
+      rows = Array.isArray(rawRecycleResult) ? rawRecycleResult : (rawRecycleResult.rows || []);
+    }
 
     const candidates = await Promise.all(rows.map(async (row: any) => {
       const age = computeAgeSafe(row.dob);

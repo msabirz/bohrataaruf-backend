@@ -338,12 +338,17 @@ export default function DiscoverPage() {
                       // so an unverified viewer sees an explanation up front
                       // instead of a silently-swallowed failed action.
                       <div className="mt-auto space-y-2">
-                        <div className="bg-accent-light/40 border border-accent/20 rounded-xl px-4 py-3 text-center">
+                        <div className="bg-accent-light/40 border border-accent/20 rounded-xl px-4 py-3 text-center space-y-2">
                           <p className="text-xs font-medium text-muted">
                             {current.viewerVerificationStatus === 'pending'
                               ? 'Your verification is pending volunteer review.'
-                              : 'Complete ITS verification in the Bohra Taaruf mobile app to express interest.'}
+                              : 'Complete ITS verification to express interest.'}
                           </p>
+                          {current.viewerVerificationStatus !== 'pending' && (
+                            <a href="/verification" className="inline-block text-xs font-bold text-primary hover:underline">
+                              Verify now
+                            </a>
+                          )}
                         </div>
                         <button
                           onClick={() => act('skip', current.profileId)}

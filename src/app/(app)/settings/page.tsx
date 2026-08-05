@@ -183,6 +183,14 @@ export default function SettingsPage() {
       <div className="container mx-auto max-w-2xl space-y-6">
         <h1 className="text-3xl font-bold mb-2">Settings</h1>
 
+        <Link
+          href="/verification"
+          className="flex items-center justify-between bg-surface p-6 rounded-3xl border border-border shadow-sm hover:bg-background transition-colors"
+        >
+          <span className="text-sm font-semibold text-foreground">ITS Verification</span>
+          <ChevronRight className="w-4 h-4 text-muted" />
+        </Link>
+
         <section className="bg-surface p-8 rounded-3xl border border-border shadow-sm">
           <div className="flex items-center gap-2 mb-6">
             <Bell className="w-5 h-5 text-primary" />

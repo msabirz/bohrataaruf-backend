@@ -150,8 +150,13 @@ export function ProfileDetailModal({
             <p className="text-sm text-muted max-w-xs">
               {notVerifiedStatus === 'pending'
                 ? 'Your verification is pending volunteer review. You can view profiles once verified.'
-                : 'Complete ITS verification in the Bohra Taaruf mobile app to view profiles.'}
+                : 'Complete ITS verification to view profiles.'}
             </p>
+            {notVerifiedStatus !== 'pending' && (
+              <a href="/verification" className="bg-primary text-surface font-bold text-sm px-5 py-2.5 rounded-xl hover:bg-primary/90 transition-colors">
+                Verify now
+              </a>
+            )}
           </div>
         ) : !profile ? (
           <div className="w-full h-96 flex items-center justify-center">

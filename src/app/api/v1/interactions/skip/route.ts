@@ -18,6 +18,14 @@ export async function POST(request: Request) {
 
     const { profileId: targetId } = parsed.data;
 
+    // Deliberately NOT verification-gated, unlike /interactions/interested —
+    // skipping doesn't create any bidirectional exposure the way expressing
+    // interest does, and mobile's swipe-up gesture calls this regardless of
+    // verification status (bypassing the card's "Verify now" prompt, which
+    // only replaces the Interested button, not the swipe gesture itself).
+    // Gating this too would silently break skip for unverified users on
+    // both platforms.
+
     // Simple upsert, skipping never triggers a match
     const query = sql`
       INSERT INTO interactions (user_id, target_id, action)

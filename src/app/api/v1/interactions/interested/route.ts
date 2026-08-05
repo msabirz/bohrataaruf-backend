@@ -4,6 +4,7 @@ import { matches } from '@/lib/db/schema';
 import { sql, eq } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { TargetIdSchema } from '@/lib/api/validators';
+import { requireVerifiedOrMatched } from '@/lib/api/verificationGate';
 import { keysToCamelCase } from '@/lib/api/serialize';
 import { getViewUrl } from '@/lib/storage';
 import { sendPushNotification } from '@/lib/pushNotifications';
@@ -21,6 +22,11 @@ export async function POST(request: Request) {
     }
 
     const { profileId: targetId } = parsed.data;
+
+    const gate = await requireVerifiedOrMatched(userId, targetId);
+    if (gate.blocked) {
+      return NextResponse.json(gate.body, { status: gate.status });
+    }
 
     // Abuse Prevention Check
     const withdrawalLogQuery = sql`
