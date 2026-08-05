@@ -206,3 +206,18 @@ export const RespondPhotoViewRequestSchema = z.discriminatedUnion('decision', [
 export const TargetIdSchema = z.object({
   profileId: z.string().uuid(),
 });
+
+export const NearbySessionSchema = z.object({
+  latitude: z.number().min(-90).max(90),
+  longitude: z.number().min(-180).max(180),
+  isVisible: z.boolean().optional(),
+  familyMode: z.boolean().optional(),
+});
+
+export const NearbyNudgeSchema = z.object({
+  toUserId: z.string().uuid(),
+});
+
+export const NearbyNudgeMessageSchema = z.object({
+  message: z.string().min(1).max(500),
+});

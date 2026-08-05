@@ -12,7 +12,8 @@ import {
   index,
   jsonb,
   check,
-  primaryKey
+  primaryKey,
+  numeric
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -297,6 +298,7 @@ export const pushPreferences = pgTable('push_preferences', {
   securityAlertsEnabled: boolean('security_alerts_enabled').default(true).notNull(),
   supportAlertsEnabled: boolean('support_alerts_enabled').default(true).notNull(),
   photoRequestsEnabled: boolean('photo_requests_enabled').default(true).notNull(),
+  nudgesEnabled: boolean('nudges_enabled').default(true).notNull(),
 });
 
 // ── Photo Privacy ────────────────────────────────────────────────────
@@ -379,4 +381,64 @@ export const notificationsLog = pgTable('notifications_log', {
   relatedId: uuid('related_id'),
   isRead: boolean('is_read').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
+// ── Nearby Nudge (app-only) ─────────────────────────────────────────
+//
+// A time-limited, gathering-context micro-chat between two users who are
+// physically near each other. Ephemeral by design (8h expiry, checked at
+// query time — no cron job this pass). Never reveals real name/photo
+// until both sides explicitly request handoff (reuses the existing
+// POST /handoff flow, same as regular matches).
+//
+// nudges.status stays a plain text + CHECK column (not a pgEnum) to match
+// exactly what the approved migration created — see migrate_nearby_nudge.ts.
+
+export const nearbySessions = pgTable('nearby_sessions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull().unique(),
+  isVisible: boolean('is_visible').default(false).notNull(),
+  latitude: numeric('latitude', { precision: 10, scale: 7, mode: 'number' }).notNull(),
+  longitude: numeric('longitude', { precision: 10, scale: 7, mode: 'number' }).notNull(),
+  lastSeen: timestamp('last_seen', { withTimezone: true }).defaultNow(),
+  familyMode: boolean('family_mode').default(false).notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const nudges = pgTable('nudges', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  fromUserId: uuid('from_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  toUserId: uuid('to_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  // 'active' | 'expired' | 'declined' — enforced by a raw CHECK constraint
+  // in the migration, not a native Postgres enum type.
+  status: text('status').default('active').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  endedBy: uuid('ended_by').references(() => users.id),
+  lastReadByFrom: timestamp('last_read_by_from', { withTimezone: true }),
+  lastReadByTo: timestamp('last_read_by_to', { withTimezone: true }),
+  handoffRequestedBy: uuid('handoff_requested_by').array().default(sql`'{}'::uuid[]`),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const nudgeMessages = pgTable('nudge_messages', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  nudgeId: uuid('nudge_id').references(() => nudges.id, { onDelete: 'cascade' }).notNull(),
+  fromUserId: uuid('from_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  message: text('message').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+});
+
+export const communityEvents = pgTable('community_events', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(),
+  locationName: text('location_name'),
+  latitude: numeric('latitude', { precision: 10, scale: 7, mode: 'number' }),
+  longitude: numeric('longitude', { precision: 10, scale: 7, mode: 'number' }),
+  radiusKm: integer('radius_km').default(1),
+  startsAt: timestamp('starts_at', { withTimezone: true }),
+  endsAt: timestamp('ends_at', { withTimezone: true }),
+  createdBy: uuid('created_by').references(() => users.id),
+  isActive: boolean('is_active').default(true),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });

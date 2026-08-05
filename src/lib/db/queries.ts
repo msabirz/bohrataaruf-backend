@@ -88,6 +88,23 @@ export function buildBaseCandidateQuery(
   `;
 }
 
+// Reused by the Nearby Nudge feature to exclude candidates already in an
+// Interested interaction (either direction) with the viewer, without
+// modifying buildBaseCandidateQuery itself — that function's own
+// interaction exclusions serve a broader, already-tested purpose (general
+// discovery pool) and check this same 'interested' concept differently
+// (split across two clauses, one broader than just 'interested'). This is
+// a narrower, standalone version matching exactly the "already Interested"
+// concept, safe to reuse without touching proven code.
+export function hasInterestedInteractionSql(userAId: string, userBId: string): SQL {
+  return sql`EXISTS (
+    SELECT 1 FROM interactions ni
+    WHERE ((ni.user_id = ${userAId} AND ni.target_id = ${userBId})
+        OR (ni.user_id = ${userBId} AND ni.target_id = ${userAId}))
+      AND ni.action = 'interested'
+  )`;
+}
+
 export interface SearchFilters {
   ageMin?: number | null;
   ageMax?: number | null;

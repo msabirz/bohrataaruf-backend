@@ -55,6 +55,7 @@ async function main() {
     security_alerts: "Security alert",
     support_alerts: "Support replied to your ticket",
     photo_requests: "Photo request update",
+    nudges: "Someone nearby wants to connect",
   };
 
   const bodies: Record<PushCategory, string> = {
@@ -65,6 +66,7 @@ async function main() {
     security_alerts: "An unusual login was detected on your account.",
     photo_requests: "Someone requested to view your photo.",
     support_alerts: "Your inquiry has been answered. Tap to view the reply.",
+    nudges: "Someone sent you a nudge at the gathering",
   };
 
   for (const category of categories) {
