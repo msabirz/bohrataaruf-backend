@@ -46,7 +46,7 @@ export default async function AdminVerificationsPage() {
     alias: row.alias,
     city: row.city,
     createdAt: row.createdAt,
-    imageUrl: row.cardImageKey ? await getViewUrl(row.cardImageKey) : '',
+    imageUrl: row.cardImageKey ? (await getViewUrl(row.cardImageKey)) ?? '' : '',
   })));
 
   return (
