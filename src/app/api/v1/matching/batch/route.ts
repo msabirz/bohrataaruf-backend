@@ -8,11 +8,13 @@ import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { computeMatchScore } from '@/lib/matching';
 import { computeAgeSafe } from '@/lib/api/serialize';
 import { resolvePhotoAccess } from '@/lib/photoAccess';
+import { isModeB } from '@/lib/modeGuard';
 
 export async function POST(request: Request) {
   try {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isModeB()) return NextResponse.json({ error: 'MODE_B', message: 'Coming soon' }, { status: 200 });
 
     let body;
     try {

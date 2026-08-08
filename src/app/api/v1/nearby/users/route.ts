@@ -5,6 +5,8 @@ import { eq, sql } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { getViewUrl } from '@/lib/storage';
 import { computeAgeSafe } from '@/lib/api/serialize';
+import { checkAndNotifyExpiringNudges } from '@/lib/nudgeExpiryCheck';
+import { isModeB } from '@/lib/modeGuard';
 
 const NEARBY_RADIUS_M = 500;
 
@@ -12,6 +14,11 @@ export async function GET(request: Request) {
   try {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isModeB()) return NextResponse.json({ error: 'MODE_B', message: 'Coming soon' }, { status: 200 });
+
+    // Fire-and-forget — opportunistic day-28/29 retention warning check,
+    // not on the response's critical path.
+    checkAndNotifyExpiringNudges(userId).catch((e) => console.warn('[nudge-expiry] check failed:', e));
 
     const mySession = await db
       .select()
@@ -24,19 +31,6 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'No active nearby session — call POST /nearby/session first' }, { status: 400 });
     }
 
-    // hasInterestedInteractionSql (queries.ts) takes two fixed user ids —
-    // this is a per-row correlated check against every candidate in the
-    // join instead, so it's inlined directly rather than forced through
-    // that helper's fixed-pair shape. Same underlying "interested, either
-    // direction" concept, reused by POST /nearby/nudge where the pair
-    // really is fixed.
-    const notAlreadyInterested = sql`NOT EXISTS (
-      SELECT 1 FROM interactions ni
-      WHERE ((ni.user_id = ${userId} AND ni.target_id = u.id)
-          OR (ni.user_id = u.id AND ni.target_id = ${userId}))
-        AND ni.action = 'interested'
-    )`;
-
     const rawResult: any = await db.execute(sql`
       SELECT
         u.id, u.date_of_birth as "dob",
@@ -45,7 +39,13 @@ export async function GET(request: Request) {
         ST_Distance(
           geography(ST_MakePoint(ns.longitude::float8, ns.latitude::float8)),
           geography(ST_MakePoint(${mySession.longitude}::float8, ${mySession.latitude}::float8))
-        )::int as "distanceM"
+        )::int as "distanceM",
+        EXISTS (
+          SELECT 1 FROM interactions ni
+          WHERE ((ni.user_id = ${userId} AND ni.target_id = u.id)
+              OR (ni.user_id = u.id AND ni.target_id = ${userId}))
+            AND ni.action = 'interested'
+        ) as "alreadyInterested"
       FROM nearby_sessions ns
       JOIN users u ON u.id = ns.user_id
       JOIN profiles p ON p.user_id = u.id
@@ -55,7 +55,6 @@ export async function GET(request: Request) {
         AND u.is_active = true
         AND u.abandoned_at IS NULL
         AND u.is_test_account = false
-        AND ${notAlreadyInterested}
         AND ST_DWithin(
           geography(ST_MakePoint(ns.longitude::float8, ns.latitude::float8)),
           geography(ST_MakePoint(${mySession.longitude}::float8, ${mySession.latitude}::float8)),
@@ -76,6 +75,7 @@ export async function GET(request: Request) {
         // Blurred derivative only — nudges never reveal the real photo,
         // same rule as pre-match discovery elsewhere in the app.
         photoUri: await getViewUrl(row.photoUriBlurred),
+        alreadyInterested: row.alreadyInterested,
       }))
     );
 

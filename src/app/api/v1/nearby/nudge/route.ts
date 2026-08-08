@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { nearbySessions, nudges, profiles } from '@/lib/db/schema';
-import { and, eq, or, sql } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { NearbyNudgeSchema } from '@/lib/api/validators';
-import { hasInterestedInteractionSql } from '@/lib/db/queries';
 import { sendPushNotification } from '@/lib/pushNotifications';
 
 export async function POST(request: Request) {
@@ -34,13 +33,11 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'This person is not currently visible nearby' }, { status: 400 });
     }
 
-    const alreadyInterestedResult: any = await db.execute(
-      sql`SELECT ${hasInterestedInteractionSql(userId, toUserId)} as exists`
-    );
-    const alreadyInterestedRows = Array.isArray(alreadyInterestedResult) ? alreadyInterestedResult : alreadyInterestedResult.rows || [];
-    if (alreadyInterestedRows[0]?.exists) {
-      return NextResponse.json({ error: 'You already have an interest interaction with this person' }, { status: 400 });
-    }
+    // Nearby nudge is intentionally independent of the Interested/matching
+    // flow — a prior 'interested' interaction (either direction) no longer
+    // blocks nudging, matching /nearby/users' visibility rule (see comment
+    // there): expressing interest elsewhere shouldn't make someone
+    // unreachable at a gathering.
 
     // At most one thread per unordered pair (DB-enforced via the
     // LEAST/GREATEST unique index) — if either side already nudged the

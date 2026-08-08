@@ -4,11 +4,13 @@ import { sql, eq, inArray } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { serializeInterestedProfile } from '@/lib/api/serialize';
 import { preferences } from '@/lib/db/schema';
+import { isModeB } from '@/lib/modeGuard';
 
 export async function GET(request: Request) {
   try {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (isModeB()) return NextResponse.json({ error: 'MODE_B', message: 'Coming soon' }, { status: 200 });
 
     const myPrefs = await db.select().from(preferences).where(eq(preferences.userId, userId)).limit(1).then(res => res[0]);
 
@@ -16,13 +18,19 @@ export async function GET(request: Request) {
     // AND I have not declined them (no row where user_id = userId, target_id = them, action = 'declined')
     // AND we are not matched (no matches row)
     const query = sql`
-      SELECT 
+      SELECT
         u.id, p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", u.city, p.profession, p.education, p.bio_text as "bio", p.intro_line as "introLine",
+        p.photo_privacy_mode as "photoPrivacyMode",
         u.date_of_birth as "dob",
-        i.created_at as "interestedAt"
+        i.created_at as "interestedAt",
+        COALESCE(pv.views_used, 0) as "viewsUsed",
+        pv.extra_view_requested as "extraViewRequested",
+        pv.extra_view_approved as "extraViewApproved",
+        pv.extra_view_approved_until as "extraViewApprovedUntil"
       FROM interactions i
       JOIN users u ON u.id = i.user_id
       JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN photo_views pv ON pv.viewer_id = ${userId} AND pv.profile_id = u.id
       WHERE i.target_id = ${userId}
         AND i.action = 'interested'
         AND NOT EXISTS (

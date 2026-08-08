@@ -220,4 +220,14 @@ export const NearbyNudgeSchema = z.object({
 
 export const NearbyNudgeMessageSchema = z.object({
   message: z.string().min(1).max(500),
-});
+  messageType: z.enum(['text', 'contact_share', 'location']).default('text'),
+  contactMethod: z.enum(['mobile', 'email']).optional(),
+  latitude: z.number().min(-90).max(90).optional(),
+  longitude: z.number().min(-180).max(180).optional(),
+}).refine(
+  (data) => data.messageType !== 'contact_share' || !!data.contactMethod,
+  { message: 'contactMethod is required for contact_share messages', path: ['contactMethod'] }
+).refine(
+  (data) => data.messageType !== 'location' || (data.latitude != null && data.longitude != null),
+  { message: 'latitude and longitude are required for location messages', path: ['latitude'] }
+);

@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, User, Menu, X } from 'lucide-react';
+import { useModeContext } from '@/lib/context/ModeContext';
 
 const NAV_ITEMS = [
   { href: '/discover', label: 'Discover' },
@@ -11,6 +12,10 @@ const NAV_ITEMS = [
   { href: '/profile', label: 'Profile' },
   { href: '/settings', label: 'Settings' },
 ];
+
+// Mode B: only what's actually usable pre-launch. No greyed-out tabs, no
+// coming-soon labels — the other tabs simply don't exist in the nav.
+const NAV_ITEMS_MODE_B = NAV_ITEMS.filter((item) => item.href === '/profile' || item.href === '/settings');
 
 type Notification = {
   id: string;
@@ -25,6 +30,9 @@ type Notification = {
 export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
+  const { mode } = useModeContext();
+  const postAuthPath = mode === 'B' ? '/profile' : '/discover';
+  const navItems = mode === 'B' ? NAV_ITEMS_MODE_B : NAV_ITEMS;
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [isBellOpen, setIsBellOpen] = useState(false);
@@ -94,7 +102,7 @@ export function AppHeader() {
 
   const NavLinks = ({ onNavigate }: { onNavigate?: () => void }) => (
     <>
-      {NAV_ITEMS.map(item => {
+      {navItems.map(item => {
         const isActive = pathname === item.href || pathname?.startsWith(`${item.href}/`);
         return (
           <Link
@@ -117,8 +125,28 @@ export function AppHeader() {
           <button className="md:hidden text-foreground" onClick={() => setIsMobileNavOpen(true)} aria-label="Open menu">
             <Menu className="w-6 h-6" />
           </button>
-          <Link href="/discover" className="font-semibold text-xl tracking-tight text-primary">
-            {process.env.NEXT_PUBLIC_APP_DISPLAY_NAME ?? 'Bohra Taaruf'}
+          <Link href={postAuthPath} className="flex items-center" style={{ gap: '14px' }}>
+            <img src="/logo-light.svg" alt="" width={48} height={63} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '22px',
+                fontWeight: 500,
+                color: '#211F1A',
+                lineHeight: 1.1
+              }}>
+                Bohra Taaruf
+              </span>
+              <span style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '13px',
+                fontStyle: 'italic',
+                color: '#8C6A3F',
+                lineHeight: 1.2
+              }}>
+                Through the right door, together
+              </span>
+            </div>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             <NavLinks />

@@ -3,11 +3,16 @@ import { db } from '@/lib/db';
 import { notificationsLog } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
+import { checkAndNotifyExpiringNudges } from '@/lib/nudgeExpiryCheck';
 
 export async function GET(request: Request) {
   try {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+
+    // Fire-and-forget — opportunistic day-28/29 retention warning check,
+    // not on the response's critical path.
+    checkAndNotifyExpiringNudges(userId).catch((e) => console.warn('[nudge-expiry] check failed:', e));
 
     const url = new URL(request.url);
     const limit = Math.min(parseInt(url.searchParams.get('limit') || '20', 10), 50);

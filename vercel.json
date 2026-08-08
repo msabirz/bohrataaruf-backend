@@ -3,6 +3,10 @@
     {
       "path": "/api/admin/cleanup-abandoned",
       "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/admin/cleanup-expired-nudges",
+      "schedule": "0 3 * * *"
     }
   ]
 }

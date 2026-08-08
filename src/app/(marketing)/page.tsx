@@ -2,11 +2,13 @@ import React from 'react';
 import { ShieldCheck, Search, Heart, Users, ShieldOff, EyeOff, Lock, MessageCircleOff, Link as LinkIcon, Eye, Zap, MapPin, ChevronDown } from 'lucide-react';
 import IndiaMap from '@/components/marketing/IndiaMap';
 import RegisteredCounter from '@/components/marketing/RegisteredCounter';
+import { MarketingModeGate } from '@/components/marketing/MarketingModeGate';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
 export default function MarketingHomePage() {
   return (
+    <MarketingModeGate>
     <div className="flex flex-col min-h-screen">
       {/* 1. HERO SECTION */}
       <section className="relative pt-12 md:pt-16 pb-20 overflow-hidden px-6">
@@ -258,44 +260,7 @@ export default function MarketingHomePage() {
         </div>
       </section>
 
-      {/* 6. TESTIMONIALS */}
-      <section className="py-24 bg-surface px-6">
-        <div className="container mx-auto max-w-5xl">
-          <div className="text-center mb-16 scroll-reveal">
-            <h2 className="text-3xl font-bold mb-4">Stories from our community</h2>
-            <p className="text-muted">Real connections made through {APP_NAME}.</p>
-          </div>
-          
-          <div className="grid md:grid-cols-2 gap-8">
-            {/* TODO: Replace with real testimonials before launch. These are placeholders. */}
-            <div className="bg-background p-8 rounded-2xl border border-border scroll-reveal">
-              <div className="flex gap-1 text-accent mb-4">
-                ★★★★★
-              </div>
-              <p className="text-lg italic text-foreground mb-6">
-                "I appreciated how dignified the whole process felt. The alias feature meant I didn't have to worry about my privacy while browsing."
-              </p>
-              <div>
-                <p className="font-semibold">Fatema S.</p>
-                <p className="text-sm text-muted">Matched in 2024</p>
-              </div>
-            </div>
-            
-            <div className="bg-background p-8 rounded-2xl border border-border scroll-reveal" style={{ animationDelay: '100ms' }}>
-              <div className="flex gap-1 text-accent mb-4">
-                ★★★★★
-              </div>
-              <p className="text-lg italic text-foreground mb-6">
-                "Knowing that every single person on the app was ITS verified gave my family immense peace of mind."
-              </p>
-              <div>
-                <p className="font-semibold">Hussain M.</p>
-                <p className="text-sm text-muted">Matched in 2025</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
     </div>
+    </MarketingModeGate>
   );
 }

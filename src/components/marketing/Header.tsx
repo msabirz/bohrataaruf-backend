@@ -4,8 +4,11 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import { useModeContext } from '@/lib/context/ModeContext';
 
 export function Header() {
+  const { mode } = useModeContext();
+  const postAuthPath = mode === 'B' ? '/profile' : '/discover';
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [itsNumber, setItsNumber] = useState('');
   const [password, setPassword] = useState('');
@@ -67,7 +70,7 @@ export function Header() {
       
       if (res.ok) {
         setIsSuccess(true);
-        router.push(redirectTarget || '/discover');
+        router.push(redirectTarget || postAuthPath);
       } else {
         setError(data.error || 'Invalid credentials');
       }
@@ -133,8 +136,28 @@ export function Header() {
     <>
       <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
         <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center gap-2">
-            <span className="font-semibold text-xl tracking-tight text-primary">{process.env.NEXT_PUBLIC_APP_DISPLAY_NAME ?? 'Bohra Taaruf'}</span>
+          <Link href="/" className="flex items-center" style={{ gap: '14px' }}>
+            <img src="/logo-light.svg" alt="" width={48} height={63} />
+            <div style={{ display: 'flex', flexDirection: 'column' }}>
+              <span style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '22px',
+                fontWeight: 500,
+                color: '#211F1A',
+                lineHeight: 1.1
+              }}>
+                Bohra Taaruf
+              </span>
+              <span style={{
+                fontFamily: 'Georgia, serif',
+                fontSize: '13px',
+                fontStyle: 'italic',
+                color: '#8C6A3F',
+                lineHeight: 1.2
+              }}>
+                Through the right door, together
+              </span>
+            </div>
           </Link>
           
           <nav className="hidden md:flex items-center gap-8">
@@ -150,10 +173,10 @@ export function Header() {
             ) : isAuthenticated ? (
               <div className="flex items-center gap-6">
                 <Link
-                  href="/discover"
+                  href={postAuthPath}
                   className="text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
-                  Discover
+                  {mode === 'B' ? 'Profile' : 'Discover'}
                 </Link>
                 
                 <div className="relative group">

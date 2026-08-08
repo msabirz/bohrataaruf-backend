@@ -19,6 +19,7 @@ export function keysToCamelCase(obj: any): any {
 }
 import { getViewUrl } from '@/lib/storage';
 import { computeMatchScore } from '@/lib/matching';
+import { resolvePhotoAccess } from '@/lib/photoAccess';
 
 // dob is nullable now that onboarding no longer collects it up-front —
 // null-guard rather than silently computing a nonsense ~56yo from
@@ -80,16 +81,32 @@ export async function serializeInterestedProfile(row: any, viewerPrefs?: any, ca
     matchPercentage = percentage;
   }
 
+  // Routed through the same resolvePhotoAccess() every other candidate-serving
+  // call site uses (see photoAccess.ts) — this used to hardcode the blurred
+  // key unconditionally, which was actually wrong for 'always'-mode profiles
+  // (should never be blurred) and never exposed viewsRemaining/request-status
+  // for the Interests screen's own tap-to-view mechanic to work.
+  const access = resolvePhotoAccess({
+    photoPrivacyMode: row.photoPrivacyMode,
+    photoUri: row.photoUri,
+    photoUriBlurred: row.photoUriBlurred,
+    viewsUsed: row.viewsUsed,
+    extraViewRequested: row.extraViewRequested,
+    extraViewApproved: row.extraViewApproved,
+    extraViewApprovedUntil: row.extraViewApprovedUntil,
+  });
+
   return {
     profileId: row.id,
     alias: row.alias,
     age,
     city: row.city,
     profession: row.profession,
-    // Pre-generated blurred derivative only — the real photo never appears in a
-    // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
-    // reveals the real one, gated by the 3-view cap.
-    photoUri: await getViewUrl(row.photoUriBlurred),
+    photoUri: await getViewUrl(access.photoKeyToServe),
+    viewsRemaining: access.viewsRemaining,
+    photoPrivacyMode: row.photoPrivacyMode,
+    photoRequestStatus: access.photoRequestStatus,
+    photoGrantedUntil: access.photoGrantedUntil,
     bio: row.bio,
     introLine: row.introLine,
     matchPercentage,

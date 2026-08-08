@@ -15,6 +15,8 @@ const publicRoutes = [
   '/api/v1/auth/logout',
   '/api/v1/auth/password/reset-request',
   '/api/v1/auth/password/reset-confirm',
+  '/api/v1/app/mode', // SITE_MODE bridge — must be readable before login to gate the marketing page
+  '/api/v1/stats/registered', // Public registered-count stat for the pre-launch page
   '/api/admin', // Admin routes use their own admin_session cookie auth
   '/api/marketing', // Marketing website routes are strictly public
 ];

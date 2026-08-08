@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: APP_NAME,
     description: 'A verified, private, and thoughtful matchmaking platform exclusively for the Dawoodi Bohra community.',
-    url: 'https://bohrataaruf.app',
+    url: 'https://bohrataaruf.com',
     siteName: APP_NAME,
     locale: 'en_US',
     type: 'website',

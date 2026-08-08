@@ -92,6 +92,13 @@
       "when": 1752567000000,
       "tag": "0012_add_photo_privacy",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1752568000000,
+      "tag": "0013_add_waitlist",
+      "breakpoints": true
     }
   ]
 }

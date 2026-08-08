@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Chip } from '@/components/ui/Chip';
+import { useModeContext } from '@/lib/context/ModeContext';
 
 export default function ProfilePage() {
+  const { mode } = useModeContext();
+  const [completionPercentage, setCompletionPercentage] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<'basics' | 'preferences'>('basics');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -95,6 +98,18 @@ export default function ProfilePage() {
     return () => { isMounted = false; };
   }, []);
 
+  useEffect(() => {
+    if (mode !== 'B') return;
+    let isMounted = true;
+    fetch('/api/v1/profile/completion')
+      .then((res) => res.json())
+      .then((data) => {
+        if (isMounted && typeof data.percentage === 'number') setCompletionPercentage(data.percentage);
+      })
+      .catch(() => {});
+    return () => { isMounted = false; };
+  }, [mode]);
+
   const handleBasicsSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -182,6 +197,43 @@ export default function ProfilePage() {
   }
 
   return (
+    <>
+      {mode === 'B' && (
+        <div style={{ backgroundColor: '#211F1A', padding: '16px 24px' }}>
+          <div className="container mx-auto max-w-2xl">
+            <div className="flex items-center" style={{ gap: '8px' }}>
+              <span style={{ width: '6px', height: '6px', borderRadius: '50%', backgroundColor: '#C9A96E', display: 'inline-block' }} />
+              <span style={{ fontSize: '13px', color: '#FFFFFC', fontWeight: 500 }}>Your profile is ready</span>
+            </div>
+            <div style={{ marginTop: '4px' }}>
+              <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', lineHeight: 1.5 }}>
+                We&apos;re gathering verified families before opening discovery — so your first experience is genuinely good, not an empty room. We&apos;ll email you the moment it opens.
+              </p>
+            </div>
+            <div style={{ marginTop: '10px' }}>
+              <a
+                href="https://instagram.com/bohrataaruf"
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{ fontSize: '12px', color: '#C9A96E', textDecoration: 'none' }}
+              >
+                Follow @bohrataaruf on Instagram →
+              </a>
+            </div>
+
+            {completionPercentage !== null && completionPercentage < 100 && (
+              <div style={{ marginTop: '14px' }}>
+                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px' }}>
+                  Your profile is {completionPercentage}% complete — finish it so you&apos;re ready when discovery opens.
+                </p>
+                <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '999px', overflow: 'hidden' }}>
+                  <div style={{ height: '100%', width: `${completionPercentage}%`, backgroundColor: '#C9A96E', borderRadius: '999px', transition: 'width 0.3s' }} />
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     <div className="min-h-screen bg-background pt-12 pb-32 px-6">
       <div className="container mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
@@ -349,5 +401,6 @@ export default function ProfilePage() {
         </div>
       </div>
     </div>
+    </>
   );
 }

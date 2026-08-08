@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
+import { useModeContext } from '@/lib/context/ModeContext';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -46,6 +47,8 @@ export default function SignupPage() {
 // 5 = bio; 6 = done. Preferences is intentionally dropped from this flow.
 function SignupWizard() {
   const router = useRouter();
+  const { mode } = useModeContext();
+  const postAuthPath = mode === 'B' ? '/profile' : '/discover';
   const [step, setStep] = useState<number>(0); // 0 = loading/checking resume
   const [isAuthed, setIsAuthed] = useState(false);
 
@@ -409,7 +412,7 @@ function SignupWizard() {
             </div>
           )}
 
-          <button onClick={() => router.push('/discover')} className="w-full bg-primary text-surface font-medium py-4 rounded-xl flex items-center justify-center gap-2 mb-3">Start Browsing</button>
+          <button onClick={() => router.push(postAuthPath)} className="w-full bg-primary text-surface font-medium py-4 rounded-xl flex items-center justify-center gap-2 mb-3">Start Browsing</button>
         </div>
       )}
 

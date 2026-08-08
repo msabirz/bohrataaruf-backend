@@ -419,13 +419,29 @@ export const nudges = pgTable('nudges', {
   lastReadByTo: timestamp('last_read_by_to', { withTimezone: true }),
   handoffRequestedBy: uuid('handoff_requested_by').array().default(sql`'{}'::uuid[]`),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  // Set once an expiry-warning push has been sent (checked opportunistically
+  // from GET /nearby/users and GET /notifications, not a dedicated cron) —
+  // guards against sending the same warning more than once.
+  nudgeExpiryNotifiedAt: timestamp('nudge_expiry_notified_at', { withTimezone: true }),
 });
 
 export const nudgeMessages = pgTable('nudge_messages', {
   id: uuid('id').primaryKey().defaultRandom(),
   nudgeId: uuid('nudge_id').references(() => nudges.id, { onDelete: 'cascade' }).notNull(),
   fromUserId: uuid('from_user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  // For 'contact_share': the phone number or email value itself.
+  // For 'location': a short display label (real coords live in latitude/longitude).
   message: text('message').notNull(),
+  // 'text' | 'contact_share' | 'location' — enforced by a raw CHECK
+  // constraint in the migration, not a native Postgres enum type (same
+  // convention as nudges.status).
+  messageType: text('message_type').default('text').notNull(),
+  contactMethod: text('contact_method'), // 'mobile' | 'email', only for contact_share
+  latitude: numeric('latitude', { precision: 10, scale: 7, mode: 'number' }),
+  longitude: numeric('longitude', { precision: 10, scale: 7, mode: 'number' }),
+  // Soft-delete only — "delete before seen" for contact_share messages.
+  // Excluded from GET .../messages once set, never hard-deleted.
+  deletedAt: timestamp('deleted_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
 

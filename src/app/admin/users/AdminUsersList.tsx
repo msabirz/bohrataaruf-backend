@@ -22,6 +22,8 @@ export default function AdminUsersList() {
   const [loading, setLoading] = useState(true);
   const [cleaning, setCleaning] = useState(false);
   const [cleanupMessage, setCleanupMessage] = useState<string | null>(null);
+  const [nudgeCleaning, setNudgeCleaning] = useState(false);
+  const [nudgeCleanupMessage, setNudgeCleanupMessage] = useState<string | null>(null);
   
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -69,6 +71,25 @@ export default function AdminUsersList() {
     }
   };
 
+  const handleCleanupExpiredNudges = async () => {
+    if (!confirm('Are you sure you want to delete Nearby Nudge message history older than 30 days? Thread records are kept, only the message content is removed.')) return;
+    setNudgeCleaning(true);
+    setNudgeCleanupMessage(null);
+    try {
+      const res = await fetch('/api/admin/cleanup-expired-nudges', { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setNudgeCleanupMessage(`Successfully deleted ${data.deletedMessageCount} expired nudge message(s).`);
+      } else {
+        alert(data.error || 'Cleanup failed');
+      }
+    } catch (e) {
+      alert('Network error during cleanup');
+    } finally {
+      setNudgeCleaning(false);
+    }
+  };
+
   // Debounced search
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -93,19 +114,35 @@ export default function AdminUsersList() {
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">User Management</h1>
           <p className="text-gray-500 mt-2">Search, view, and manage volunteer actions on user accounts.</p>
         </div>
-        <button
-          onClick={handleCleanupAbandoned}
-          disabled={cleaning}
-          className="px-4 py-2 bg-[#8C6A3F] text-white rounded-lg font-medium text-sm hover:bg-[#7a5b35] transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
-        >
-          {cleaning ? 'Running Cleanup...' : 'Cleanup Abandoned Registrations'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={handleCleanupAbandoned}
+            disabled={cleaning}
+            className="px-4 py-2 bg-[#8C6A3F] text-white rounded-lg font-medium text-sm hover:bg-[#7a5b35] transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+          >
+            {cleaning ? 'Running Cleanup...' : 'Cleanup Abandoned Registrations'}
+          </button>
+          <button
+            onClick={handleCleanupExpiredNudges}
+            disabled={nudgeCleaning}
+            className="px-4 py-2 bg-[#8C6A3F] text-white rounded-lg font-medium text-sm hover:bg-[#7a5b35] transition-colors disabled:opacity-50 flex items-center gap-2 shadow-sm"
+          >
+            {nudgeCleaning ? 'Running Cleanup...' : 'Cleanup Expired Nudge Messages'}
+          </button>
+        </div>
       </div>
 
       {cleanupMessage && (
         <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm flex justify-between items-center">
           <span>{cleanupMessage}</span>
           <button onClick={() => setCleanupMessage(null)} className="text-green-600 hover:text-green-800 font-bold">✕</button>
+        </div>
+      )}
+
+      {nudgeCleanupMessage && (
+        <div className="bg-green-50 border border-green-200 text-green-800 px-4 py-3 rounded-xl text-sm flex justify-between items-center">
+          <span>{nudgeCleanupMessage}</span>
+          <button onClick={() => setNudgeCleanupMessage(null)} className="text-green-600 hover:text-green-800 font-bold">✕</button>
         </div>
       )}
 

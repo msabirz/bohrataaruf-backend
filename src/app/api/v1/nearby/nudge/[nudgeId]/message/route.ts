@@ -20,7 +20,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ nud
     if (!parsed.success) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 });
     }
-    const { message } = parsed.data;
+    const { message, messageType, contactMethod, latitude, longitude } = parsed.data;
 
     const nudge = await db
       .select()
@@ -38,7 +38,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ nud
 
     const [saved] = await db
       .insert(nudgeMessages)
-      .values({ nudgeId, fromUserId: userId, message })
+      .values({ nudgeId, fromUserId: userId, message, messageType, contactMethod, latitude, longitude })
       .returning();
 
     const isFrom = nudge.fromUserId === userId;

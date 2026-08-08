@@ -1,12 +1,11 @@
 import { NextResponse } from 'next/server';
 import { db, executeQuery } from '@/lib/db';
-import { matches } from '@/lib/db/schema';
-import { sql, eq } from 'drizzle-orm';
+import { matches, preferences } from '@/lib/db/schema';
+import { sql, eq, inArray } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { TargetIdSchema } from '@/lib/api/validators';
 import { requireVerifiedOrMatched } from '@/lib/api/verificationGate';
-import { keysToCamelCase } from '@/lib/api/serialize';
-import { getViewUrl } from '@/lib/storage';
+import { serializeInterestedProfile } from '@/lib/api/serialize';
 import { sendPushNotification } from '@/lib/pushNotifications';
 
 export async function POST(request: Request) {
@@ -127,49 +126,50 @@ export async function GET(request: Request) {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    const myPrefs = await db.select().from(preferences).where(eq(preferences.userId, userId)).limit(1).then(res => res[0]);
+
     // Retrieve the waiting list: people the user marked 'interested' in the last 14 days,
     // where no match has been formed yet.
     const query = sql`
-      SELECT 
+      SELECT
         u.id, u.city, u.date_of_birth as "dob",
-        p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", p.profession,
-        i.created_at as "interestedAt"
+        p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", p.profession, p.education, p.has_children as "hasChildren", p.bio_text as "bio", p.intro_line as "introLine",
+        p.photo_privacy_mode as "photoPrivacyMode",
+        i.created_at as "interestedAt",
+        COALESCE(pv.views_used, 0) as "viewsUsed",
+        pv.extra_view_requested as "extraViewRequested",
+        pv.extra_view_approved as "extraViewApproved",
+        pv.extra_view_approved_until as "extraViewApprovedUntil"
       FROM interactions i
       JOIN users u ON i.target_id = u.id
       JOIN profiles p ON u.id = p.user_id
+      LEFT JOIN photo_views pv ON pv.viewer_id = ${userId} AND pv.profile_id = u.id
       WHERE i.user_id = ${userId}
         AND i.action = 'interested'
         AND i.created_at > now() - interval '14 days'
         AND NOT EXISTS (
-          SELECT 1 FROM matches m 
-          WHERE (m.user_a = ${userId} AND m.user_b = u.id) 
+          SELECT 1 FROM matches m
+          WHERE (m.user_a = ${userId} AND m.user_b = u.id)
              OR (m.user_a = u.id AND m.user_b = ${userId})
         )
       ORDER BY i.created_at DESC
     `;
-    
+
     const results = await executeQuery(query);
 
-    const profilesList = await Promise.all(results.map(async (row: any) => {
-      const age = Math.abs(new Date(Date.now() - new Date(row.dob).getTime()).getUTCFullYear() - 1970);
-      return keysToCamelCase({
-        profileId: row.id,
-        alias: row.alias,
-        age,
-        city: row.city,
-        profession: row.profession,
-        // Pre-generated blurred derivative only — the real photo never appears in a
-        // browsing/pre-match context. Only POST /api/v1/matching/photo-view legitimately
-        // reveals the real one, gated by the 3-view cap.
-        photoUri: await getViewUrl(row.photoUriBlurred),
-        interestedAt: row.interestedAt,
-      });
-    }));
+    let profilesList: any[] = [];
+    if (results.length > 0) {
+      const candidateIds = results.map((r: any) => r.id);
+      const allPrefs = await db.select().from(preferences).where(inArray(preferences.userId, candidateIds));
 
-    console.log('\n--- [getInterestedProfiles] DIAGNOSTICS ---');
-    console.log(`Sending ${profilesList.length} profiles to the frontend:`);
-    console.log(JSON.stringify(profilesList, null, 2));
-    console.log('-------------------------------------------\n');
+      profilesList = await Promise.all(results.map(async (row: any) => {
+        const candidatePrefs = allPrefs.find(p => p.userId === row.id);
+        return {
+          ...(await serializeInterestedProfile(row, myPrefs, candidatePrefs)),
+          interestedAt: new Date(row.interestedAt).toISOString(),
+        };
+      }));
+    }
 
     return NextResponse.json({ profiles: profilesList });
   } catch (error) {

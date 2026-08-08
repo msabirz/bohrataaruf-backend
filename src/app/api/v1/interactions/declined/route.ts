@@ -15,13 +15,19 @@ export async function GET(request: Request) {
     // Fetch profiles who I have declined (user_id = userId, action = 'declined')
     // We join with the target profile (the person who originally liked me).
     const query = sql`
-      SELECT 
+      SELECT
         u.id, p.alias, p.photo_key as "photoUri", p.photo_key_blurred as "photoUriBlurred", u.city, p.profession, p.education, p.bio_text as "bio", p.intro_line as "introLine",
+        p.photo_privacy_mode as "photoPrivacyMode",
         u.date_of_birth as "dob",
-        i.created_at as "interestedAt"
+        i.created_at as "interestedAt",
+        COALESCE(pv.views_used, 0) as "viewsUsed",
+        pv.extra_view_requested as "extraViewRequested",
+        pv.extra_view_approved as "extraViewApproved",
+        pv.extra_view_approved_until as "extraViewApprovedUntil"
       FROM interactions i
       JOIN users u ON u.id = i.target_id
       JOIN profiles p ON p.user_id = u.id
+      LEFT JOIN photo_views pv ON pv.viewer_id = ${userId} AND pv.profile_id = u.id
       WHERE i.user_id = ${userId}
         AND i.action = 'declined'
       ORDER BY i.created_at DESC

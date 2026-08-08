@@ -1,5 +1,6 @@
 import React from 'react';
 import Link from 'next/link';
+import { InstagramIcon } from './InstagramIcon';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -24,6 +25,17 @@ export function Footer() {
               <li><Link href="/#features" className="text-sm text-muted hover:text-primary transition-colors">Features</Link></li>
               <li><Link href="/about" className="text-sm text-muted hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/signup" className="text-sm text-muted hover:text-primary transition-colors">Sign up</Link></li>
+              <li>
+                <a
+                  href="https://instagram.com/bohrataaruf"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-sm text-muted hover:text-primary transition-colors"
+                >
+                  <InstagramIcon size={14} />
+                  @bohrataaruf
+                </a>
+              </li>
             </ul>
           </div>
           
@@ -42,7 +54,7 @@ export function Footer() {
             &copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.
           </p>
           <p className="text-xs text-muted/70">
-            Designed exclusively for the Dawoodi Bohra community.
+            An independent initiative for the Dawoodi Bohra community. Not affiliated with any institution.
           </p>
         </div>
       </div>
