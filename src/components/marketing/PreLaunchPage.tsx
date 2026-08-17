@@ -18,7 +18,7 @@ const STORY_TRANSLATIONS = {
     headingLines: ['Not a startup.', 'A community response.'],
     paragraph1: `There was a time when a Bohra family looking for a rishta would reach out to the jamaat, ask a trusted elder, or rely on someone who knew someone. It was human. It was free.`,
     paragraph2: `That changed. Platforms emerged, paywalls went up. Seeing who expressed interest became a premium feature. Chatting after a match cost a subscription. The most important decision of a family's life was behind a price tag.`,
-    quote: `"Matchmaking should never be a business. A fellow momin built Bohra Taaruf so that every family — regardless of means — has the same access to this community."`,
+    quote: `Matchmaking should never be a business. A fellow momin built Bohra Taaruf so that every family has the same access to this community.`,
     paragraph3: `No investors. No monetisation roadmap. No premium tier. Just a platform built for the community, by someone from the community.`,
   },
   lud: {

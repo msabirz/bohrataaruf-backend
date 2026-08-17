@@ -3,7 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
+import {
+  User, LogOut, Settings, ChevronDown, Menu, X,
+} from 'lucide-react';
 import { useModeContext } from '@/lib/context/ModeContext';
 import { useLocale, LOCALIZATION_ENABLED } from '@/lib/context/LocaleContext';
 import { PasswordInput } from '@/components/ui/PasswordInput';
@@ -26,7 +28,15 @@ export function Header() {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [redirectTarget, setRedirectTarget] = useState<string | null>(null);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+
+  const NAV_LINKS = [
+    { href: '/about', label: 'About Us' },
+    { href: '/#how-it-works', label: 'How it works' },
+    { href: '/#features', label: 'Features' },
+    { href: '/contact', label: 'Contact' },
+  ];
 
   useEffect(() => {
     fetch('/api/v1/auth/me')
@@ -138,20 +148,25 @@ export function Header() {
   return (
     <>
       <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
-        <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-          <Link href="/" className="flex items-center" style={{ gap: '14px' }}>
-            <img src="/logo-light.svg" alt="" width={48} height={63} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
-              <span style={{
+        <div className="container mx-auto px-4 sm:px-6 h-20 flex items-center justify-between">
+          <Link href="/" className="flex items-center min-w-0" style={{ gap: '14px' }}>
+            <img src="/logo-light.svg" alt="" width={48} height={63} className="shrink-0 w-9 h-[47px] sm:w-12 sm:h-[63px]" />
+            <div style={{ display: 'flex', flexDirection: 'column' }} className="min-w-0">
+              {/* truncate (not just nowrap) so if this ever gets too tight
+                  it clips with an ellipsis instead of overflowing past its
+                  box and overlapping Log in/Sign up next to it. */}
+              <span className="truncate text-[17px] sm:text-[22px]" style={{
                 fontFamily: 'Georgia, serif',
-                fontSize: '22px',
                 fontWeight: 500,
                 color: '#211F1A',
                 lineHeight: 1.1
               }}>
                 Bohra Taaruf
               </span>
-              <span style={{
+              {/* Tagline hidden on mobile — it's decorative, and wrapping to
+                  3 lines was eating the width Log in/Sign up need to stay
+                  on one line. */}
+              <span className="hidden sm:block whitespace-nowrap" style={{
                 fontFamily: 'Georgia, serif',
                 fontSize: '13px',
                 fontStyle: 'italic',
@@ -164,13 +179,14 @@ export function Header() {
           </Link>
           
           <nav className="hidden md:flex items-center gap-8">
-            <Link href="/about" className="text-sm font-medium text-muted hover:text-foreground transition-colors">About Us</Link>
-            <Link href="/#how-it-works" className="text-sm font-medium text-muted hover:text-foreground transition-colors">How it works</Link>
-            <Link href="/#features" className="text-sm font-medium text-muted hover:text-foreground transition-colors">Features</Link>
-            <Link href="/contact" className="text-sm font-medium text-muted hover:text-foreground transition-colors">Contact</Link>
+            {NAV_LINKS.map((link) => (
+              <Link key={link.href} href={link.href} className="text-sm font-medium text-muted hover:text-foreground transition-colors">
+                {link.label}
+              </Link>
+            ))}
           </nav>
           
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-2 sm:gap-4">
             {mode === 'B' && LOCALIZATION_ENABLED && (
               <select
                 value={locale}
@@ -227,22 +243,51 @@ export function Header() {
               </div>
             ) : (
               <>
-                <button 
+                <button
                   onClick={() => setIsLoginModalOpen(true)}
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors px-4 py-2"
+                  className="text-sm font-medium text-foreground hover:text-primary transition-colors px-2 py-2 sm:px-4 whitespace-nowrap"
                 >
                   Log in
                 </button>
-                <Link 
-                  href="/signup" 
-                  className="text-sm font-medium bg-primary text-surface px-6 py-2.5 rounded-full hover:bg-primary/90 transition-colors shadow-sm"
+                <Link
+                  href="/signup"
+                  className="text-sm font-medium bg-primary text-surface px-4 py-2 sm:px-6 sm:py-2.5 rounded-full hover:bg-primary/90 transition-colors shadow-sm whitespace-nowrap"
                 >
                   Sign up
                 </Link>
               </>
             )}
+            <button
+              type="button"
+              onClick={() => setIsMobileMenuOpen((open) => !open)}
+              aria-label={isMobileMenuOpen ? 'Close menu' : 'Open menu'}
+              aria-expanded={isMobileMenuOpen}
+              className="md:hidden flex items-center justify-center w-10 h-10 rounded-full text-foreground hover:bg-accent-light/30 transition-colors"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile nav panel — the /about, /#how-it-works, /#features, /contact
+            links above are hidden entirely below the md breakpoint with no
+            other way to reach them, so this is the only mobile access point. */}
+        {isMobileMenuOpen && (
+          <nav className="md:hidden border-t border-border bg-background">
+            <div className="container mx-auto px-6 py-3 flex flex-col">
+              {NAV_LINKS.map((link) => (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="py-3 text-sm font-medium text-muted hover:text-foreground transition-colors border-b border-border last:border-b-0"
+                >
+                  {link.label}
+                </Link>
+              ))}
+            </div>
+          </nav>
+        )}
       </header>
 
       {/* Lightweight Login Modal */}
