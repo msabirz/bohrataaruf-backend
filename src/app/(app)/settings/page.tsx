@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Bell, Lock, LogOut, Trash2, Image as ImageIcon, ChevronRight, Sparkles } from 'lucide-react';
 import { LifestyleToggle, TraitPair } from '@/components/app/LifestyleToggle';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 type PushPrefs = {
   matchesEnabled: boolean;
@@ -283,14 +284,14 @@ export default function SettingsPage() {
             <h2 className="text-lg font-bold text-foreground">Change Password</h2>
           </div>
           <form onSubmit={handlePasswordSubmit} className="flex gap-3">
-            <input
-              type="password"
+            <PasswordInput
               required
               minLength={8}
               value={newPassword}
               onChange={e => setNewPassword(e.target.value)}
               placeholder="New password (min. 8 characters)"
-              className="flex-1 px-4 py-3 rounded-xl border border-border bg-background text-sm"
+              className="w-full px-4 py-3 rounded-xl border border-border bg-background text-sm"
+              wrapperClassName="relative flex-1"
             />
             <button
               type="submit"

@@ -8,16 +8,17 @@ export function Footer() {
   return (
     <footer className="bg-background border-t border-border py-12 mt-auto">
       <div className="container mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 mb-8">
           <div className="md:col-span-2">
-            <Link href="/" className="inline-block mb-4">
+            <Link href="/" className="inline-flex items-center gap-2.5 mb-4">
+              <img src="/logo-light.svg" alt="" className="w-6 h-auto" />
               <span className="font-semibold text-xl tracking-tight text-primary">{APP_NAME}</span>
             </Link>
             <p className="text-muted text-sm max-w-sm leading-relaxed">
               A trusted, verified, and private space for the Dawoodi Bohra community to find meaningful connections.
             </p>
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-foreground mb-4">Platform</h3>
             <ul className="space-y-3">
@@ -25,6 +26,12 @@ export function Footer() {
               <li><Link href="/#features" className="text-sm text-muted hover:text-primary transition-colors">Features</Link></li>
               <li><Link href="/about" className="text-sm text-muted hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/signup" className="text-sm text-muted hover:text-primary transition-colors">Sign up</Link></li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-foreground mb-4">Connect</h3>
+            <ul className="space-y-3">
               <li>
                 <a
                   href="https://instagram.com/bohrataaruf"
@@ -38,7 +45,7 @@ export function Footer() {
               </li>
             </ul>
           </div>
-          
+
           <div>
             <h3 className="font-semibold text-foreground mb-4">Legal</h3>
             <ul className="space-y-3">

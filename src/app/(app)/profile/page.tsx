@@ -1,12 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chip } from '@/components/ui/Chip';
 import { useModeContext } from '@/lib/context/ModeContext';
+import { CompletionBreakdownCard, type CompletionBreakdownItem } from '@/components/app/CompletionBreakdownCard';
 
 export default function ProfilePage() {
   const { mode } = useModeContext();
+  const tabsRef = useRef<HTMLDivElement>(null);
   const [completionPercentage, setCompletionPercentage] = useState<number | null>(null);
+  const [completionBreakdown, setCompletionBreakdown] = useState<CompletionBreakdownItem[]>([]);
+  const [isProfileComplete, setIsProfileComplete] = useState(false);
+  const [verificationStatus, setVerificationStatus] = useState<string | undefined>(undefined);
   const [activeTab, setActiveTab] = useState<'basics' | 'preferences'>('basics');
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
@@ -21,6 +26,12 @@ export default function ProfilePage() {
   const [city, setCity] = useState('');
   const [jamaat, setJamaat] = useState('');
   const [email, setEmail] = useState('');
+  const [fieldOfStudy, setFieldOfStudy] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('');
+  const [brothersCount, setBrothersCount] = useState<string>('');
+  const [sistersCount, setSistersCount] = useState<string>('');
+  const [bio, setBio] = useState('');
+  const [introLine, setIntroLine] = useState('');
 
   // Preferences state
   const [ageMin, setAgeMin] = useState(25);
@@ -31,6 +42,7 @@ export default function ProfilePage() {
   const [practiceLevel, setPracticeLevel] = useState<string>('');
   const [familyExpectation, setFamilyExpectation] = useState<string>('');
   const [partnerQualityTags, setPartnerQualityTags] = useState<string[]>([]);
+  const [childrenAcceptance, setChildrenAcceptance] = useState<string>('');
 
   // Constant options for chips
   const CITIES = ['Mumbai', 'Pune', 'Surat', 'Dubai', 'Karachi', 'London', 'New York'];
@@ -49,6 +61,16 @@ export default function ProfilePage() {
     { value: 'flexible', label: 'Flexible' }
   ];
   const QUALITY_TAGS = ['Ambitious', 'Family-oriented', 'Creative', 'Religious', 'Athletic', 'Traveler'];
+  const MARITAL_STATUSES = [
+    { value: 'never_married', label: 'Never Married' },
+    { value: 'divorced', label: 'Divorced' },
+    { value: 'widowed', label: 'Widowed' },
+  ];
+  const CHILDREN_ACCEPTANCE_OPTIONS = [
+    { value: 'yes', label: 'Yes' },
+    { value: 'open', label: 'Open' },
+    { value: 'prefer_not', label: 'Prefer not' },
+  ];
 
   const toggleArrayItem = (setter: React.Dispatch<React.SetStateAction<string[]>>, item: string) => {
     setter(prev => {
@@ -76,6 +98,13 @@ export default function ProfilePage() {
           setCity(data.city || '');
           setJamaat(data.jamaat || '');
           setEmail(data.email || '');
+          setFieldOfStudy(data.fieldOfStudy || '');
+          setMaritalStatus(data.maritalStatus || '');
+          setBrothersCount(data.brothersCount != null ? String(data.brothersCount) : '');
+          setSistersCount(data.sistersCount != null ? String(data.sistersCount) : '');
+          setBio(data.bio || '');
+          setIntroLine(data.introLine || '');
+          setVerificationStatus(data.verification?.status);
 
           if (data.preferences) {
             setAgeMin(data.preferences.ageRange?.min || 25);
@@ -86,6 +115,7 @@ export default function ProfilePage() {
             setPracticeLevel(data.preferences.practiceLevel || '');
             setFamilyExpectation(data.preferences.familyExpectation || '');
             setPartnerQualityTags(data.preferences.partnerQualityTags || []);
+            setChildrenAcceptance(data.preferences.childrenAcceptance || '');
           }
         }
       } catch (err) {
@@ -98,16 +128,21 @@ export default function ProfilePage() {
     return () => { isMounted = false; };
   }, []);
 
-  useEffect(() => {
+  const refreshCompletion = () => {
     if (mode !== 'B') return;
-    let isMounted = true;
     fetch('/api/v1/profile/completion')
       .then((res) => res.json())
       .then((data) => {
-        if (isMounted && typeof data.percentage === 'number') setCompletionPercentage(data.percentage);
+        if (typeof data.percentage === 'number') setCompletionPercentage(data.percentage);
+        if (Array.isArray(data.breakdown)) setCompletionBreakdown(data.breakdown);
+        if (typeof data.isComplete === 'boolean') setIsProfileComplete(data.isComplete);
       })
       .catch(() => {});
-    return () => { isMounted = false; };
+  };
+
+  useEffect(() => {
+    refreshCompletion();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode]);
 
   const handleBasicsSubmit = async (e: React.FormEvent) => {
@@ -118,10 +153,22 @@ export default function ProfilePage() {
       const res1 = await fetch('/api/v1/profile/basics', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, gender, dob, city, jamaat, email }),
+        body: JSON.stringify({
+          name, gender, dob, city, jamaat, email,
+          fieldOfStudy: fieldOfStudy || undefined,
+          maritalStatus: maritalStatus || undefined,
+          brothersCount: brothersCount !== '' ? Number(brothersCount) : undefined,
+          sistersCount: sistersCount !== '' ? Number(sistersCount) : undefined,
+        }),
       });
-      if (res1.ok) {
+      const res2 = await fetch('/api/v1/profile/bio', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio, introLine }),
+      });
+      if (res1.ok && res2.ok) {
         setMessage({ text: 'Basic details updated successfully.', type: 'success' });
+        refreshCompletion();
       } else {
         throw new Error('Failed to update basics');
       }
@@ -147,11 +194,13 @@ export default function ProfilePage() {
           professions: prefProfessions,
           practiceLevel: practiceLevel || undefined,
           familyExpectation: familyExpectation || undefined,
-          partnerQualityTags: partnerQualityTags
+          partnerQualityTags: partnerQualityTags,
+          childrenAcceptance: childrenAcceptance || undefined,
         }),
       });
       if (res.ok) {
         setMessage({ text: 'Preferences updated successfully.', type: 'success' });
+        refreshCompletion();
       } else {
         throw new Error('Failed to update preferences');
       }
@@ -220,17 +269,6 @@ export default function ProfilePage() {
                 Follow @bohrataaruf on Instagram →
               </a>
             </div>
-
-            {completionPercentage !== null && completionPercentage < 100 && (
-              <div style={{ marginTop: '14px' }}>
-                <p style={{ fontSize: '12px', color: 'rgba(255,255,255,0.6)', marginBottom: '6px' }}>
-                  Your profile is {completionPercentage}% complete — finish it so you&apos;re ready when discovery opens.
-                </p>
-                <div style={{ height: '6px', width: '100%', backgroundColor: 'rgba(255,255,255,0.1)', borderRadius: '999px', overflow: 'hidden' }}>
-                  <div style={{ height: '100%', width: `${completionPercentage}%`, backgroundColor: '#C9A96E', borderRadius: '999px', transition: 'width 0.3s' }} />
-                </div>
-              </div>
-            )}
           </div>
         </div>
       )}
@@ -238,7 +276,26 @@ export default function ProfilePage() {
       <div className="container mx-auto max-w-2xl">
         <h1 className="text-3xl font-bold mb-8">My Profile</h1>
 
-        <div className="flex items-center gap-2 mb-8 border-b border-border">
+        {mode === 'B' && completionBreakdown.length > 0 && (
+          <div className="mb-8">
+            <CompletionBreakdownCard
+              percentage={completionPercentage ?? 0}
+              breakdown={completionBreakdown}
+              isComplete={isProfileComplete}
+              verificationStatus={verificationStatus}
+              onFieldClick={(item) => {
+                // Tier 2 (Partner Preferences) fields live on the Preferences
+                // tab; everything else (Tier 1 core essentials, Tier 3
+                // background) is on Basics.
+                setActiveTab(item.tier === 2 ? 'preferences' : 'basics');
+                setMessage({ text: '', type: '' });
+                tabsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              }}
+            />
+          </div>
+        )}
+
+        <div ref={tabsRef} className="flex items-center gap-2 mb-8 border-b border-border">
           <button
             onClick={() => { setActiveTab('basics'); setMessage({ text: '', type: '' }); }}
             className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 -mb-[1px] ${activeTab === 'basics' ? 'border-primary text-foreground' : 'border-transparent text-muted hover:text-foreground'}`}
@@ -310,6 +367,46 @@ export default function ProfilePage() {
                 <input type="email" value={email} onChange={e => setEmail(e.target.value)} placeholder="you@example.com" className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background" />
                 <p className="text-xs text-muted mt-1">Used only for account recovery. Never shown publicly or shared.</p>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1.5">Field of Study</label>
+                  <input type="text" value={fieldOfStudy} onChange={e => setFieldOfStudy(e.target.value)} placeholder="e.g. Computer Science" className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1.5">Marital Status</label>
+                  <select value={maritalStatus} onChange={e => setMaritalStatus(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background">
+                    <option value="">Select...</option>
+                    {MARITAL_STATUSES.map(s => (
+                      <option key={s.value} value={s.value}>{s.label}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1.5">Number of Brothers</label>
+                  <input type="number" min={0} value={brothersCount} onChange={e => setBrothersCount(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-muted mb-1.5">Number of Sisters</label>
+                  <input type="number" min={0} value={sistersCount} onChange={e => setSistersCount(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background" />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted mb-1.5">Intro Line</label>
+                <input type="text" maxLength={100} value={introLine} onChange={e => setIntroLine(e.target.value)} placeholder="A one-line tagline for your profile" className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background" />
+                <p className="text-xs text-muted mt-1">{introLine.length}/100 characters</p>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-muted mb-1.5">Bio</label>
+                <textarea maxLength={300} rows={4} value={bio} onChange={e => setBio(e.target.value)} placeholder="Tell us a bit about yourself..." className="w-full px-4 py-3 rounded-xl border border-border focus:outline-none focus:border-primary transition-all bg-background resize-none" />
+                <p className="text-xs text-muted mt-1">{bio.length}/300 characters — at least 10 counts toward profile completion</p>
+              </div>
+
               <button disabled={isSaving} type="submit" className="w-full bg-primary text-surface font-bold py-3.5 rounded-xl mt-4 disabled:opacity-50">
                 {isSaving ? 'Saving...' : 'Save Basics'}
               </button>
@@ -389,6 +486,15 @@ export default function ProfilePage() {
                       disabled={!isSelected(partnerQualityTags, tag) && partnerQualityTags.length >= 3}
                       onClick={() => toggleArrayItem(setPartnerQualityTags, tag)}
                     />
+                  ))}
+                </div>
+              </section>
+
+              <section>
+                <h3 className="text-sm font-bold text-foreground mb-3">Open to a Partner with Children?</h3>
+                <div className="flex flex-wrap gap-2">
+                  {CHILDREN_ACCEPTANCE_OPTIONS.map(opt => (
+                    <Chip key={opt.value} label={opt.label} selected={childrenAcceptance === opt.value} onClick={() => setChildrenAcceptance(opt.value)} />
                   ))}
                 </div>
               </section>

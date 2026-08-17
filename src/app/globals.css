@@ -34,6 +34,16 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 
+/* Browsers only default <a> elements to a pointer cursor — <button> and
+   role="button" elements (used throughout for onClick-driven actions like
+   "Log in", modal triggers, etc.) fall back to the plain arrow cursor
+   unless told otherwise. One global rule instead of a cursor-pointer class
+   on every button across marketing, admin, and app. */
+button:not(:disabled),
+[role='button']:not([aria-disabled='true']) {
+  cursor: pointer;
+}
+
 /* Scroll-Driven Parallax Utilities */
 @keyframes parallax-down {
   from { transform: translateY(0); }
@@ -59,6 +69,55 @@ body {
 }
 .lifestyle-badge-pulse {
   animation: lifestyle-badge-pulse 1.8s ease-in-out infinite;
+}
+
+/* Hero "mark" reveal — the logo mark draws itself in stroke-by-stroke on
+   load, then each symbolic element (arch, keystone, two dots, ground line)
+   pops/fades in, in the order it was just drawn. Default state (no
+   animation applied) is the fully-drawn, fully-visible end state, so the
+   mark is never invisible if JS/CSS animation timing is interrupted. */
+@keyframes mark-draw {
+  from { stroke-dashoffset: var(--mark-dash, 260); }
+  to { stroke-dashoffset: 0; }
+}
+@keyframes mark-pop {
+  from { opacity: 0; transform: scale(0.5); }
+  to { opacity: 1; transform: scale(1); }
+}
+@keyframes mark-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.mark-draw-path {
+  stroke-dasharray: var(--mark-dash, 260);
+  stroke-dashoffset: 0;
+}
+.mark-pop-item {
+  opacity: 1;
+  transform: scale(1);
+}
+.mark-fade-item {
+  opacity: 1;
+  transform: translateY(0);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .mark-draw-path {
+    stroke-dashoffset: var(--mark-dash, 260);
+    animation: mark-draw 1.1s ease-out forwards;
+    animation-delay: var(--mark-delay, 0s);
+  }
+  .mark-pop-item {
+    opacity: 0;
+    transform: scale(0.5);
+    animation: mark-pop 0.4s cubic-bezier(0.2, 0.9, 0.3, 1.3) forwards;
+    animation-delay: var(--mark-delay, 0s);
+  }
+  .mark-fade-item {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: mark-fade-up 0.5s ease-out forwards;
+    animation-delay: var(--mark-delay, 0s);
+  }
 }
 
 @supports (animation-timeline: scroll()) {

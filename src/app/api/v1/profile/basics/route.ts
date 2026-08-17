@@ -67,6 +67,7 @@ export async function POST(request: Request) {
     // Update profiles table
     const profileUpdates: any = {};
     if (data.education !== undefined) profileUpdates.education = data.education;
+    if (data.fieldOfStudy !== undefined) profileUpdates.fieldOfStudy = data.fieldOfStudy;
     if (data.profession !== undefined) profileUpdates.profession = data.profession;
     if (data.heightCm !== undefined) profileUpdates.heightCm = data.heightCm;
     if (data.willingToRelocate !== undefined) profileUpdates.willingToRelocate = data.willingToRelocate;

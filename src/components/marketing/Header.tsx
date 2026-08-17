@@ -5,9 +5,12 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { User, LogOut, Settings, ChevronDown } from 'lucide-react';
 import { useModeContext } from '@/lib/context/ModeContext';
+import { useLocale, LOCALIZATION_ENABLED } from '@/lib/context/LocaleContext';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export function Header() {
   const { mode } = useModeContext();
+  const { locale, setLocale } = useLocale();
   const postAuthPath = mode === 'B' ? '/profile' : '/discover';
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [itsNumber, setItsNumber] = useState('');
@@ -168,6 +171,17 @@ export function Header() {
           </nav>
           
           <div className="flex items-center gap-4">
+            {mode === 'B' && LOCALIZATION_ENABLED && (
+              <select
+                value={locale}
+                onChange={(e) => setLocale(e.target.value as 'en' | 'lud')}
+                aria-label="Language"
+                className="text-sm font-medium text-foreground bg-transparent border border-border rounded-full px-3 py-1.5 cursor-pointer focus:outline-none focus:ring-2 focus:ring-primary/20"
+              >
+                <option value="en">English</option>
+                <option value="lud">Lisan-ud-Dawat</option>
+              </select>
+            )}
             {isAuthenticated === null ? (
               <div className="w-20 h-10 animate-pulse bg-muted/20 rounded-full" />
             ) : isAuthenticated ? (
@@ -314,8 +328,7 @@ export function Header() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-muted mb-1.5">New Password</label>
-                      <input 
-                        type="password" 
+                      <PasswordInput
                         required
                         value={newPassword}
                         onChange={(e) => setNewPassword(e.target.value)}
@@ -354,8 +367,7 @@ export function Header() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-muted mb-1.5">Password</label>
-                      <input 
-                        type="password"
+                      <PasswordInput
                         required
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}

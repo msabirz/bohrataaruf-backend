@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
+import { LocaleProvider } from '@/lib/context/LocaleContext';
 import '../globals.css';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
@@ -28,11 +29,13 @@ export default function MarketingLayout({
 }) {
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans selection:bg-primary/20 selection:text-primary">
-      <Header />
-      <main className="flex-1">
-        {children}
-      </main>
-      <Footer />
+      <LocaleProvider>
+        <Header />
+        <main className="flex-1">
+          {children}
+        </main>
+        <Footer />
+      </LocaleProvider>
     </div>
   );
 }

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModeContext } from '@/lib/context/ModeContext';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -282,7 +283,7 @@ function SignupWizard() {
 
           {!isAuthed && (
             <>
-              <input type="password" required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background mb-1" placeholder="Password" />
+              <PasswordInput required value={password} onChange={e => setPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background" wrapperClassName="relative mb-1" placeholder="Password" />
               {password.length > 0 && (
                 <div className="flex items-center gap-2 mb-1">
                   <div className="flex-1 h-1 rounded-full bg-border overflow-hidden">
@@ -292,7 +293,7 @@ function SignupWizard() {
                 </div>
               )}
               <p className="text-xs text-muted mb-4">At least 8 characters, with an uppercase letter, a lowercase letter, a number, and a symbol.</p>
-              <input type="password" required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background mb-1" placeholder="Confirm password" />
+              <PasswordInput required value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background" wrapperClassName="relative mb-1" placeholder="Confirm password" />
               {confirmPassword.length > 0 && !passwordsMatch && (
                 <p className="text-xs text-danger mb-4">Passwords do not match.</p>
               )}

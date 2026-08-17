@@ -38,6 +38,7 @@ export async function GET(request: Request) {
     payload.completionPercentage = completion.percentage;
     payload.missingCompletionFields = completion.missingFields;
     payload.isProfileComplete = completion.isComplete;
+    payload.completionBreakdown = completion.breakdown;
 
     return NextResponse.json(payload);
   } catch (error) {

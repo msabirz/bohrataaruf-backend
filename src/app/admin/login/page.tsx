@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { PasswordInput } from '@/components/ui/PasswordInput';
 
 export default function AdminLoginPage() {
   const [name, setName] = useState('');
@@ -65,8 +66,7 @@ export default function AdminLoginPage() {
           
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Admin Password</label>
-            <input
-              type="password"
+            <PasswordInput
               required
               className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-[#8C6A3F] focus:border-[#8C6A3F] outline-none transition-all text-gray-900"
               placeholder="Enter the secure volunteer password"

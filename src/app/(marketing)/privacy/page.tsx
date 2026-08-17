@@ -44,7 +44,7 @@ export default function PrivacyPage() {
         
         <h2 className="text-2xl font-semibold text-foreground mt-12 mb-4">5. Contact Us</h2>
         <p>
-          If you have any questions about this Privacy Policy, please contact us at privacy@bohrataaruf.app.
+          If you have any questions about this Privacy Policy, please contact us at support@bohrataaruf.com.
         </p>
       </div>
     </div>
