@@ -2,14 +2,21 @@ import { db } from '@/lib/db';
 import { otps } from '@/lib/db/schema';
 import { eq, desc } from 'drizzle-orm';
 import crypto from 'crypto';
+import { sendPasswordResetOtpEmail } from '@/lib/email';
 
 export type OtpPurpose = 'login' | 'password_reset';
 
 /**
  * Generates an OTP, hashes it, stores it in the database with expiry,
- * and enforces the 60-second rate limit.
+ * and enforces the 60-second rate limit. `phone` stays the DB lookup/
+ * rate-limit key (the otps table is keyed by it, and there's no reason to
+ * migrate that schema just to change the delivery channel) — but if
+ * `deliveryEmail` is passed, the raw code is actually delivered there
+ * before it goes out of scope. Without a deliveryEmail, this only stores
+ * the code and never sends it anywhere (that was already true before this
+ * change — no SMS sending was ever implemented here).
  */
-export async function generateAndSendOtp(phone: string, purpose: OtpPurpose) {
+export async function generateAndSendOtp(phone: string, purpose: OtpPurpose, deliveryEmail?: string) {
   // Rate limiting: check last OTP request for this phone AND purpose
   const lastOtp = await db.select()
     .from(otps)
@@ -43,7 +50,12 @@ export async function generateAndSendOtp(phone: string, purpose: OtpPurpose) {
     expiresAt,
   });
 
-  // SECURITY: this must never return the OTP in production — verify 
+  if (deliveryEmail) {
+    sendPasswordResetOtpEmail(deliveryEmail, code)
+      .catch((err) => console.warn('[email] OTP send failed:', err));
+  }
+
+  // SECURITY: this must never return the OTP in production — verify
   // NODE_ENV is correctly set to 'production' in the actual deployed 
   // Vercel environment before launch, not just locally.
   let responseBody: { success: boolean; devOtp?: string } = { success: true };

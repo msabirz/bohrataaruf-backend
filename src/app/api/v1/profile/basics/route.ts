@@ -5,6 +5,7 @@ import { users, profiles } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { BasicsSchema, parseDobStrict } from '@/lib/api/validators';
 import { generateUniqueAlias } from '@/lib/alias-generator';
+import { sendWelcomeEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -49,6 +50,20 @@ export async function POST(request: Request) {
     if (data.jamaat !== undefined && data.jamaat !== null) userUpdates.jamaat = data.jamaat;
     if (data.preferredLanguage !== undefined && data.preferredLanguage !== null) userUpdates.preferredLanguage = data.preferredLanguage;
 
+    // There's no signup-time email (users are created with ITS number +
+    // password only, email is collected later on this exact tab) — so the
+    // welcome email fires here, the first time email transitions from
+    // empty to set, not on every subsequent basics save.
+    let shouldSendWelcome = false;
+    let welcomeName: string | undefined;
+    if (userUpdates.email) {
+      const [existingUser] = await db.select({ email: users.email, name: users.name }).from(users).where(eq(users.id, userId));
+      if (existingUser && !existingUser.email) {
+        shouldSendWelcome = true;
+        welcomeName = data.name || existingUser.name || 'there';
+      }
+    }
+
     if (Object.keys(userUpdates).length > 0) {
       try {
         await db.update(users).set(userUpdates).where(eq(users.id, userId));
@@ -61,6 +76,10 @@ export async function POST(request: Request) {
           }, { status: 409 });
         }
         throw err;
+      }
+      if (shouldSendWelcome) {
+        sendWelcomeEmail(userUpdates.email, welcomeName || 'there')
+          .catch((err) => console.warn('[email] welcome send failed:', err));
       }
     }
 

@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server';
 import { db, executeQuery } from '@/lib/db';
-import { matches, preferences } from '@/lib/db/schema';
+import { matches, preferences, users } from '@/lib/db/schema';
 import { sql, eq, inArray } from 'drizzle-orm';
 import { getAuthenticatedUserId } from '@/lib/api/auth';
 import { TargetIdSchema } from '@/lib/api/validators';
 import { requireVerifiedOrMatched } from '@/lib/api/verificationGate';
 import { serializeInterestedProfile } from '@/lib/api/serialize';
 import { sendPushNotification } from '@/lib/pushNotifications';
+import { sendMatchEmail, sendReceivedInterestEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
   try {
@@ -103,6 +104,14 @@ export async function POST(request: Request) {
         { matchId: row.match_id }
       ).catch(e => console.warn('[push] match notify failed (target):', e));
 
+      db.select({ id: users.id, email: users.email }).from(users).where(inArray(users.id, [userId, targetId]))
+        .then((rows) => {
+          rows.forEach((r) => {
+            if (r.email) sendMatchEmail(r.email).catch(e => console.warn('[email] match notify failed:', e));
+          });
+        })
+        .catch(e => console.warn('[email] match notify lookup failed:', e));
+
     } else if (wasInserted) {
       // Genuinely new one-sided interest — notify the TARGET only
       // (wasInserted guards against re-notifying on duplicate taps or upserts)
@@ -112,6 +121,12 @@ export async function POST(request: Request) {
         "Check your Received tab to see their profile.",
         { profileId: userId }
       ).catch(e => console.warn('[push] received_interests notify failed:', e));
+
+      db.select({ email: users.email }).from(users).where(eq(users.id, targetId)).limit(1)
+        .then(([r]) => {
+          if (r?.email) sendReceivedInterestEmail(r.email).catch(e => console.warn('[email] received_interests notify failed:', e));
+        })
+        .catch(e => console.warn('[email] received_interests notify lookup failed:', e));
     }
 
     return NextResponse.json({ success: true, mutualMatch });

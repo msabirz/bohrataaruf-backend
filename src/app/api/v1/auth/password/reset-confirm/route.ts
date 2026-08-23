@@ -6,6 +6,7 @@ import { ResetPasswordConfirmSchema } from '@/lib/api/validators';
 import { hashItsNumber } from '@/lib/api/auth';
 import { verifyOtp } from '@/lib/api/otp';
 import { sendPushNotification } from '@/lib/pushNotifications';
+import { sendPasswordChangedEmail } from '@/lib/email';
 import crypto from 'crypto';
 
 export async function POST(request: Request) {
@@ -49,6 +50,11 @@ export async function POST(request: Request) {
     // Fire push notification for security alert
     sendPushNotification(userRow.id, 'security_alerts', 'Password Changed', 'Your password was successfully reset.')
       .catch(err => console.warn('[push] send failed:', err));
+
+    if (userRow.email) {
+      sendPasswordChangedEmail(userRow.email)
+        .catch(err => console.warn('[email] send failed:', err));
+    }
 
     return NextResponse.json({ success: true, message: 'Password has been reset successfully.' });
   } catch (error) {

@@ -40,10 +40,12 @@ export async function POST(request: Request) {
 
     let devOtp: string | undefined = undefined;
 
-    // We only generate an OTP if the user exists.
-    if (userRow && userRow.phone) {
+    // We only generate an OTP if the user exists and has an email on file
+    // to deliver it to — phone stays the DB lookup key (see otp.ts), but
+    // email is the actual delivery channel now.
+    if (userRow && userRow.phone && userRow.email) {
       try {
-        const responseBody = await generateAndSendOtp(`${userRow.countryCode}${userRow.phone}`, 'password_reset');
+        const responseBody = await generateAndSendOtp(`${userRow.countryCode}${userRow.phone}`, 'password_reset', userRow.email);
         devOtp = responseBody.devOtp;
       } catch (err: any) {
         // If rate limited by the OTP logic itself (60 seconds), we can safely swallow it or return the generic success

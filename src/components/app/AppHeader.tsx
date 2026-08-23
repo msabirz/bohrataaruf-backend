@@ -31,7 +31,6 @@ export function AppHeader() {
   const pathname = usePathname();
   const router = useRouter();
   const { mode } = useModeContext();
-  const postAuthPath = mode === 'B' ? '/profile' : '/discover';
   const navItems = mode === 'B' ? NAV_ITEMS_MODE_B : NAV_ITEMS;
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -125,7 +124,7 @@ export function AppHeader() {
           <button className="md:hidden text-foreground" onClick={() => setIsMobileNavOpen(true)} aria-label="Open menu">
             <Menu className="w-6 h-6" />
           </button>
-          <Link href={postAuthPath} className="flex items-center" style={{ gap: '14px' }}>
+          <Link href="/" className="flex items-center" style={{ gap: '14px' }}>
             <img src="/logo-light.svg" alt="" width={48} height={63} />
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span style={{

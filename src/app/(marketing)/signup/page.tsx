@@ -4,9 +4,39 @@ import React, { useState, useEffect, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import { useModeContext } from '@/lib/context/ModeContext';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { Chip } from '@/components/ui/Chip';
+import { ImageUploadWithCrop } from '@/components/ui/ImageUploadWithCrop';
+import { FamilySection } from '@/components/ui/FamilySection';
+import { ChildrenSection } from '@/components/ui/ChildrenSection';
+import { HEIGHT_PICKER_OPTIONS, DEFAULT_HEIGHT_CM } from '@/lib/height';
+import { getOnboardingLocation } from '@/lib/location';
+import { PhotoPrivacyPicker, type PhotoPrivacyMode } from '@/components/ui/PhotoPrivacyPicker';
+
+// Same lists as the mobile app's onboarding/basics.tsx, so a user's own
+// education/profession means the same thing regardless of which platform
+// they signed up on.
+const EDUCATION_OPTIONS = ['High School', 'B.Com', 'B.Tech', 'MBBS', 'BDS', 'MBA', 'CA', 'M.Ed', 'PhD', 'Other'];
+const PROFESSION_OPTIONS = ['Doctor', 'Engineer', 'Teacher', 'Business', 'CA', 'Dentist', 'Lawyer', 'Homemaker', 'Other'];
+const LANGUAGE_OPTIONS = [
+  { value: 'en', label: 'English' },
+  { value: 'gu', label: 'Gujarati' },
+  { value: 'ur', label: 'Urdu' },
+];
+const RELOCATE_OPTIONS = [
+  { value: 'yes', label: 'Yes' },
+  { value: 'no', label: 'No' },
+  { value: 'depends', label: 'Depends' },
+];
+const MARITAL_STATUSES = [
+  { value: 'never_married', label: 'Never Married' },
+  { value: 'divorced', label: 'Divorced' },
+  { value: 'widowed', label: 'Widowed' },
+];
+const COUNTRY_CODE_OPTIONS = ['+91', '+971', '+1', '+44', '+92', 'Other'];
 
 const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const MAX_BIO_REROLLS = 3;
 
 function passwordStrength(password: string): { score: number; label: string; color: string } {
   let score = 0;
@@ -61,7 +91,9 @@ function SignupWizard() {
 
   // Step 2: phone & email state
   const [phone, setPhone] = useState('');
-  const [countryCode, setCountryCode] = useState('+91');
+  const [countryCodeOption, setCountryCodeOption] = useState('+91');
+  const [countryCodeCustom, setCountryCodeCustom] = useState('');
+  const countryCode = countryCodeOption === 'Other' ? countryCodeCustom.trim() : countryCodeOption;
   const [email, setEmail] = useState('');
 
   // Step 3: basics state
@@ -69,11 +101,43 @@ function SignupWizard() {
   const [gender, setGender] = useState('female');
   const [dob, setDob] = useState('');
   const [city, setCity] = useState('');
+  const [latitude, setLatitude] = useState<number | null>(null);
+  const [longitude, setLongitude] = useState<number | null>(null);
+  const [photoPrivacyAllowedModes, setPhotoPrivacyAllowedModes] = useState<PhotoPrivacyMode[]>([]);
+  const [photoPrivacyMode, setPhotoPrivacyMode] = useState<PhotoPrivacyMode>('three_then_request');
   const [jamaat, setJamaat] = useState('');
+  const [education, setEducation] = useState('');
+  const [educationOther, setEducationOther] = useState('');
+  const [profession, setProfession] = useState('');
+  const [professionOther, setProfessionOther] = useState('');
+  const [heightCm, setHeightCm] = useState<number>(DEFAULT_HEIGHT_CM);
+  // Website localization isn't live yet — default English, show
+  // Gujarati/Urdu as visible-but-disabled (same gate as the marketing
+  // site's NEXT_PUBLIC_LOCALIZATION_ENABLED).
+  const [preferredLanguage, setPreferredLanguage] = useState('en');
+  const [willingToRelocate, setWillingToRelocate] = useState('');
+  const [maritalStatus, setMaritalStatus] = useState('');
+  const [brothersCount, setBrothersCount] = useState<number | null>(null);
+  const [brothersMarriedCount, setBrothersMarriedCount] = useState<number | null>(null);
+  const [sistersCount, setSistersCount] = useState<number | null>(null);
+  const [sistersMarriedCount, setSistersMarriedCount] = useState<number | null>(null);
+  const [hasChildren, setHasChildren] = useState<boolean | null>(null);
+  const [childrenCount, setChildrenCount] = useState<number | null>(null);
+  const [childrenBoysCount, setChildrenBoysCount] = useState<number | null>(null);
+  const [childrenGirlsCount, setChildrenGirlsCount] = useState<number | null>(null);
+  const [childrenLivingStatus, setChildrenLivingStatus] = useState<string | null>(null);
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [alias, setAlias] = useState('');
+
+  // Step 5: bio state — mirrors mobile's onboarding/bio.tsx: auto-generate
+  // on entry, offer Use this / Try another (capped) / Edit.
+  const [bio, setBio] = useState('');
+  const [isEditingBio, setIsEditingBio] = useState(false);
+  const [bioRerollCount, setBioRerollCount] = useState(0);
+  const [bioLoading, setBioLoading] = useState(false);
+  const [bioInitialLoading, setBioInitialLoading] = useState(true);
 
   useEffect(() => {
     if (step === 6) {
@@ -195,7 +259,26 @@ function SignupWizard() {
       const dobFormatted = `${d}/${m}/${y}`;
       const res = await fetch('/api/v1/profile/basics', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, gender, dob: dobFormatted, city, jamaat }),
+        body: JSON.stringify({
+          name, gender, dob: dobFormatted, city, jamaat,
+          latitude: latitude ?? undefined,
+          longitude: longitude ?? undefined,
+          education: education === 'Other' ? educationOther.trim() : (education || undefined),
+          profession: profession === 'Other' ? professionOther.trim() : (profession || undefined),
+          heightCm,
+          preferredLanguage,
+          willingToRelocate: willingToRelocate || undefined,
+          maritalStatus: maritalStatus || undefined,
+          brothersCount: brothersCount ?? undefined,
+          brothersMarriedCount: brothersMarriedCount ?? undefined,
+          sistersCount: sistersCount ?? undefined,
+          sistersMarriedCount: sistersMarriedCount ?? undefined,
+          hasChildren: hasChildren ?? undefined,
+          childrenCount: childrenCount ?? undefined,
+          childrenBoysCount: childrenBoysCount ?? undefined,
+          childrenGirlsCount: childrenGirlsCount ?? undefined,
+          childrenLivingStatus: childrenLivingStatus ?? undefined,
+        }),
       });
       if (!res.ok) {
         const errBody = await res.json().catch(() => ({}));
@@ -210,10 +293,7 @@ function SignupWizard() {
     }
   };
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
+  const handlePhotoUpload = async (file: File) => {
     setIsLoading(true); setError('');
     try {
       const res = await fetch('/api/v1/profile/photo/upload-url', { method: 'POST' });
@@ -224,11 +304,102 @@ function SignupWizard() {
         body: JSON.stringify({ photoKey: objectKey }),
       });
       if (!confirmRes.ok) throw new Error('Photo save failed');
+      await fetch('/api/v1/profile', {
+        method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photoPrivacyMode }),
+      });
       setStep(5);
     } catch (err: any) {
       setError(err.message);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // "inputs" is accepted but unused by the real endpoint — the actual
+  // generation draws from profession/education/city already saved to the
+  // profile (Step 3), not from anything passed in this request body.
+  const generateBio = async (candidateIndex = 0) => {
+    setBioLoading(true);
+    try {
+      const res = await fetch('/api/v1/profile/bio/generate', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputs: {} }),
+      });
+      const data = await res.json();
+      if (res.ok && data.candidates?.length) {
+        setBio(data.candidates[candidateIndex % data.candidates.length].bio);
+      } else {
+        setBio('Tell us about yourself in a few words...');
+      }
+    } catch {
+      setBio('Tell us about yourself in a few words...');
+    } finally {
+      setBioLoading(false);
+      setBioInitialLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (step === 5) {
+      setBioInitialLoading(true);
+      setBioRerollCount(0);
+      setIsEditingBio(false);
+      generateBio(0);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  // Same timing as mobile's onboarding/basics.tsx: kick off location capture
+  // the moment this step mounts, not on submit — by the time the user
+  // finishes this step's ~15 fields the browser prompt/lookup is already
+  // resolved. Best-effort only, never blocks Continue.
+  useEffect(() => {
+    if (step !== 3) return;
+    getOnboardingLocation().then((loc) => {
+      if (!loc) return;
+      setLatitude(loc.latitude);
+      setLongitude(loc.longitude);
+      if (loc.city) {
+        setCity((prev) => (prev.trim().length === 0 ? loc.city! : prev));
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step]);
+
+  useEffect(() => {
+    if (step !== 4) return;
+    fetch('/api/v1/profile/photo-privacy-options')
+      .then((r) => r.json())
+      .then((d) => {
+        if (d.allowedModes) setPhotoPrivacyAllowedModes(d.allowedModes);
+        if (d.defaultMode) setPhotoPrivacyMode(d.defaultMode);
+      })
+      .catch(() => {});
+  }, [step]);
+
+  const handleTryAnotherBio = async () => {
+    if (bioRerollCount >= MAX_BIO_REROLLS) return;
+    const next = bioRerollCount + 1;
+    setBioRerollCount(next);
+    await generateBio(next);
+  };
+
+  const saveBioAndAdvance = async () => {
+    setBioLoading(true);
+    setError('');
+    try {
+      const res = await fetch('/api/v1/profile/bio', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bio }),
+      });
+      if (!res.ok) throw new Error('Failed to save bio');
+      setIsEditingBio(false);
+      setStep(6);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setBioLoading(false);
     }
   };
 
@@ -301,10 +472,15 @@ function SignupWizard() {
             </>
           )}
 
-          <label className={`block w-full border-2 border-dashed border-border rounded-2xl p-12 text-center transition-colors ${itsNumber.length === 8 ? 'cursor-pointer hover:border-primary/50' : 'opacity-50 cursor-not-allowed'}`}>
-            <span className="text-sm font-medium">{cardFile ? cardFile.name : 'Upload ID Card Photo'}</span>
-            <input type="file" accept="image/*" className="hidden" disabled={isLoading || itsNumber.length !== 8} onChange={(e) => setCardFile(e.target.files?.[0] ?? null)} />
-          </label>
+          <p className="text-xs text-muted mb-2">
+            Take a selfie holding your ITS card — make sure both your face and the card details are clearly visible.
+          </p>
+          <ImageUploadWithCrop
+            onImageReady={setCardFile}
+            triggerLabel="Upload selfie with ITS Card"
+            fileName="its-card.jpg"
+            disabled={isLoading || itsNumber.length !== 8}
+          />
 
           <button type="submit" disabled={isLoading || !step1Valid} className="w-full bg-primary text-surface font-bold py-4 rounded-xl mt-6 disabled:opacity-50">
             {isLoading ? 'Creating account...' : isAuthed ? 'Upload & continue' : 'Create account'}
@@ -316,14 +492,21 @@ function SignupWizard() {
         <form onSubmit={handlePhoneEmailSubmit}>
           <h2 className="text-2xl font-bold mb-2">Contact details</h2>
           <p className="text-muted text-sm mb-6">We'll use these to keep your account secure and reachable.</p>
-          <div className="flex gap-2 mb-4">
-            <select value={countryCode} onChange={(e) => setCountryCode(e.target.value)} className="px-3 py-3 rounded-xl border border-border bg-background">
-              <option value="+91">+91</option>
-              <option value="+971">+971</option>
-              <option value="+1">+1</option>
-              <option value="+44">+44</option>
-              <option value="+92">+92</option>
-            </select>
+          <div className="mb-4">
+            <h3 className="text-sm font-bold text-foreground mb-2">Country code</h3>
+            <div className="flex flex-wrap gap-2 mb-2">
+              {COUNTRY_CODE_OPTIONS.map(opt => (
+                <Chip key={opt} label={opt} selected={countryCodeOption === opt} onClick={() => setCountryCodeOption(opt)} />
+              ))}
+            </div>
+            {countryCodeOption === 'Other' && (
+              <input
+                type="text" required value={countryCodeCustom}
+                onChange={(e) => setCountryCodeCustom(e.target.value.replace(/[^\d+]/g, '').slice(0, 5))}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background mb-2"
+                placeholder="+61"
+              />
+            )}
             <input type="tel" required value={phone} onChange={(e) => setPhone(e.target.value.replace(/\D/g, '').slice(0, 14))} className="w-full px-4 py-3 rounded-xl border border-border bg-background" placeholder="98765 43210" />
           </div>
           <input type="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background mb-1" placeholder="you@example.com" />
@@ -369,6 +552,111 @@ function SignupWizard() {
             <p className="text-xs text-muted -mt-2">Minimum age: 18 (female) / 20 (male)</p>
             <input type="text" required value={city} onChange={e => setCity(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background" placeholder="City (e.g. Mumbai)" />
             <input type="text" required value={jamaat} onChange={e => setJamaat(e.target.value)} className="w-full px-4 py-3 rounded-xl border border-border bg-background" placeholder="Jamaat" />
+
+            <div>
+              <h3 className="text-sm font-bold text-foreground mb-2">Height</h3>
+              <div className="flex gap-2 overflow-x-auto pb-1">
+                {HEIGHT_PICKER_OPTIONS.map(opt => (
+                  <Chip key={opt.cm} label={opt.label} selected={heightCm === opt.cm} onClick={() => setHeightCm(opt.cm)} className="shrink-0" />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-foreground mb-2">Education</h3>
+              <div className="flex flex-wrap gap-2">
+                {EDUCATION_OPTIONS.map(opt => (
+                  <Chip key={opt} label={opt} selected={education === opt} onClick={() => setEducation(opt)} />
+                ))}
+              </div>
+              {education === 'Other' && (
+                <input
+                  type="text" required maxLength={100} value={educationOther}
+                  onChange={e => setEducationOther(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background mt-2"
+                  placeholder="Your education"
+                />
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-foreground mb-2">Profession</h3>
+              <div className="flex flex-wrap gap-2">
+                {PROFESSION_OPTIONS.map(opt => (
+                  <Chip key={opt} label={opt} selected={profession === opt} onClick={() => setProfession(opt)} />
+                ))}
+              </div>
+              {profession === 'Other' && (
+                <input
+                  type="text" required maxLength={100} value={professionOther}
+                  onChange={e => setProfessionOther(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-border bg-background mt-2"
+                  placeholder="Your profession"
+                />
+              )}
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-foreground mb-2">Preferred Language for Updates</h3>
+              <div className="flex flex-wrap gap-2">
+                {LANGUAGE_OPTIONS.map(opt => (
+                  <Chip
+                    key={opt.value} label={opt.label}
+                    selected={preferredLanguage === opt.value}
+                    disabled={opt.value !== 'en'}
+                    onClick={() => setPreferredLanguage(opt.value)}
+                  />
+                ))}
+              </div>
+              <p className="text-xs text-muted mt-1">Gujarati and Urdu are coming soon — English only for now.</p>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-foreground mb-2">Willing to Relocate?</h3>
+              <div className="flex flex-wrap gap-2">
+                {RELOCATE_OPTIONS.map(opt => (
+                  <Chip key={opt.value} label={opt.label} selected={willingToRelocate === opt.value} onClick={() => setWillingToRelocate(opt.value)} />
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <h3 className="text-sm font-bold text-foreground mb-2">Marital Status</h3>
+              <div className="flex flex-wrap gap-2">
+                {MARITAL_STATUSES.map(opt => (
+                  <Chip key={opt.value} label={opt.label} selected={maritalStatus === opt.value} onClick={() => setMaritalStatus(opt.value)} />
+                ))}
+              </div>
+            </div>
+
+            <FamilySection
+              brothersCount={brothersCount}
+              brothersMarriedCount={brothersMarriedCount}
+              sistersCount={sistersCount}
+              sistersMarriedCount={sistersMarriedCount}
+              onChange={(updates) => {
+                if ('brothersCount' in updates) setBrothersCount(updates.brothersCount ?? null);
+                if ('brothersMarriedCount' in updates) setBrothersMarriedCount(updates.brothersMarriedCount ?? null);
+                if ('sistersCount' in updates) setSistersCount(updates.sistersCount ?? null);
+                if ('sistersMarriedCount' in updates) setSistersMarriedCount(updates.sistersMarriedCount ?? null);
+              }}
+            />
+
+            <ChildrenSection
+              maritalStatus={maritalStatus}
+              hasChildren={hasChildren}
+              childrenCount={childrenCount}
+              childrenBoysCount={childrenBoysCount}
+              childrenGirlsCount={childrenGirlsCount}
+              childrenLivingStatus={childrenLivingStatus as any}
+              onChange={(updates) => {
+                if ('hasChildren' in updates) setHasChildren(updates.hasChildren ?? null);
+                if ('childrenCount' in updates) setChildrenCount(updates.childrenCount ?? null);
+                if ('childrenBoysCount' in updates) setChildrenBoysCount(updates.childrenBoysCount ?? null);
+                if ('childrenGirlsCount' in updates) setChildrenGirlsCount(updates.childrenGirlsCount ?? null);
+                if ('childrenLivingStatus' in updates) setChildrenLivingStatus(updates.childrenLivingStatus ?? null);
+              }}
+            />
           </div>
           <button disabled={isLoading} className="w-full bg-primary text-surface font-bold py-4 rounded-xl mt-6">{isLoading ? 'Saving...' : 'Continue'}</button>
         </form>
@@ -378,20 +666,81 @@ function SignupWizard() {
         <div>
           <h2 className="text-2xl font-bold mb-2">Profile Photo</h2>
           <p className="text-muted text-sm mb-6">Photos are heavily blurred by default and fully protected.</p>
-          <label className="block w-full border-2 border-dashed border-border rounded-2xl p-12 text-center cursor-pointer hover:border-primary/50 hover:bg-accent-light/10 transition-colors">
-            <svg className="w-8 h-8 mx-auto mb-3 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
-            <span className="text-sm font-medium text-foreground">Click to upload photo</span>
-            <input type="file" accept="image/*" className="hidden" onChange={handlePhotoUpload} disabled={isLoading} />
-          </label>
+          <ImageUploadWithCrop
+            onImageReady={handlePhotoUpload}
+            aspect={4 / 5}
+            triggerLabel="Click to upload photo"
+            fileName="profile-photo.jpg"
+            disabled={isLoading}
+          />
           {isLoading && <p className="text-center text-sm text-primary mt-4 animate-pulse">Uploading...</p>}
+
+          {photoPrivacyAllowedModes.length > 0 && (
+            <div className="mt-6 text-left">
+              <h3 className="text-sm font-bold text-foreground mb-1">Photo privacy</h3>
+              <p className="text-xs text-muted mb-3">Choose who can see your photo, and how. You can change this anytime.</p>
+              <PhotoPrivacyPicker value={photoPrivacyMode} onChange={setPhotoPrivacyMode} allowedModes={photoPrivacyAllowedModes} disabled={isLoading} />
+            </div>
+          )}
         </div>
       )}
 
       {step === 5 && (
         <div>
-          <h2 className="text-2xl font-bold mb-6">Your Bio</h2>
-          <p className="text-muted mb-6 text-sm">Our AI can write this for you in the mobile app. For now, skip to finish.</p>
-          <button onClick={() => setStep(6)} className="w-full bg-primary text-surface font-bold py-4 rounded-xl">Skip to finish</button>
+          <h2 className="text-2xl font-bold mb-2">Your bio</h2>
+          {bioInitialLoading ? (
+            <div className="py-12 text-center">
+              <div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-muted text-sm">Crafting your bio...</p>
+            </div>
+          ) : isEditingBio ? (
+            <>
+              <textarea
+                value={bio}
+                onChange={e => setBio(e.target.value)}
+                maxLength={300}
+                rows={5}
+                className="w-full px-4 py-3 rounded-xl border border-border bg-background mb-1"
+              />
+              <p className="text-xs text-muted mb-4">{bio.length}/300 characters</p>
+              <button
+                onClick={saveBioAndAdvance}
+                disabled={bioLoading || bio.length < 20}
+                className="w-full bg-primary text-surface font-bold py-4 rounded-xl mb-2 disabled:opacity-50"
+              >
+                {bioLoading ? 'Saving...' : 'Save & continue'}
+              </button>
+              <button onClick={() => setIsEditingBio(false)} className="w-full text-muted text-sm py-2">Cancel</button>
+            </>
+          ) : (
+            <>
+              <p className="text-muted mb-4 text-sm">We wrote something for you — use it as-is, try another, or edit it yourself.</p>
+              <div className="bg-background border border-border rounded-xl p-4 mb-4">
+                <p className="text-sm text-foreground leading-relaxed">{bio}</p>
+              </div>
+              <button
+                onClick={saveBioAndAdvance}
+                disabled={bioLoading}
+                className="w-full bg-primary text-surface font-bold py-4 rounded-xl mb-2 disabled:opacity-50"
+              >
+                {bioLoading ? 'Saving...' : '✓ Use this'}
+              </button>
+              {bioRerollCount < MAX_BIO_REROLLS ? (
+                <button
+                  onClick={handleTryAnotherBio}
+                  disabled={bioLoading}
+                  className="w-full bg-secondary text-foreground font-medium py-3 rounded-xl mb-2 disabled:opacity-50"
+                >
+                  ↻ Try another ({MAX_BIO_REROLLS - bioRerollCount} left)
+                </button>
+              ) : (
+                <div className="bg-accent-light text-primary text-xs text-center py-2.5 rounded-xl mb-2">
+                  No more auto-generated options — tap Edit to write your own
+                </div>
+              )}
+              <button onClick={() => setIsEditingBio(true)} className="w-full text-muted text-sm py-2">✏️ Edit</button>
+            </>
+          )}
         </div>
       )}
 
