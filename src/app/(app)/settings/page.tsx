@@ -3,9 +3,9 @@
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Bell, Lock, LogOut, Trash2, Image as ImageIcon, ChevronRight, Sparkles } from 'lucide-react';
-import { LifestyleToggle, TraitPair } from '@/components/app/LifestyleToggle';
+import { Bell, Lock, LogOut, Trash2, Image as ImageIcon, ChevronRight } from 'lucide-react';
 import { PasswordInput } from '@/components/ui/PasswordInput';
+import { PhotoPrivacyPicker, type PhotoPrivacyMode as Mode } from '@/components/ui/PhotoPrivacyPicker';
 
 type PushPrefs = {
   matchesEnabled: boolean;
@@ -23,15 +23,6 @@ const TOGGLE_LABELS: { key: keyof PushPrefs; label: string; description: string 
   { key: 'photoRequestsEnabled', label: 'Photo requests', description: 'New requests to view your photo, and responses to yours' },
 ];
 
-type Mode = 'always' | 'three_then_request' | 'request_only' | 'blur_until_match';
-
-const MODE_LABELS: Record<Mode, { label: string; description: string }> = {
-  always: { label: 'Show my photo', description: 'Always visible to everyone, no blur' },
-  three_then_request: { label: 'Show 3 times, then allow request', description: 'Free peeks first, then viewers can ask for more' },
-  request_only: { label: 'Show only on request', description: 'Every view must be requested and approved by you' },
-  blur_until_match: { label: 'Blur until match', description: 'Photo stays blurred until you mutually match' },
-};
-
 function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void }) {
   return (
     <button
@@ -40,7 +31,11 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: () => void 
       className={`w-11 h-6 rounded-full relative transition-colors shrink-0 ${checked ? 'bg-primary' : 'bg-border'}`}
       aria-pressed={checked}
     >
-      <span className={`absolute top-0.5 w-5 h-5 rounded-full bg-surface shadow-sm transition-transform ${checked ? 'translate-x-[22px]' : 'translate-x-0.5'}`} />
+      {/* left-0.5 anchors the thumb's base position explicitly — without it,
+          the absolutely-positioned span has no defined left, so translate-x
+          applies on top of an undefined base and the thumb ends up floating
+          outside the track entirely instead of sliding within it. */}
+      <span className={`absolute left-0.5 top-0.5 w-5 h-5 rounded-full bg-surface shadow-sm transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'}`} />
     </button>
   );
 }
@@ -55,10 +50,6 @@ export default function SettingsPage() {
   const [photoModeMessage, setPhotoModeMessage] = useState('');
   const [isSavingPhotoMode, setIsSavingPhotoMode] = useState(false);
   const [pendingRequestCount, setPendingRequestCount] = useState(0);
-
-  const [traitPairs, setTraitPairs] = useState<TraitPair[]>([]);
-  const [lifestyleAnswers, setLifestyleAnswers] = useState<Record<string, string>>({});
-  const [lifestyleMessage, setLifestyleMessage] = useState('');
 
   const [newPassword, setNewPassword] = useState('');
   const [isSavingPassword, setIsSavingPassword] = useState(false);
@@ -75,13 +66,9 @@ export default function SettingsPage() {
     }).catch(() => {});
     fetch('/api/v1/profile').then(r => r.json()).then(d => {
       if (d.photoPrivacyMode) setPhotoMode(d.photoPrivacyMode);
-      if (d.lifestyleAnswers) setLifestyleAnswers(d.lifestyleAnswers);
     }).catch(() => {});
     fetch('/api/v1/matching/photo-view-requests').then(r => r.json()).then(d => {
       setPendingRequestCount((d.requests || []).length);
-    }).catch(() => {});
-    fetch('/api/v1/lifestyle-traits').then(r => r.json()).then(d => {
-      setTraitPairs(d.pairs || []);
     }).catch(() => {});
   }, []);
 
@@ -120,24 +107,6 @@ export default function SettingsPage() {
     } catch {
       setPrefs(prefs); // revert on failure
       setPrefsMessage('Failed to update — please try again.');
-    }
-  };
-
-  const handleLifestyleChange = async (slug: string, optionKey: string) => {
-    const prev = lifestyleAnswers;
-    const next = { ...lifestyleAnswers, [slug]: optionKey };
-    setLifestyleAnswers(next);
-    setLifestyleMessage('');
-    try {
-      const res = await fetch('/api/v1/profile', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ lifestyleAnswers: next }),
-      });
-      if (!res.ok) throw new Error();
-    } catch {
-      setLifestyleAnswers(prev); // revert on failure
-      setLifestyleMessage('Failed to update — please try again.');
     }
   };
 
@@ -224,25 +193,7 @@ export default function SettingsPage() {
             <div className="w-6 h-6 border-4 border-primary/30 border-t-primary rounded-full animate-spin" />
           ) : (
             <div className="space-y-3">
-              {allowedModes.map((mode) => (
-                <label
-                  key={mode}
-                  className={`flex items-start gap-3 p-4 rounded-xl border cursor-pointer transition-colors ${photoMode === mode ? 'border-primary bg-accent-light/20' : 'border-border hover:bg-background'}`}
-                >
-                  <input
-                    type="radio"
-                    name="photoMode"
-                    checked={photoMode === mode}
-                    onChange={() => savePhotoMode(mode)}
-                    disabled={isSavingPhotoMode}
-                    className="mt-1"
-                  />
-                  <div>
-                    <p className="text-sm font-medium text-foreground">{MODE_LABELS[mode].label}</p>
-                    <p className="text-xs text-muted">{MODE_LABELS[mode].description}</p>
-                  </div>
-                </label>
-              ))}
+              <PhotoPrivacyPicker value={photoMode} onChange={savePhotoMode} allowedModes={allowedModes} disabled={isSavingPhotoMode} />
               {photoModeMessage && <p className="text-danger text-xs">{photoModeMessage}</p>}
               <Link
                 href="/photo-requests"
@@ -256,27 +207,6 @@ export default function SettingsPage() {
             </div>
           )}
         </section>
-
-        {traitPairs.length > 0 && (
-          <section className="bg-surface p-8 rounded-3xl border border-border shadow-sm">
-            <div className="flex items-center gap-2 mb-6">
-              <Sparkles className="w-5 h-5 text-primary" />
-              <h2 className="text-lg font-bold text-foreground">Lifestyle & Personality</h2>
-            </div>
-            <div className="space-y-6">
-              {traitPairs.map((pair, index) => (
-                <LifestyleToggle
-                  key={pair.id}
-                  pair={pair}
-                  value={lifestyleAnswers[pair.slug]}
-                  onChange={(optionKey) => handleLifestyleChange(pair.slug, optionKey)}
-                  badgeDelay={index * 0.8}
-                />
-              ))}
-              {lifestyleMessage && <p className="text-danger text-xs">{lifestyleMessage}</p>}
-            </div>
-          </section>
-        )}
 
         <section className="bg-surface p-8 rounded-3xl border border-border shadow-sm">
           <div className="flex items-center gap-2 mb-6">

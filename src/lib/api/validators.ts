@@ -125,12 +125,14 @@ export const BasicsSchema = z.object({
 });
 
 export const PreferencesSchema = z.object({
-  ageRange: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() }).optional(),
+  ageRange: z.object({ min: z.number().nullable().optional(), max: z.number().nullable().optional() })
+    .refine((r) => r.min == null || r.max == null || r.min <= r.max, { message: 'min must be <= max' })
+    .optional(),
   cities: z.array(z.string()).nullable().optional(),
   education: z.array(z.string()).nullable().optional(),
   professions: z.array(z.string()).nullable().optional(),
   practiceLevel: z.enum(['very_devout', 'practicing', 'moderate', 'flexible']).nullable().optional(),
-  familyExpectation: z.enum(['very_important', 'somewhat', 'flexible']).nullable().optional(),
+  familyExpectation: z.enum(['very_important', 'somewhat', 'flexible', 'not_sure']).nullable().optional(),
   partnerQualityTags: z.array(z.string()).nullable().optional(),
   childrenAcceptance: z.enum(['yes', 'open', 'prefer_not']).nullable().optional(),
 });
