@@ -21,14 +21,32 @@ import { PasswordChangedEmail } from './templates/PasswordChangedEmail';
 import { VerificationResultEmail } from './templates/VerificationResultEmail';
 import { ReceivedInterestEmail } from './templates/ReceivedInterestEmail';
 import { MatchEmail } from './templates/MatchEmail';
+import { PreLaunchAcknowledgementEmail } from './templates/PreLaunchAcknowledgementEmail';
 
 const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL ?? 'http://localhost:3000';
 
-async function dispatch(to: string, subject: string, element: React.ReactElement): Promise<void> {
+// MSG91_FROM_EMAIL lives on a sending-only subdomain with no MX records —
+// confirmed by a live test that replies there bounce. support@bohrataaruf.com
+// (the apex domain) is confirmed to actually receive mail, so every send
+// asks the provider to route replies there instead of the From address.
+// Applies to ALL email types, not just one — a reply to an OTP or welcome
+// email should land somewhere real just as much as this one does.
+const REPLY_TO_EMAIL = process.env.EMAIL_REPLY_TO || 'support@bohrataaruf.com';
+
+async function dispatch(to: string, subject: string, element: React.ReactElement, opts?: { bypassKillSwitch?: boolean }): Promise<void> {
   // Master kill-switch — defaults to enabled (matches how this already
   // behaves in prod today) so a missing env var never silently disables
   // live email; only an explicit "false" turns sending off entirely.
-  if (process.env.EMAIL_ENABLED === 'false') {
+  //
+  // bypassKillSwitch is a deliberate, narrow exception: EMAIL_ENABLED exists
+  // to stop AUTOMATED system email (welcome/OTP/match/etc.) in bulk, e.g. if
+  // something's misbehaving. A volunteer manually clicking "send" on one
+  // named user in the admin panel is a different kind of action — already
+  // one-at-a-time and confirmed — and forcing them to flip a global env var
+  // (and redeploy) before every single click isn't what that switch is for.
+  // Only sendPreLaunchAcknowledgementEmail passes this; every other email
+  // in this file still respects EMAIL_ENABLED normally.
+  if (process.env.EMAIL_ENABLED === 'false' && !opts?.bypassKillSwitch) {
     console.log('[email] EMAIL_ENABLED=false — skipping send:', subject, '→', to);
     return;
   }
@@ -48,7 +66,7 @@ async function dispatch(to: string, subject: string, element: React.ReactElement
 
   switch (provider) {
     case 'msg91':
-      await sendViaMsg91({ to: finalTo, subject: finalSubject, html });
+      await sendViaMsg91({ to: finalTo, subject: finalSubject, html, replyTo: REPLY_TO_EMAIL });
       break;
     default:
       throw new Error(`Unknown EMAIL_TRANSACTIONAL_PROVIDER: "${provider}"`);
@@ -94,4 +112,24 @@ export async function sendMatchEmail(to: string): Promise<void> {
   await dispatch(to, 'You have a new match', React.createElement(MatchEmail, {
     matchesUrl: `${PUBLIC_APP_URL}/matches`,
   }));
+}
+
+export async function sendPreLaunchAcknowledgementEmail(
+  to: string,
+  name: string,
+  reupload?: { reason?: string },
+  message?: string,
+): Promise<void> {
+  await dispatch(
+    to,
+    'An update on your Bohra Taaruf registration',
+    React.createElement(PreLaunchAcknowledgementEmail, {
+      name,
+      message,
+      needsReupload: !!reupload,
+      rejectionReason: reupload?.reason,
+      verificationUrl: `${PUBLIC_APP_URL}/verification`,
+    }),
+    { bypassKillSwitch: true },
+  );
 }

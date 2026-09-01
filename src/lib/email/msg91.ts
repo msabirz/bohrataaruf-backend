@@ -18,6 +18,7 @@ export async function sendViaMsg91(params: {
   toName?: string;
   subject: string;
   html: string;
+  replyTo?: string;
 }): Promise<void> {
   const apiKey = process.env.MSG91_API_KEY;
   const domain = process.env.MSG91_EMAIL_DOMAIN;
@@ -34,6 +35,32 @@ export async function sendViaMsg91(params: {
   // NOT repeat the brand name). The real design/copy for each email type
   // lives in the React Email component that was rendered to `params.html`
   // before this function was called — see src/lib/email/index.ts.
+  //
+  // reply_to routes replies to support@bohrataaruf.com instead of the
+  // sending-only mail.bohrataaruf.com subdomain (confirmed to have no MX
+  // records — a reply there bounces, while support@bohrataaruf.com is
+  // confirmed to receive mail). MSG91 requires this as an ARRAY of
+  // {email, name} objects, same shape as `to` — a single {email, name}
+  // object (matching `from`'s shape) is rejected with a 422. Confirmed
+  // directly against the live API, not assumed from docs.
+  const body: Record<string, unknown> = {
+    template_id: templateId,
+    recipients: [
+      {
+        to: [{ email: params.to, name: params.toName || params.to }],
+        variables: {
+          SUBJECT: params.subject,
+          CONTENT: params.html,
+        },
+      },
+    ],
+    from: { email: fromEmail, name: 'Bohra Taaruf' },
+    domain,
+  };
+  if (params.replyTo) {
+    body.reply_to = [{ email: params.replyTo, name: 'Bohra Taaruf Support' }];
+  }
+
   const res = await fetch(MSG91_EMAIL_ENDPOINT, {
     method: 'POST',
     headers: {
@@ -41,20 +68,7 @@ export async function sendViaMsg91(params: {
       accept: 'application/json',
       'content-type': 'application/json',
     },
-    body: JSON.stringify({
-      template_id: templateId,
-      recipients: [
-        {
-          to: [{ email: params.to, name: params.toName || params.to }],
-          variables: {
-            SUBJECT: params.subject,
-            CONTENT: params.html,
-          },
-        },
-      ],
-      from: { email: fromEmail, name: 'Bohra Taaruf' },
-      domain,
-    }),
+    body: JSON.stringify(body),
   });
 
   const bodyText = await res.text();
