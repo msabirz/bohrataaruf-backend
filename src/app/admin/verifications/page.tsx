@@ -4,6 +4,7 @@ import { eq, desc, and, gte } from 'drizzle-orm';
 import { requireAdminAuth } from '@/lib/adminAuth';
 import ClientList from './ClientList';
 import { getViewUrl } from '@/lib/storage';
+import { decryptItsNumber } from '@/lib/api/itsEncryption';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export default async function AdminVerificationsPage() {
     .select({
       id: verifications.id,
       cardImageKey: verifications.cardImageKey,
+      itsNumberEncrypted: verifications.itsNumberEncrypted,
       createdAt: verifications.createdAt,
       alias: profiles.alias,
       city: users.city,
@@ -47,6 +49,10 @@ export default async function AdminVerificationsPage() {
     city: row.city,
     createdAt: row.createdAt,
     imageUrl: row.cardImageKey ? (await getViewUrl(row.cardImageKey)) ?? '' : '',
+    // Decrypted server-side, here, in this admin-authenticated request only
+    // — never sent anywhere except to the already-authenticated volunteer
+    // viewing this page.
+    itsNumber: decryptItsNumber(row.itsNumberEncrypted),
   })));
 
   return (
