@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
-import { Search, Filter, ShieldCheck, ShieldAlert, Shield, ShieldX, User, ChevronRight } from 'lucide-react';
+import { Search, Filter, ShieldCheck, ShieldAlert, Shield, ShieldX, User, ChevronRight, X } from 'lucide-react';
+import { buildDefaultPrelaunchMessage } from '@/lib/email/defaultMessages';
 
 interface AdminUser {
   id: string;
@@ -10,11 +11,14 @@ interface AdminUser {
   alias: string | null;
   city: string;
   phone: string;
+  email: string | null;
   isActive: boolean;
   abandonedAt: string | null;
   createdAt: string;
   verificationStatus: string | null;
+  rejectionReason: string | null;
   matchCount: number;
+  prelaunchAckSentAt: string | null;
 }
 
 export default function AdminUsersList() {
@@ -29,6 +33,9 @@ export default function AdminUsersList() {
   const [statusFilter, setStatusFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('');
   const [abandonedFilter, setAbandonedFilter] = useState('');
+  const [sendingId, setSendingId] = useState<string | null>(null);
+  const [composeUser, setComposeUser] = useState<AdminUser | null>(null);
+  const [composeMessage, setComposeMessage] = useState('');
 
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -87,6 +94,36 @@ export default function AdminUsersList() {
       alert('Network error during cleanup');
     } finally {
       setNudgeCleaning(false);
+    }
+  };
+
+  const openComposePrelaunchAck = (user: AdminUser, e: React.MouseEvent) => {
+    e.stopPropagation(); // don't trigger the row's navigate-to-detail click
+    setComposeUser(user);
+    setComposeMessage(buildDefaultPrelaunchMessage(user.verificationStatus === 'rejected', user.rejectionReason ?? undefined));
+  };
+
+  const handleConfirmSendPrelaunchAck = async () => {
+    if (!composeUser) return;
+    const user = composeUser;
+    setSendingId(user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/action`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sent_prelaunch_ack_email', message: composeMessage }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setComposeUser(null);
+        fetchUsers();
+      } else {
+        alert(data.error || 'Failed to send email');
+      }
+    } catch (e) {
+      alert('Network error sending email');
+    } finally {
+      setSendingId(null);
     }
   };
 
@@ -204,17 +241,18 @@ export default function AdminUsersList() {
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Status</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Matches</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Joined</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Pre-launch email</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-8 text-center text-gray-500">Loading users...</td>
+                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">Loading users...</td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
                     <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-lg font-medium text-gray-900">No users found</p>
                     <p>Try adjusting your search or filters.</p>
@@ -240,6 +278,24 @@ export default function AdminUsersList() {
                     </td>
                     <td className="px-6 py-4 text-gray-600">{user.matchCount}</td>
                     <td className="px-6 py-4 text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4">
+                      {!user.email ? (
+                        <span className="text-xs text-gray-400 italic">No email</span>
+                      ) : (
+                        <div className="flex flex-col items-start gap-1">
+                          {user.prelaunchAckSentAt && (
+                            <span className="text-xs text-green-700">Sent {new Date(user.prelaunchAckSentAt).toLocaleDateString()}</span>
+                          )}
+                          <button
+                            onClick={(e) => openComposePrelaunchAck(user, e)}
+                            disabled={sendingId === user.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#8C6A3F] text-[#8C6A3F] hover:bg-[#8C6A3F] hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            {sendingId === user.id ? 'Sending...' : user.prelaunchAckSentAt ? 'Resend' : 'Send update'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
                     <td className="px-6 py-4 text-right">
                       <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-[#8C6A3F] inline-block" />
                     </td>
@@ -250,6 +306,68 @@ export default function AdminUsersList() {
           </table>
         </div>
       </div>
+
+      {composeUser && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {composeUser.prelaunchAckSentAt ? 'Re-send' : 'Send'} pre-launch update to {composeUser.name}
+                </h2>
+                <p className="text-sm text-gray-500">{composeUser.email}</p>
+              </div>
+              <button
+                onClick={() => setComposeUser(null)}
+                className="text-gray-400 hover:text-gray-600 transition-colors p-2"
+                aria-label="Close"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto space-y-4">
+              {composeUser.verificationStatus === 'rejected' && (
+                <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded-lg text-sm">
+                  This user&apos;s ITS verification is currently rejected, so the request to
+                  re-upload their ITS card (with their rejection reason) is already included
+                  in the message below — a &quot;Re-upload ITS card&quot; button linking to
+                  their verification page is added automatically underneath it.
+                </div>
+              )}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">
+                  Message (fully editable — this is the entire body they&apos;ll see, right
+                  after &quot;Assalamu Alaikum {composeUser.name},&quot;)
+                </label>
+                <textarea
+                  value={composeMessage}
+                  onChange={(e) => setComposeMessage(e.target.value)}
+                  rows={12}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#8C6A3F] focus:border-[#8C6A3F] transition-all text-sm resize-y"
+                />
+              </div>
+            </div>
+
+            <div className="p-4 bg-white border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setComposeUser(null)}
+                disabled={sendingId === composeUser.id}
+                className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmSendPrelaunchAck}
+                disabled={sendingId === composeUser.id || !composeMessage.trim()}
+                className="px-5 py-2.5 rounded-lg bg-[#8C6A3F] hover:bg-[#7a5b35] text-white font-semibold transition-colors disabled:opacity-50"
+              >
+                {sendingId === composeUser.id ? 'Sending...' : composeUser.prelaunchAckSentAt ? 'Re-send' : 'Send'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -40,11 +40,13 @@ export async function GET(request: Request) {
     }
 
     const rawData: any = await db.execute(sql`
-      SELECT 
-        u.id, u.name, u.city, u.phone, u.is_active as "isActive", u.created_at as "createdAt", u.abandoned_at as "abandonedAt",
+      SELECT
+        u.id, u.name, u.city, u.phone, u.email, u.is_active as "isActive", u.created_at as "createdAt", u.abandoned_at as "abandonedAt",
         p.alias,
         v.status as "verificationStatus",
-        (SELECT COUNT(*)::int FROM matches m WHERE m.user_a = u.id OR m.user_b = u.id) as "matchCount"
+        v.rejection_reason as "rejectionReason",
+        (SELECT COUNT(*)::int FROM matches m WHERE m.user_a = u.id OR m.user_b = u.id) as "matchCount",
+        (SELECT MAX(created_at) FROM admin_action_log WHERE target_user_id = u.id AND action = 'sent_prelaunch_ack_email') as "prelaunchAckSentAt"
       FROM users u
       LEFT JOIN profiles p ON u.id = p.user_id
       LEFT JOIN verifications v ON u.id = v.user_id

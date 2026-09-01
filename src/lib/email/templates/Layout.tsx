@@ -30,15 +30,15 @@ export function EmailLayout({ previewText, children }: { previewText: string; ch
       </Head>
       <Body style={{ backgroundColor: COLORS.background, margin: 0, padding: '32px 16px', fontFamily: 'Georgia, serif' }}>
         <Container style={{ maxWidth: '480px', margin: '0 auto', backgroundColor: COLORS.surface, borderRadius: '16px', border: `1px solid ${COLORS.border}`, overflow: 'hidden' }}>
-          <Section style={{ backgroundColor: '#211F1A', padding: '28px 32px', textAlign: 'center' as const }}>
+          <Section style={{ backgroundColor: '#211F1A', padding: '36px 32px', textAlign: 'center' as const }}>
             <Img
               src="https://bohrataaruf.com/logo-light.svg"
               alt="Bohra Taaruf"
-              width="40"
-              height="52"
-              style={{ margin: '0 auto 8px' }}
+              width="72"
+              height="94"
+              style={{ margin: '0 auto 12px' }}
             />
-            <Text style={{ color: COLORS.surface, fontSize: '18px', fontWeight: 500, margin: 0, fontFamily: 'Georgia, serif' }}>
+            <Text style={{ color: COLORS.surface, fontSize: '22px', fontWeight: 500, margin: 0, fontFamily: 'Georgia, serif' }}>
               Bohra Taaruf
             </Text>
           </Section>
