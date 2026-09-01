@@ -5,6 +5,7 @@ import { eq } from 'drizzle-orm';
 import { ItsCardSchema } from '@/lib/api/validators';
 import { keysToCamelCase } from '@/lib/api/serialize';
 import { getAuthenticatedUserId, hashItsNumber } from '@/lib/api/auth';
+import { encryptItsNumber } from '@/lib/api/itsEncryption';
 
 export async function POST(request: Request) {
   try {
@@ -40,17 +41,22 @@ export async function POST(request: Request) {
       throw err;
     }
     
+    // Re-encrypted fresh on every submission (including resubmits after a
+    // rejection) so it always reflects the ITS number that goes with
+    // whichever card image is currently pending review.
+    const itsNumberEncrypted = encryptItsNumber(itsNumber);
+
     let verificationRow = await db.select().from(verifications).where(eq(verifications.userId, userId)).limit(1).then(res => res[0]);
 
     if (verificationRow) {
       verificationRow = await db.update(verifications)
-        .set({ status: 'pending', rejectionReason: null, cardImageKey })
+        .set({ status: 'pending', rejectionReason: null, cardImageKey, itsNumberEncrypted })
         .where(eq(verifications.userId, userId))
         .returning()
         .then(res => res[0]);
     } else {
       verificationRow = await db.insert(verifications)
-        .values({ userId, status: 'pending', cardImageKey })
+        .values({ userId, status: 'pending', cardImageKey, itsNumberEncrypted })
         .returning()
         .then(res => res[0]);
     }

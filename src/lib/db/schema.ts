@@ -89,6 +89,11 @@ export const verifications = pgTable('verifications', {
   userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).unique().notNull(),
   status: verificationStatusEnum('status').default('pending'),
   cardImageKey: text('card_image_key'),
+  // AES-256-GCM encrypted (see src/lib/api/itsEncryption.ts) — the ITS
+  // number the user typed at submission time, kept so an admin can compare
+  // it against the card photo. Kept permanently for audit; NOT the same as
+  // users.itsNumberHash (one-way, used for login/dedup).
+  itsNumberEncrypted: text('its_number_encrypted'),
   rejectionReason: text('rejection_reason'),
   reviewedBy: uuid('reviewed_by').references(() => volunteers.id, { onDelete: 'set null' }),
   reviewedAt: timestamp('reviewed_at'),
