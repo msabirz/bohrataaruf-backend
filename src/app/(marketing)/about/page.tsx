@@ -1,5 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
+import { breadcrumbJsonLd } from '@/lib/seo';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -8,9 +9,15 @@ export const metadata: Metadata = {
   description: `Learn why we built ${APP_NAME} and what we believe about privacy, dignity, and connecting the Dawoodi Bohra community.`,
 };
 
+const breadcrumb = breadcrumbJsonLd([
+  { name: 'Home', path: '/' },
+  { name: 'About Us', path: '/about' },
+]);
+
 export default function AboutPage() {
   return (
     <div className="bg-background min-h-screen pt-24 pb-32 px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       <div className="container mx-auto max-w-3xl">
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-12">About Us</h1>
         

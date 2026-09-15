@@ -463,3 +463,77 @@ export const communityEvents = pgTable('community_events', {
   isActive: boolean('is_active').default(true),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
 });
+
+// Admin-run, in-person community matchmaking events (distinct from
+// communityEvents above, which is the geofenced "Nearby" proximity marker
+// feature — no relation between the two). Program -> Application is a
+// classic post-and-apply flow: community creates a post, people apply,
+// admin selects, selected candidates are notified and issued a pass.
+export const taarufPrograms = pgTable('taaruf_programs', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  title: text('title').notNull(),
+  slug: text('slug').unique().notNull(),
+  description: text('description'),
+  city: text('city').notNull(),
+  venueName: text('venue_name'),
+  startDate: date('start_date').notNull(),
+  endDate: date('end_date'),
+  ageMinMale: integer('age_min_male'),
+  ageMaxMale: integer('age_max_male'),
+  ageMinFemale: integer('age_min_female'),
+  ageMaxFemale: integer('age_max_female'),
+  // ₹, charged only on acceptance — see taarufProgramApplications.paymentStatus.
+  feeAmount: integer('fee_amount').default(500),
+  capacity: integer('capacity'),
+  registrationDeadline: date('registration_deadline'),
+  // 'draft' | 'published' | 'closed' | 'completed' — enforced by a raw
+  // CHECK constraint in the migration, matching the nudges.status /
+  // nudgeMessages.messageType convention elsewhere in this file, not a
+  // native Postgres enum type (easier to extend later without an
+  // ALTER TYPE ... ADD VALUE migration).
+  status: text('status').default('draft').notNull(),
+  // Admin's "Feature on Homepage" toggle — the single gate for whether the
+  // banner renders on whichever homepage (PreLaunchPage or the full
+  // homepage) currently happens to be live. Not tied to SITE_MODE at all.
+  featureOnHomepage: boolean('feature_on_homepage').default(false).notNull(),
+  featureUntil: date('feature_until'),
+  // Admin-defined custom application questions for this program — an
+  // array of { id, label, type: 'text'|'textarea'|'select'|'number',
+  // required, options? }. Rendered dynamically on the public application
+  // form; answers are stored keyed by field id in
+  // taarufProgramApplications.formResponses. Null/empty = no custom
+  // questions, just the fixed name/age fields.
+  formSchema: jsonb('form_schema'),
+  createdBy: uuid('created_by').references(() => volunteers.id, { onDelete: 'set null' }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).$onUpdate(() => new Date()),
+}, (table) => ({
+  statusCheck: check('taaruf_programs_status_check', sql`${table.status} IN ('draft', 'published', 'closed', 'completed')`),
+}));
+
+export const taarufProgramApplications = pgTable('taaruf_program_applications', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  programId: uuid('program_id').references(() => taarufPrograms.id, { onDelete: 'cascade' }).notNull(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  // Admin-defined custom fields, answered at application time — no fixed
+  // schema, same free-form jsonb approach as profiles.lifestyleAnswers.
+  formResponses: jsonb('form_responses'),
+  // 'submitted' | 'selected' | 'rejected' | 'accepted' | 'declined'
+  status: text('status').default('submitted').notNull(),
+  selectedAt: timestamp('selected_at', { withTimezone: true }),
+  acceptedAt: timestamp('accepted_at', { withTimezone: true }),
+  // 'not_required' | 'pending' | 'paid' — schema is ready for a payment
+  // gateway; nothing enforces this yet (Phase 4, not built).
+  paymentStatus: text('payment_status').default('not_required').notNull(),
+  paymentReference: text('payment_reference'),
+  passCode: text('pass_code').unique(),
+  passIssuedAt: timestamp('pass_issued_at', { withTimezone: true }),
+  // Set once the admin's "Notify Selected" bulk action has emailed this
+  // applicant — guards against double-sending if the action is run again.
+  selectionNotifiedAt: timestamp('selection_notified_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  programUserUnique: unique('taaruf_program_applications_program_user_unique').on(table.programId, table.userId),
+  statusCheck: check('taaruf_program_applications_status_check', sql`${table.status} IN ('submitted', 'selected', 'rejected', 'accepted', 'declined')`),
+  paymentStatusCheck: check('taaruf_program_applications_payment_status_check', sql`${table.paymentStatus} IN ('not_required', 'pending', 'paid')`),
+}));

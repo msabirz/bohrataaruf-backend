@@ -7,6 +7,7 @@ import {
 } from 'lucide-react';
 import { InstagramIcon } from './InstagramIcon';
 import { useLocale } from '@/lib/context/LocaleContext';
+import { ProgramHomepageBanner } from './ProgramHomepageBanner';
 
 // Lisan-ud-Dawat, romanized (not Gujarati script) — matches how the
 // community actually writes it day to day, e.g. "Kem Cho?" for "How are
@@ -420,6 +421,12 @@ export default function PreLaunchPage() {
           </div>
         </div>
       </section>
+
+      {/* Taaruf Programs — shows only when an admin has featured a published
+          program; renders nothing otherwise. Independent of SITE_MODE. */}
+      <div style={{ backgroundColor: '#FFFFFC', padding: '20px 0' }}>
+        <ProgramHomepageBanner />
+      </div>
 
       {/* SECTION 1B: PULL QUOTE — standalone, sits right below the hero */}
       <section style={{ backgroundColor: '#EADFCB', padding: '38px 24px' }}>

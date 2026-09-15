@@ -1,6 +1,12 @@
 'use client';
 
 import React, { useState } from 'react';
+import { breadcrumbJsonLd } from '@/lib/seo';
+
+const breadcrumb = breadcrumbJsonLd([
+  { name: 'Home', path: '/' },
+  { name: 'Contact', path: '/contact' },
+]);
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({ name: '', email: '', subject: '', message: '' });
@@ -33,6 +39,7 @@ export default function ContactPage() {
 
   return (
     <div className="bg-background min-h-screen pt-24 pb-32 px-6">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       <div className="container mx-auto max-w-4xl grid md:grid-cols-2 gap-16">
         
         <div>

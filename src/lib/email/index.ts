@@ -22,6 +22,8 @@ import { VerificationResultEmail } from './templates/VerificationResultEmail';
 import { ReceivedInterestEmail } from './templates/ReceivedInterestEmail';
 import { MatchEmail } from './templates/MatchEmail';
 import { PreLaunchAcknowledgementEmail } from './templates/PreLaunchAcknowledgementEmail';
+import { ProgramSelectionEmail } from './templates/ProgramSelectionEmail';
+import { ProgramPassEmail } from './templates/ProgramPassEmail';
 
 const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -131,5 +133,44 @@ export async function sendPreLaunchAcknowledgementEmail(
       verificationUrl: `${PUBLIC_APP_URL}/verification`,
     }),
     { bypassKillSwitch: true },
+  );
+}
+
+export async function sendProgramSelectionEmail(
+  to: string,
+  name: string,
+  program: { title: string; city: string; slug: string; dateRange: string; feeAmount: number | null },
+): Promise<void> {
+  await dispatch(
+    to,
+    `You've been selected — ${program.title}`,
+    React.createElement(ProgramSelectionEmail, {
+      name,
+      programTitle: program.title,
+      programCity: program.city,
+      dateRange: program.dateRange,
+      feeAmount: program.feeAmount,
+      programUrl: `${PUBLIC_APP_URL}/events/${program.slug}`,
+    }),
+  );
+}
+
+export async function sendProgramPassEmail(
+  to: string,
+  name: string,
+  program: { title: string; city: string; venueName: string | null; dateRange: string },
+  passCode: string,
+): Promise<void> {
+  await dispatch(
+    to,
+    `Your entry pass — ${program.title}`,
+    React.createElement(ProgramPassEmail, {
+      name,
+      programTitle: program.title,
+      programCity: program.city,
+      venueName: program.venueName,
+      dateRange: program.dateRange,
+      passCode,
+    }),
   );
 }

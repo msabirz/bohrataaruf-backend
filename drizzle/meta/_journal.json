@@ -113,6 +113,27 @@
       "when": 1788192172127,
       "tag": "0015_add_its_number_encrypted",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1789461788334,
+      "tag": "0016_add_taaruf_programs",
+      "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1789468528917,
+      "tag": "0017_add_program_form_schema",
+      "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1789481000000,
+      "tag": "0018_add_selection_notified_at",
+      "breakpoints": true
     }
   ]
 }

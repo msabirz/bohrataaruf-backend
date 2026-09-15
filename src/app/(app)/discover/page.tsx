@@ -8,6 +8,7 @@ import { FilterPanel, DEFAULT_FILTERS, buildFilterPayload, RADIUS_MIN, RADIUS_MA
 import { LifestyleBadges } from '@/components/app/LifestyleBadges';
 import type { TraitPair } from '@/components/app/LifestyleToggle';
 import { WebRangeSlider } from '@/components/app/WebRangeSlider';
+import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBanner';
 
 const NEARBY_DEFAULT_RADIUS_KM = 25;
 
@@ -213,6 +214,8 @@ export default function DiscoverPage() {
   return (
     <div className="min-h-[calc(100vh-80px)] bg-background px-6 pt-8 pb-24">
       <div className="container mx-auto max-w-3xl">
+        <ProgramHomepageBanner variant="compact" />
+
         {/* For You / Nearby toggle */}
         <div className="mb-6">
           <div className="flex items-center gap-4">
