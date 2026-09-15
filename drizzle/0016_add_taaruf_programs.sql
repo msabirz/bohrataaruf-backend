@@ -1,0 +1,42 @@
+CREATE TABLE IF NOT EXISTS "taaruf_programs" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"title" text NOT NULL,
+	"slug" text NOT NULL UNIQUE,
+	"description" text,
+	"city" text NOT NULL,
+	"venue_name" text,
+	"start_date" date NOT NULL,
+	"end_date" date,
+	"age_min_male" integer,
+	"age_max_male" integer,
+	"age_min_female" integer,
+	"age_max_female" integer,
+	"fee_amount" integer DEFAULT 500,
+	"capacity" integer,
+	"registration_deadline" date,
+	"status" text DEFAULT 'draft' NOT NULL,
+	"feature_on_homepage" boolean DEFAULT false NOT NULL,
+	"feature_until" date,
+	"created_by" uuid REFERENCES "volunteers"("id") ON DELETE SET NULL,
+	"created_at" timestamp with time zone DEFAULT now(),
+	"updated_at" timestamp with time zone,
+	CONSTRAINT "taaruf_programs_status_check" CHECK ("status" IN ('draft', 'published', 'closed', 'completed'))
+);
+
+CREATE TABLE IF NOT EXISTS "taaruf_program_applications" (
+	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
+	"program_id" uuid NOT NULL REFERENCES "taaruf_programs"("id") ON DELETE CASCADE,
+	"user_id" uuid NOT NULL REFERENCES "users"("id") ON DELETE CASCADE,
+	"form_responses" jsonb,
+	"status" text DEFAULT 'submitted' NOT NULL,
+	"selected_at" timestamp with time zone,
+	"accepted_at" timestamp with time zone,
+	"payment_status" text DEFAULT 'not_required' NOT NULL,
+	"payment_reference" text,
+	"pass_code" text UNIQUE,
+	"pass_issued_at" timestamp with time zone,
+	"created_at" timestamp with time zone DEFAULT now(),
+	CONSTRAINT "taaruf_program_applications_program_user_unique" UNIQUE ("program_id", "user_id"),
+	CONSTRAINT "taaruf_program_applications_status_check" CHECK ("status" IN ('submitted', 'selected', 'rejected', 'accepted', 'declined')),
+	CONSTRAINT "taaruf_program_applications_payment_status_check" CHECK ("payment_status" IN ('not_required', 'pending', 'paid'))
+);

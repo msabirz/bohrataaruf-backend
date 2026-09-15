@@ -3,6 +3,7 @@ import { ShieldCheck, Search, Heart, Users, ShieldOff, EyeOff, Lock, MessageCirc
 import IndiaMap from '@/components/marketing/IndiaMap';
 import RegisteredCounter from '@/components/marketing/RegisteredCounter';
 import { MarketingModeGate } from '@/components/marketing/MarketingModeGate';
+import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBanner';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -64,6 +65,12 @@ export default function MarketingHomePage() {
           <ChevronDown className="w-5 h-5" />
         </a>
       </section>
+
+      {/* Taaruf Programs — shows only when an admin has featured a published
+          program; renders nothing otherwise. Independent of SITE_MODE. */}
+      <div className="px-0 -mt-4 mb-4 relative z-10">
+        <ProgramHomepageBanner />
+      </div>
 
       {/* 2. OUR CAUSE (NEW) */}
       <section id="our-cause" className="py-24 bg-surface px-6">

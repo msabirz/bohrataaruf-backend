@@ -11,11 +11,11 @@
 // part of it. Only the structural pieces (greeting, "Re-upload ITS card"
 // button + its real link) stay outside the editable text.
 export function buildDefaultPrelaunchMessage(needsReupload: boolean, rejectionReason?: string): string {
-  const base = `Thank you for signing up with Bohra Taaruf. We wanted to let you know that we are currently in the process of seeking Raza Mubarak before launching the website and app globally. Your registration and profile are safely saved, and we will notify you as soon as we are ready to launch. If you have any questions or need help in the meantime, just reply to this email, or write to us directly at support@bohrataaruf.com — we're happy to assist. We appreciate your patience and trust.`;
+  const base = `Thank you for signing up with Bohra Taaruf. We wanted to let you know that we are currently in the process of seeking Raza Mubarak before launching the website and app globally — this also means ITS verification reviews are on hold until we receive it. Your registration and profile are safely saved, and we will notify you as soon as we are ready to launch. If you have any questions or need help in the meantime, just reply to this email, or write to us directly at support@bohrataaruf.com — we're happy to assist. We appreciate your patience and trust.`;
 
   if (!needsReupload) return base;
 
-  const reuploadAsk = `Separately, the photo of your ITS card wasn't clear enough for us to verify${rejectionReason ? ` (${rejectionReason})` : ''}. Could you please re-upload a clearer photo when you get a moment? This lets us complete your verification ahead of launch.`;
+  const reuploadAsk = `Separately, the photo of your ITS card wasn't clear enough for us to verify${rejectionReason ? ` (${rejectionReason})` : ''}. Could you please re-upload a clearer photo when you get a moment? This way everything is ready to go the moment verification reviews resume.`;
 
   return `${base}\n\n${reuploadAsk}`;
 }
