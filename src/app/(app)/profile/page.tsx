@@ -17,6 +17,7 @@ import { LifestyleIcon } from '@/lib/lifestyleIcons';
 import { LifestyleToggle, type TraitPair } from '@/components/app/LifestyleToggle';
 import { WebRangeSlider } from '@/components/app/WebRangeSlider';
 import { AGE_MIN, AGE_MAX } from '@/components/app/FilterPanel';
+import { shareIsNew } from '@/lib/share/newBadge';
 import { HEIGHT_PICKER_OPTIONS, DEFAULT_HEIGHT_CM, nearestHeightOptionCm } from '@/lib/height';
 
 // Same lists used on the edit page (profile/page.tsx) and signup — kept as
@@ -371,6 +372,20 @@ export default function ProfileViewPage() {
         )}
 
         {message && <div className="bg-primary/10 text-primary text-sm font-medium px-4 py-3 rounded-xl mb-5">{message}</div>}
+
+        {/* Share your biodata — entry point to the Share page (owner view only). */}
+        {!isGuest && (
+          <div className="rounded-3xl text-white px-6 py-5 mb-5 flex items-center justify-between gap-4 flex-wrap" style={{ background: 'linear-gradient(135deg, #3F2A16, #6E4520)' }}>
+            <div className="max-w-md">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xl font-semibold" style={{ fontFamily: 'Georgia, serif' }}>Share your biodata</span>
+                {shareIsNew() && <span className="px-2.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[11px] font-bold">New</span>}
+              </div>
+              <p className="mt-1 text-sm text-[#F3E3C8] leading-relaxed">Make a private link, choose what to show, and see who opened it.</p>
+            </div>
+            <Link href="/share" className="px-6 py-2.5 rounded-full bg-[#C9A24B] text-[#3F2A16] font-bold text-sm hover:bg-[#d6b05a] transition-colors">Share my profile</Link>
+          </div>
+        )}
 
         {/* Hero */}
         <div className="bg-surface border border-border rounded-3xl overflow-hidden shadow-sm mb-5">

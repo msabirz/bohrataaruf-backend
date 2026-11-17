@@ -5,17 +5,19 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { Bell, User, Menu, X } from 'lucide-react';
 import { useModeContext } from '@/lib/context/ModeContext';
+import { shareIsNew } from '@/lib/share/newBadge';
 
 const NAV_ITEMS = [
   { href: '/discover', label: 'Discover' },
   { href: '/interests', label: 'Interests' },
   { href: '/profile', label: 'Profile' },
+  { href: '/share', label: 'Share' },
   { href: '/settings', label: 'Settings' },
 ];
 
 // Mode B: only what's actually usable pre-launch. No greyed-out tabs, no
 // coming-soon labels — the other tabs simply don't exist in the nav.
-const NAV_ITEMS_MODE_B = NAV_ITEMS.filter((item) => item.href === '/profile' || item.href === '/settings');
+const NAV_ITEMS_MODE_B = NAV_ITEMS.filter((item) => item.href === '/profile' || item.href === '/share' || item.href === '/settings');
 
 type Notification = {
   id: string;
@@ -111,6 +113,9 @@ export function AppHeader() {
             className={`text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-muted hover:text-foreground'}`}
           >
             {item.label}
+            {item.href === '/share' && shareIsNew() && (
+              <span className="ml-1.5 align-middle px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>
+            )}
           </Link>
         );
       })}
@@ -226,6 +231,10 @@ export function AppHeader() {
             {isAvatarOpen && (
               <div className="absolute right-0 mt-2 w-48 bg-surface border border-border rounded-2xl shadow-xl z-50">
                 <div className="p-2 space-y-1">
+                  <Link href="/share" className="flex items-center justify-between px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors" onClick={() => setIsAvatarOpen(false)}>
+                    Share my profile
+                    {shareIsNew() && <span className="px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
+                  </Link>
                   <Link href="/settings" className="block px-4 py-2.5 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors" onClick={() => setIsAvatarOpen(false)}>
                     Settings
                   </Link>
