@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { useModeContext } from '@/lib/context/ModeContext';
 import { shareIsNew } from '@/lib/share/newBadge';
+import { ShareAnnouncement } from '@/components/share/ShareAnnouncement';
 import { useLocale, LOCALIZATION_ENABLED } from '@/lib/context/LocaleContext';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 
@@ -203,19 +204,19 @@ export function Header() {
             {isAuthenticated === null ? (
               <div className="w-20 h-10 animate-pulse bg-muted/20 rounded-full" />
             ) : isAuthenticated ? (
-              <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3 sm:gap-6">
                 <Link
                   href={postAuthPath}
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                  className="text-[13px] sm:text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
                   {mode === 'B' ? 'Profile' : 'Discover'}
                 </Link>
                 <Link
                   href="/share"
-                  className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                  className="text-[13px] sm:text-sm font-medium text-foreground hover:text-primary transition-colors"
                 >
                   Share
-                  {shareIsNew() && <span className="ml-1.5 align-middle px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
+                  {shareIsNew() && <span className="hidden sm:inline ml-1.5 align-middle px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
                 </Link>
                 
                 <div className="relative group">
@@ -461,6 +462,9 @@ export function Header() {
           </div>
         </div>
       )}
+      {/* One-time "New: share your biodata" popup. People land on the homepage after
+          login, which is in this layout, not the signed-in app layout. */}
+      {isAuthenticated && <ShareAnnouncement />}
     </>
   );
 }
