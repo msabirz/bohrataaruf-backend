@@ -91,7 +91,7 @@ function whatsappUrl(link: { label: string; expiryKind: ExpiryKind }, url: strin
 export function SharePageClient() {
   const [data, setData] = useState<Overview | null>(null);
   const [loadError, setLoadError] = useState('');
-  const [tab, setTab] = useState<'links' | 'share' | 'activity'>('links');
+  const [tab, setTab] = useState<'links' | 'share' | 'analytics'>('links');
   const [message, setMessage] = useState('');
 
   const load = useCallback(async () => {
@@ -125,21 +125,67 @@ export function SharePageClient() {
           <SharingSwitch data={data} reload={load} setMessage={setMessage} />
         </div>
 
+        <HowItWorks data={data} goTo={setTab} />
+
         {message && <div className="mt-4 bg-primary/10 text-primary text-sm font-medium px-4 py-3 rounded-xl">{message}</div>}
 
         <div className="mt-6 flex gap-8 border-b border-border" role="tablist">
           <button role="tab" aria-selected={tab === 'links'} className={tabCls('links')} onClick={() => setTab('links')}>Links</button>
           <button role="tab" aria-selected={tab === 'share'} className={tabCls('share')} onClick={() => setTab('share')}>What I share</button>
-          <button role="tab" aria-selected={tab === 'activity'} className={tabCls('activity')} onClick={() => setTab('activity')}>Activity</button>
+          <button role="tab" aria-selected={tab === 'analytics'} className={tabCls('analytics')} onClick={() => setTab('analytics')}>Analytics</button>
         </div>
 
         <div className="mt-6">
           {tab === 'links' && <LinksTab data={data} reload={load} setMessage={setMessage} />}
           {tab === 'share' && <WhatIShareTab data={data} reload={load} setMessage={setMessage} />}
-          {tab === 'activity' && <ActivityTab data={data} />}
+          {tab === 'analytics' && <ActivityTab data={data} />}
         </div>
       </div>
     </div>
+  );
+}
+
+
+// ── First-time guide ─────────────────────────────────────────────────────────
+function HowItWorks({ data, goTo }: { data: Overview; goTo: (t: 'links' | 'share' | 'analytics') => void }) {
+  const hasLinks = data.links.length > 0;
+  const opened = data.totals.opens > 0;
+  // Which step she is on: 1 choose, 2 make a link, 3 send it, 4 see who opened it.
+  const current = !hasLinks ? 1 : !opened ? 3 : 4;
+  const steps = [
+    { n: 1, title: 'Choose what to show', text: 'Pick the details, name and photo people will see.', cta: 'Choose what to show', go: () => goTo('share') },
+    { n: 2, title: 'Make a link', text: 'Name it for the person, and choose how long it works.', cta: 'Make a link', go: () => goTo('links') },
+    { n: 3, title: 'Send it', text: 'Copy the link or send it on WhatsApp.', cta: null, go: () => goTo('links') },
+    { n: 4, title: 'See who opened it', text: 'Check Analytics to see opens, and who joined.', cta: 'Open Analytics', go: () => goTo('analytics') },
+  ];
+  const done = (n: number) => (n === 1 ? hasLinks : n === 2 ? hasLinks : n === 3 ? opened : false);
+
+  return (
+    <details open={!hasLinks} className="mt-5 bg-surface border border-border rounded-2xl group">
+      <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-3">
+        <span className="font-bold text-foreground">{hasLinks ? 'How sharing works' : 'Start here: sharing in 4 steps'}</span>
+        <span className="text-sm font-semibold text-primary group-open:hidden">Show</span>
+        <span className="text-sm font-semibold text-primary hidden group-open:inline">Hide</span>
+      </summary>
+      <ol className="px-5 pb-5 grid gap-3 sm:grid-cols-4">
+        {steps.map((st) => {
+          const isCurrent = st.n === current;
+          const isDone = done(st.n);
+          return (
+            <li key={st.n} className={`rounded-2xl border-2 px-4 py-4 flex flex-col gap-2 ${isCurrent ? 'border-[#C9A24B] bg-[#FFF9EA]' : 'border-border bg-background'}`}>
+              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isDone ? 'bg-[#2E7D4F] text-white' : 'bg-primary text-surface'}`} aria-label={isDone ? `Step ${st.n} done` : `Step ${st.n}`}>
+                {isDone ? <Check className="w-4 h-4" /> : st.n}
+              </span>
+              <span className="font-bold text-foreground">{st.title}</span>
+              <span className="text-sm text-muted leading-relaxed">{st.text}</span>
+              {isCurrent && st.cta && (
+                <button onClick={st.go} className="mt-1 self-start px-4 py-2 rounded-full bg-primary text-surface text-sm font-bold">{st.cta}</button>
+              )}
+            </li>
+          );
+        })}
+      </ol>
+    </details>
   );
 }
 

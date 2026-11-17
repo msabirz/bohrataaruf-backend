@@ -5,6 +5,7 @@ import { getViewUrl } from '@/lib/storage';
 import { fetchAndBlurPhoto } from '@/lib/blurPhoto';
 import { HEIGHT_PICKER_OPTIONS } from '@/lib/height';
 import { containsContactInfo } from './contactGuard';
+import { tidyName, tidyParagraph, tidyText } from './text';
 import { DEFAULT_VISIBLE_FIELDS, sanitizeVisibleFields, type ShareFieldKey } from './fields';
 
 export interface SharedRow { label: string; value: string }
@@ -81,29 +82,31 @@ export async function loadSharedProfile(userId: string, opts: { includePhoto?: b
   const visible = new Set<ShareFieldKey>(r.visibleFields ? sanitizeVisibleFields(r.visibleFields) : DEFAULT_VISIBLE_FIELDS);
   const has = (k: ShareFieldKey) => visible.has(k);
 
-  const firstName = (r.name || '').trim().split(/\s+/)[0] || 'Member';
-  const displayName = r.nameMode === 'full' ? (r.name || firstName) : firstName;
+  const fullName = tidyName(r.name);
+  const firstName = fullName.split(' ')[0] || 'Member';
+  const displayName = r.nameMode === 'full' ? (fullName || firstName) : firstName;
+  const city = tidyText(r.city, false) || null;
   const age = computeAge(r.dateOfBirth);
 
   const chips: string[] = [];
   if (has('age') && age !== null) chips.push(`${age} years`);
   if (has('height') && r.heightCm) chips.push(HEIGHT_PICKER_OPTIONS.find((o) => o.cm === r.heightCm)?.label ?? `${r.heightCm} cm`);
   if (has('maritalStatus') && r.maritalStatus) chips.push(MARITAL_LABEL[r.maritalStatus] ?? labelize(r.maritalStatus));
-  if (has('city') && r.city) chips.push(r.city);
-  if (has('jamaat') && r.jamaat) chips.push(`${r.jamaat} jamaat`);
+  if (has('city') && city) chips.push(city);
+  if (has('jamaat') && r.jamaat) chips.push(`${tidyText(r.jamaat, false)} jamaat`);
 
   const sections: SharedSection[] = [];
 
   const about: SharedSection = { title: 'About', rows: [] };
-  if (has('introLine') && r.introLine) about.paragraph = r.introLine;
+  if (has('introLine') && r.introLine) about.paragraph = tidyParagraph(r.introLine);
   if (has('bio') && r.bioText && !containsContactInfo(r.bioText)) {
-    about.rows.push({ label: 'About me', value: r.bioText });
+    about.rows.push({ label: 'About me', value: tidyParagraph(r.bioText) });
   }
   if (about.paragraph || about.rows.length) sections.push(about);
 
   const work: SharedSection = { title: 'Education and work', rows: [] };
-  if (has('education') && r.education) work.rows.push({ label: 'Education', value: [r.education, r.fieldOfStudy].filter(Boolean).join(' · ') });
-  if (has('profession') && r.profession) work.rows.push({ label: 'Profession', value: r.profession });
+  if (has('education') && r.education) work.rows.push({ label: 'Education', value: [tidyText(r.education), tidyText(r.fieldOfStudy)].filter(Boolean).join(' · ') });
+  if (has('profession') && r.profession) work.rows.push({ label: 'Profession', value: tidyText(r.profession) });
   if (work.rows.length) sections.push(work);
 
   const family: SharedSection = { title: 'Family', rows: [] };
@@ -121,7 +124,7 @@ export async function loadSharedProfile(userId: string, opts: { includePhoto?: b
   for (const e of extras) {
     // Belt and braces: extra details are validated on save, but never render contact info.
     if (containsContactInfo(e.label) || containsContactInfo(e.value)) continue;
-    family.rows.push({ label: e.label, value: e.value });
+    family.rows.push({ label: tidyText(e.label), value: tidyParagraph(e.value) });
   }
   if (family.rows.length) sections.push(family);
 
@@ -150,7 +153,7 @@ export async function loadSharedProfile(userId: string, opts: { includePhoto?: b
     displayName,
     firstName,
     age,
-    city: r.city,
+    city,
     showAge: has('age'),
     showCity: has('city'),
     chips,
