@@ -91,7 +91,8 @@ function whatsappUrl(link: { label: string; expiryKind: ExpiryKind }, url: strin
 export function SharePageClient() {
   const [data, setData] = useState<Overview | null>(null);
   const [loadError, setLoadError] = useState('');
-  const [tab, setTab] = useState<'links' | 'share' | 'analytics'>('links');
+  const [tab, setTab] = useState<TabKey>('links');
+  const [tourStep, setTourStep] = useState<number | null>(null);
   const [message, setMessage] = useState('');
 
   const load = useCallback(async () => {
@@ -102,7 +103,17 @@ export function SharePageClient() {
     let alive = true;
     api<Overview>('GET', '').then((r) => {
       if (!alive) return;
-      if (r.ok) setData(r.data as Overview); else setLoadError(r.data.error || 'Could not load. Please try again.');
+      if (!r.ok) { setLoadError(r.data.error || 'Could not load. Please try again.'); return; }
+      const ov = r.data as Overview;
+      setData(ov);
+      // First time (no links yet): start on step 1 and offer the tour once.
+      // With links already, open on the Links tab and don't interrupt.
+      if (ov.links.length === 0) {
+        setTab('share');
+        let done = false;
+        try { done = !!window.localStorage.getItem(TOUR_KEY); } catch { /* storage unavailable */ }
+        if (!done) setTourStep(0);
+      }
     });
     return () => { alive = false; };
   }, []);
@@ -112,7 +123,13 @@ export function SharePageClient() {
     return <div className="min-h-[50vh] flex items-center justify-center"><div className="w-8 h-8 border-4 border-primary/30 border-t-primary rounded-full animate-spin" /></div>;
   }
 
-  const tabCls = (t: string) => `pb-3 text-[15px] font-semibold border-b-[3px] transition-colors ${tab === t ? 'text-foreground border-primary' : 'text-muted border-transparent hover:text-foreground'}`;
+  const finishTour = () => {
+    try { window.localStorage.setItem(TOUR_KEY, '1'); } catch { /* ignore */ }
+    setTourStep(null);
+  };
+  const goTour = (i: number) => { setTourStep(i); setTab(TOUR_STEPS[i].tab); };
+  const startTour = () => goTour(0);
+  const tabCls = (t: string) => `px-1 pb-3 pt-1 text-[13px] sm:text-[15px] leading-tight font-semibold text-center border-b-[3px] transition-colors ${tab === t ? 'text-foreground border-primary' : 'text-muted border-transparent hover:text-foreground'} ${tourStep !== null && TOUR_STEPS[tourStep].tab === t ? 'bg-[#FFF9EA] rounded-t-lg' : ''}`;
 
   return (
     <div className="min-h-screen bg-background pb-24">
@@ -121,19 +138,22 @@ export function SharePageClient() {
           <div>
             <h1 className="text-3xl font-semibold text-foreground" style={SERIF}>Share my profile</h1>
             <p className="text-muted mt-1">Make a private link, choose what it shows, and see who opened it.</p>
+            <button onClick={startTour} className="mt-2 text-sm font-semibold text-primary underline underline-offset-4">Take a quick tour</button>
           </div>
           <SharingSwitch data={data} reload={load} setMessage={setMessage} />
         </div>
 
-        <HowItWorks data={data} goTo={setTab} />
-
         {message && <div className="mt-4 bg-primary/10 text-primary text-sm font-medium px-4 py-3 rounded-xl">{message}</div>}
 
-        <div className="mt-6 flex gap-8 border-b border-border" role="tablist">
-          <button role="tab" aria-selected={tab === 'links'} className={tabCls('links')} onClick={() => setTab('links')}>Links</button>
-          <button role="tab" aria-selected={tab === 'share'} className={tabCls('share')} onClick={() => setTab('share')}>What I share</button>
-          <button role="tab" aria-selected={tab === 'analytics'} className={tabCls('analytics')} onClick={() => setTab('analytics')}>Analytics</button>
+        <div className="mt-6 grid grid-cols-3 gap-2 border-b border-border" role="tablist">
+          {TABS.map((t) => (
+            <button key={t.key} role="tab" aria-selected={tab === t.key} className={tabCls(t.key)} onClick={() => setTab(t.key)}>{t.label}</button>
+          ))}
         </div>
+        {tourStep !== null && (
+          <TourPopover step={tourStep} onBack={() => goTour(Math.max(0, tourStep - 1))}
+            onNext={() => (tourStep >= TOUR_STEPS.length - 1 ? finishTour() : goTour(tourStep + 1))} onSkip={finishTour} />
+        )}
 
         <div className="mt-6">
           {tab === 'links' && <LinksTab data={data} reload={load} setMessage={setMessage} />}
@@ -146,46 +166,40 @@ export function SharePageClient() {
 }
 
 
-// ── First-time guide ─────────────────────────────────────────────────────────
-function HowItWorks({ data, goTo }: { data: Overview; goTo: (t: 'links' | 'share' | 'analytics') => void }) {
-  const hasLinks = data.links.length > 0;
-  const opened = data.totals.opens > 0;
-  // Which step she is on: 1 choose, 2 make a link, 3 send it, 4 see who opened it.
-  const current = !hasLinks ? 1 : !opened ? 3 : 4;
-  const steps = [
-    { n: 1, title: 'Choose what to show', text: 'Pick the details, name and photo people will see.', cta: 'Choose what to show', go: () => goTo('share') },
-    { n: 2, title: 'Make a link', text: 'Name it for the person, and choose how long it works.', cta: 'Make a link', go: () => goTo('links') },
-    { n: 3, title: 'Send it', text: 'Copy the link or send it on WhatsApp.', cta: null, go: () => goTo('links') },
-    { n: 4, title: 'See who opened it', text: 'Check Analytics to see opens, and who joined.', cta: 'Open Analytics', go: () => goTo('analytics') },
-  ];
-  const done = (n: number) => (n === 1 ? hasLinks : n === 2 ? hasLinks : n === 3 ? opened : false);
+// ── Intro tour ───────────────────────────────────────────────────────────────
+type TabKey = 'links' | 'share' | 'analytics';
+const TOUR_KEY = 'share_tour_done_v1';
+const TABS: { key: TabKey; label: string }[] = [
+  { key: 'share', label: 'Select details' },
+  { key: 'links', label: 'Create link & share' },
+  { key: 'analytics', label: 'Analytics' },
+];
+const TOUR_STEPS: { tab: TabKey; title: string; text: string }[] = [
+  { tab: 'share', title: 'Step 1: Select details to share', text: 'Choose what people see on your page: your name, photo and details. Your phone number, email and ITS number are never shown.' },
+  { tab: 'links', title: 'Step 2: Create a link and share it', text: 'Name a link for the person, choose how long it works, then copy it or send it on WhatsApp. "One view only" is the safest.' },
+  { tab: 'analytics', title: 'Step 3: Watch your analytics', text: 'See how many times each link was opened, from which phone and app, and how many people joined. We never show who opened it.' },
+];
 
+function TourPopover({ step, onBack, onNext, onSkip }: { step: number; onBack: () => void; onNext: () => void; onSkip: () => void }) {
+  const st = TOUR_STEPS[step];
+  const idx = TABS.findIndex((t) => t.key === st.tab);
+  const last = step === TOUR_STEPS.length - 1;
   return (
-    <details open={!hasLinks} className="mt-5 bg-surface border border-border rounded-2xl group">
-      <summary className="cursor-pointer list-none px-5 py-4 flex items-center justify-between gap-3">
-        <span className="font-bold text-foreground">{hasLinks ? 'How sharing works' : 'Start here: sharing in 4 steps'}</span>
-        <span className="text-sm font-semibold text-primary group-open:hidden">Show</span>
-        <span className="text-sm font-semibold text-primary hidden group-open:inline">Hide</span>
-      </summary>
-      <ol className="px-5 pb-5 grid gap-3 sm:grid-cols-4">
-        {steps.map((st) => {
-          const isCurrent = st.n === current;
-          const isDone = done(st.n);
-          return (
-            <li key={st.n} className={`rounded-2xl border-2 px-4 py-4 flex flex-col gap-2 ${isCurrent ? 'border-[#C9A24B] bg-[#FFF9EA]' : 'border-border bg-background'}`}>
-              <span className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${isDone ? 'bg-[#2E7D4F] text-white' : 'bg-primary text-surface'}`} aria-label={isDone ? `Step ${st.n} done` : `Step ${st.n}`}>
-                {isDone ? <Check className="w-4 h-4" /> : st.n}
-              </span>
-              <span className="font-bold text-foreground">{st.title}</span>
-              <span className="text-sm text-muted leading-relaxed">{st.text}</span>
-              {isCurrent && st.cta && (
-                <button onClick={st.go} className="mt-1 self-start px-4 py-2 rounded-full bg-primary text-surface text-sm font-bold">{st.cta}</button>
-              )}
-            </li>
-          );
-        })}
-      </ol>
-    </details>
+    <div className="relative mt-3" role="dialog" aria-label="Quick tour">
+      <span className="absolute -top-2 w-4 h-4 rotate-45 bg-surface border-l-2 border-t-2 border-[#C9A24B]" style={{ left: `calc(${((idx * 2 + 1) / 6) * 100}% - 8px)` }} aria-hidden="true" />
+      <div className="bg-surface border-2 border-[#C9A24B] rounded-2xl px-5 py-4 shadow-lg">
+        <div className="flex items-center justify-between gap-3">
+          <span className="font-bold text-foreground">{st.title}</span>
+          <span className="text-xs font-semibold text-muted shrink-0">{step + 1} of {TOUR_STEPS.length}</span>
+        </div>
+        <p className="mt-1.5 text-sm text-muted leading-relaxed">{st.text}</p>
+        <div className="mt-3 flex items-center gap-3 flex-wrap">
+          <button onClick={onSkip} className="text-sm font-semibold text-muted hover:text-foreground mr-auto">Skip tour</button>
+          {step > 0 && <button onClick={onBack} className="px-4 py-2 rounded-full border border-primary text-primary text-sm font-bold">Back</button>}
+          <button onClick={onNext} className="px-5 py-2 rounded-full bg-primary text-surface text-sm font-bold">{last ? 'Done' : 'Next'}</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
