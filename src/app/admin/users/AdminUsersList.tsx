@@ -24,6 +24,7 @@ interface AdminUser {
   shareLinkCount: number;
   shareActiveLinks: number;
   shareOpens: number;
+  completion: { percentage: number; missing: string[]; prefsFilled: number; prefsTotal: number; hasPhoto: boolean; itsSubmitted: boolean };
 }
 
 export default function AdminUsersList() {
@@ -38,31 +39,62 @@ export default function AdminUsersList() {
   const [statusFilter, setStatusFilter] = useState('');
   const [activeFilter, setActiveFilter] = useState('');
   const [abandonedFilter, setAbandonedFilter] = useState('');
+  const [completionFilter, setCompletionFilter] = useState('');
+  const [noPhoto, setNoPhoto] = useState(false);
+  const [noEmail, setNoEmail] = useState(false);
+  const [itsNotSubmitted, setItsNotSubmitted] = useState(false);
+  const [sort, setSort] = useState('joined');
+  const [total, setTotal] = useState(0);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [shareSendingId, setShareSendingId] = useState<string | null>(null);
   const [composeUser, setComposeUser] = useState<AdminUser | null>(null);
   const [composeMessage, setComposeMessage] = useState('');
 
-  const fetchUsers = useCallback(async () => {
-    setLoading(true);
+  const buildParams = useCallback((offset: number) => {
     const params = new URLSearchParams();
     if (search) params.set('q', search);
     if (statusFilter) params.set('status', statusFilter);
     if (activeFilter) params.set('active', activeFilter);
     if (abandonedFilter) params.set('abandoned', abandonedFilter);
+    if (completionFilter) params.set('completion', completionFilter);
+    if (noPhoto) params.set('noPhoto', 'true');
+    if (noEmail) params.set('noEmail', 'true');
+    if (itsNotSubmitted) params.set('itsNotSubmitted', 'true');
+    if (sort !== 'joined') params.set('sort', sort);
+    if (offset > 0) params.set('offset', String(offset));
+    return params;
+  }, [search, statusFilter, activeFilter, abandonedFilter, completionFilter, noPhoto, noEmail, itsNotSubmitted, sort]);
 
+  const fetchUsers = useCallback(async () => {
+    setLoading(true);
     try {
-      const res = await fetch(`/api/admin/users?${params.toString()}`);
+      const res = await fetch(`/api/admin/users?${buildParams(0).toString()}`);
       if (res.ok) {
         const data = await res.json();
         setUsers(data.users || []);
+        setTotal(data.total ?? (data.users || []).length);
       }
     } catch (e) {
       console.error(e);
     } finally {
       setLoading(false);
     }
-  }, [search, statusFilter, activeFilter, abandonedFilter]);
+  }, [buildParams]);
+
+  const loadMore = async () => {
+    setLoadingMore(true);
+    try {
+      const res = await fetch(`/api/admin/users?${buildParams(users.length).toString()}`);
+      if (res.ok) {
+        const data = await res.json();
+        setUsers((prev) => [...prev, ...(data.users || [])]);
+        setTotal(data.total ?? total);
+      }
+    } finally {
+      setLoadingMore(false);
+    }
+  };
 
   const handleCleanupAbandoned = async () => {
     if (!confirm('Are you sure you want to run the abandoned registrations cleanup (7+ days inactive)?')) return;
@@ -248,6 +280,32 @@ export default function AdminUsersList() {
             <option value="">All Registrations</option>
             <option value="true">Abandoned Only</option>
           </select>
+
+          <select
+            value={completionFilter}
+            onChange={(e) => setCompletionFilter(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#8C6A3F] bg-white text-sm"
+            aria-label="Profile completion"
+          >
+            <option value="">All Profile Completion</option>
+            <option value="lt50">Below 50%</option>
+            <option value="lt100">Below 100%</option>
+          </select>
+
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#8C6A3F] bg-white text-sm"
+            aria-label="Sort"
+          >
+            <option value="joined">Newest first</option>
+            <option value="completion_asc">Profile % low to high</option>
+            <option value="completion_desc">Profile % high to low</option>
+          </select>
+
+          <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={noPhoto} onChange={(e) => setNoPhoto(e.target.checked)} className="accent-[#8C6A3F]" /> No photo</label>
+          <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={noEmail} onChange={(e) => setNoEmail(e.target.checked)} className="accent-[#8C6A3F]" /> No email</label>
+          <label className="flex items-center gap-2 text-sm text-gray-700"><input type="checkbox" checked={itsNotSubmitted} onChange={(e) => setItsNotSubmitted(e.target.checked)} className="accent-[#8C6A3F]" /> ITS not submitted</label>
         </div>
       </div>
 
@@ -260,6 +318,7 @@ export default function AdminUsersList() {
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">User / Alias</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">City</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Verification</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Profile</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Status</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Matches</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Joined</th>
@@ -271,11 +330,11 @@ export default function AdminUsersList() {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Loading users...</td>
+                  <td colSpan={10} className="px-6 py-8 text-center text-gray-500">Loading users...</td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={10} className="px-6 py-12 text-center text-gray-500">
                     <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-lg font-medium text-gray-900">No users found</p>
                     <p>Try adjusting your search or filters.</p>
@@ -290,6 +349,15 @@ export default function AdminUsersList() {
                     </td>
                     <td className="px-6 py-4 text-gray-600">{user.city}</td>
                     <td className="px-6 py-4">{getStatusBadge(user.verificationStatus)}</td>
+                    <td className="px-6 py-4" title={user.completion.missing.length ? `Missing: ${user.completion.missing.join(', ')}` : 'Profile complete'}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
+                          <div className={`h-2 rounded-full ${user.completion.percentage >= 80 ? 'bg-green-500' : user.completion.percentage >= 50 ? 'bg-amber-500' : 'bg-red-500'}`} style={{ width: `${user.completion.percentage}%` }} />
+                        </div>
+                        <span className="font-semibold text-gray-900 text-xs w-9">{user.completion.percentage}%</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">Photo {user.completion.hasPhoto ? 'yes' : 'no'} · Prefs {user.completion.prefsFilled}/{user.completion.prefsTotal}</p>
+                    </td>
                     <td className="px-6 py-4">
                       {user.abandonedAt ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-amber-100 text-amber-800">Abandoned</span>
@@ -353,6 +421,14 @@ export default function AdminUsersList() {
               )}
             </tbody>
           </table>
+        </div>
+        <div className="px-6 py-3 border-t border-gray-200 bg-gray-50 flex items-center justify-between text-sm text-gray-600">
+          <span>Showing {users.length} of {total} users</span>
+          {users.length < total && (
+            <button onClick={loadMore} disabled={loadingMore} className="px-4 py-1.5 rounded-lg border border-[#8C6A3F] text-[#8C6A3F] text-xs font-medium hover:bg-[#8C6A3F] hover:text-white transition-colors disabled:opacity-50">
+              {loadingMore ? 'Loading...' : 'Load more'}
+            </button>
+          )}
         </div>
       </div>
 
