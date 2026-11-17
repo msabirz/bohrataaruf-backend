@@ -1,6 +1,7 @@
 import { Metadata } from 'next';
 import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
+import { GoogleTagManager } from '@/components/analytics/GoogleTagManager';
 import { LocaleProvider } from '@/lib/context/LocaleContext';
 import { organizationJsonLd, siteNavigationJsonLd } from '@/lib/seo';
 import '../globals.css';
@@ -34,6 +35,7 @@ export default function MarketingLayout({
           not per-page, since it describes the site itself. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavigationJsonLd()) }} />
+      <GoogleTagManager />
       <LocaleProvider>
         <Header />
         <main className="flex-1">

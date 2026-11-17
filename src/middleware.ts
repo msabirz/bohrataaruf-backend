@@ -113,5 +113,5 @@ export async function middleware(request: NextRequest) {
 // Runs on API routes (auth-gated there) plus the new authenticated app pages
 // (pathname-stamping only for those — see the branch above).
 export const config = {
-  matcher: ['/api/:path*', '/discover/:path*', '/interests/:path*', '/profile/:path*', '/settings/:path*', '/matches/:path*'],
+  matcher: ['/api/:path*', '/discover/:path*', '/interests/:path*', '/profile/:path*', '/settings/:path*', '/matches/:path*', '/share/:path*'],
 };

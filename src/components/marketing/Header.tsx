@@ -4,9 +4,10 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import {
-  User, LogOut, Settings, ChevronDown, Menu, X,
+  User, LogOut, Settings, ChevronDown, Menu, X, Share2,
 } from 'lucide-react';
 import { useModeContext } from '@/lib/context/ModeContext';
+import { shareIsNew } from '@/lib/share/newBadge';
 import { useLocale, LOCALIZATION_ENABLED } from '@/lib/context/LocaleContext';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 
@@ -228,6 +229,11 @@ export function Header() {
                       <Link href="/profile" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
                         <User className="w-4 h-4 text-primary" />
                         Edit Profile
+                      </Link>
+                      <Link href="/share" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
+                        <Share2 className="w-4 h-4 text-primary" />
+                        Share my profile
+                        {shareIsNew() && <span className="ml-auto px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
                       </Link>
                       <Link href="/settings" className="flex items-center gap-3 px-4 py-3 text-sm font-medium text-foreground hover:bg-accent-light/30 rounded-xl transition-colors">
                         <Settings className="w-4 h-4 text-primary" />

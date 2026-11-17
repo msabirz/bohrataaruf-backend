@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuthenticatedUserFromCookie } from '@/lib/api/pageAuth';
 import { AppHeader } from '@/components/app/AppHeader';
+import { ShareAnnouncement } from '@/components/share/ShareAnnouncement';
+import { GoogleTagManager } from '@/components/analytics/GoogleTagManager';
 import '../globals.css';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
@@ -32,8 +34,10 @@ export default async function AppLayout({
 
   return (
     <div className="flex flex-col min-h-screen bg-background text-foreground font-sans">
+      <GoogleTagManager />
       <AppHeader />
       <main className="flex-1">{children}</main>
+      <ShareAnnouncement />
     </div>
   );
 }
