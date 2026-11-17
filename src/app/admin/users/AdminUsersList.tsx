@@ -19,6 +19,11 @@ interface AdminUser {
   rejectionReason: string | null;
   matchCount: number;
   prelaunchAckSentAt: string | null;
+  shareInviteSentAt: string | null;
+  sharingEnabled: boolean | null;
+  shareLinkCount: number;
+  shareActiveLinks: number;
+  shareOpens: number;
 }
 
 export default function AdminUsersList() {
@@ -34,6 +39,7 @@ export default function AdminUsersList() {
   const [activeFilter, setActiveFilter] = useState('');
   const [abandonedFilter, setAbandonedFilter] = useState('');
   const [sendingId, setSendingId] = useState<string | null>(null);
+  const [shareSendingId, setShareSendingId] = useState<string | null>(null);
   const [composeUser, setComposeUser] = useState<AdminUser | null>(null);
   const [composeMessage, setComposeMessage] = useState('');
 
@@ -124,6 +130,22 @@ export default function AdminUsersList() {
       alert('Network error sending email');
     } finally {
       setSendingId(null);
+    }
+  };
+
+  const handleSendShareInvite = async (user: AdminUser, e: React.MouseEvent) => {
+    e.stopPropagation(); // don't trigger the row's navigate-to-detail click
+    if (!window.confirm(`Email ${user.name} (${user.email}) a button to her share settings?`)) return;
+    setShareSendingId(user.id);
+    try {
+      const res = await fetch(`/api/admin/users/${user.id}/share-invite`, { method: 'POST' });
+      const data = await res.json();
+      if (res.ok && data.success) fetchUsers();
+      else alert(data.error || 'Failed to send email');
+    } catch {
+      alert('Network error sending email');
+    } finally {
+      setShareSendingId(null);
     }
   };
 
@@ -242,17 +264,18 @@ export default function AdminUsersList() {
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Matches</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Joined</th>
                 <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Pre-launch email</th>
+                <th className="px-6 py-4 font-medium uppercase tracking-wider text-xs">Share link</th>
                 <th className="px-6 py-4"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-8 text-center text-gray-500">Loading users...</td>
+                  <td colSpan={9} className="px-6 py-8 text-center text-gray-500">Loading users...</td>
                 </tr>
               ) : users.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={9} className="px-6 py-12 text-center text-gray-500">
                     <User className="w-12 h-12 text-gray-300 mx-auto mb-3" />
                     <p className="text-lg font-medium text-gray-900">No users found</p>
                     <p>Try adjusting your search or filters.</p>
@@ -292,6 +315,32 @@ export default function AdminUsersList() {
                             className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#8C6A3F] text-[#8C6A3F] hover:bg-[#8C6A3F] hover:text-white transition-colors disabled:opacity-50"
                           >
                             {sendingId === user.id ? 'Sending...' : user.prelaunchAckSentAt ? 'Resend' : 'Send update'}
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4">
+                      {!user.email ? (
+                        <span className="text-xs text-gray-400 italic">No email</span>
+                      ) : (
+                        <div className="flex flex-col items-start gap-1">
+                          <span className={`text-xs ${user.sharingEnabled === false ? 'text-red-700' : user.shareActiveLinks > 0 ? 'text-green-700' : 'text-gray-500'}`}>
+                            {user.sharingEnabled === false
+                              ? 'Sharing switched off'
+                              : user.shareActiveLinks > 0
+                                ? `${user.shareActiveLinks} active, ${user.shareOpens} opens`
+                                : user.shareLinkCount > 0
+                                  ? `${user.shareLinkCount} links made, none active`
+                                  : user.shareInviteSentAt
+                                    ? `Sent ${new Date(user.shareInviteSentAt).toLocaleDateString()}`
+                                    : 'Not sent yet'}
+                          </span>
+                          <button
+                            onClick={(e) => handleSendShareInvite(user, e)}
+                            disabled={shareSendingId === user.id}
+                            className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#8C6A3F] text-[#8C6A3F] hover:bg-[#8C6A3F] hover:text-white transition-colors disabled:opacity-50"
+                          >
+                            {shareSendingId === user.id ? 'Sending...' : user.shareInviteSentAt ? 'Send again' : 'Send share link'}
                           </button>
                         </div>
                       )}
