@@ -46,7 +46,12 @@ export async function GET(request: Request) {
         v.status as "verificationStatus",
         v.rejection_reason as "rejectionReason",
         (SELECT COUNT(*)::int FROM matches m WHERE m.user_a = u.id OR m.user_b = u.id) as "matchCount",
-        (SELECT MAX(created_at) FROM admin_action_log WHERE target_user_id = u.id AND action = 'sent_prelaunch_ack_email') as "prelaunchAckSentAt"
+        (SELECT MAX(created_at) FROM admin_action_log WHERE target_user_id = u.id AND action = 'sent_prelaunch_ack_email') as "prelaunchAckSentAt",
+        (SELECT MAX(created_at) FROM admin_action_log WHERE target_user_id = u.id AND action = 'sent_share_invite_email') as "shareInviteSentAt",
+        (SELECT ss.sharing_enabled FROM share_settings ss WHERE ss.user_id = u.id) as "sharingEnabled",
+        (SELECT COUNT(*)::int FROM share_links sl WHERE sl.user_id = u.id) as "shareLinkCount",
+        (SELECT COUNT(*)::int FROM share_links sl WHERE sl.user_id = u.id AND sl.stopped_at IS NULL AND sl.used_at IS NULL AND sl.expires_at > now()) as "shareActiveLinks",
+        (SELECT COUNT(*)::int FROM share_link_opens o JOIN share_links sl ON sl.id = o.link_id WHERE sl.user_id = u.id) as "shareOpens"
       FROM users u
       LEFT JOIN profiles p ON u.id = p.user_id
       LEFT JOIN verifications v ON u.id = v.user_id

@@ -24,6 +24,7 @@ import { MatchEmail } from './templates/MatchEmail';
 import { PreLaunchAcknowledgementEmail } from './templates/PreLaunchAcknowledgementEmail';
 import { ProgramSelectionEmail } from './templates/ProgramSelectionEmail';
 import { ProgramPassEmail } from './templates/ProgramPassEmail';
+import { ShareInviteEmail } from './templates/ShareInviteEmail';
 
 const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -172,5 +173,21 @@ export async function sendProgramPassEmail(
       dateRange: program.dateRange,
       passCode,
     }),
+  );
+}
+
+/**
+ * Admin-sent invitation to the "Share your biodata" feature. Unlike the other
+ * sends, this one is NOT fire-and-forget: it throws if the provider rejects it
+ * (for example when the monthly email quota is used up), so the admin sees
+ * "could not send" and nothing is logged as sent. Like the pre-launch email it
+ * is a deliberate one-at-a-time admin action, so it bypasses EMAIL_ENABLED.
+ */
+export async function sendShareInviteEmail(to: string, name: string): Promise<void> {
+  await dispatch(
+    to,
+    'Share your biodata, your way',
+    React.createElement(ShareInviteEmail, { name, shareUrl: `${PUBLIC_APP_URL}/share` }),
+    { bypassKillSwitch: true },
   );
 }
