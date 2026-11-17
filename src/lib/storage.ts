@@ -38,7 +38,7 @@ export async function getUploadUrl(key: string, contentType: string = 'image/jpe
  * Generates a presigned URL for viewing a private object in R2.
  * Returns null if the key is empty or null.
  */
-export async function getViewUrl(key: string | null | undefined): Promise<string | null> {
+export async function getViewUrl(key: string | null | undefined, expiresInSeconds = 3600): Promise<string | null> {
   if (!key) return null;
 
   const command = new GetObjectCommand({
@@ -46,8 +46,9 @@ export async function getViewUrl(key: string | null | undefined): Promise<string
     Key: key,
   });
 
-  // URL valid for 1 hour
-  return getSignedUrl(s3Client, command, { expiresIn: 3600 });
+  // URL valid for 1 hour by default; callers that hand a URL to an anonymous
+  // visitor (the shared biodata page) pass a much shorter lifetime.
+  return getSignedUrl(s3Client, command, { expiresIn: expiresInSeconds });
 }
 
 /**
