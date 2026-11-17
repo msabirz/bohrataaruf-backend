@@ -210,6 +210,13 @@ export function Header() {
                 >
                   {mode === 'B' ? 'Profile' : 'Discover'}
                 </Link>
+                <Link
+                  href="/share"
+                  className="text-sm font-medium text-foreground hover:text-primary transition-colors"
+                >
+                  Share
+                  {shareIsNew() && <span className="ml-1.5 align-middle px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
+                </Link>
                 
                 <div className="relative group">
                   <button className="flex items-center gap-2 focus:outline-none">
