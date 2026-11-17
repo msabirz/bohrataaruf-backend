@@ -6,6 +6,7 @@ import { eq } from 'drizzle-orm';
 import { BasicsSchema, parseDobStrict } from '@/lib/api/validators';
 import { generateUniqueAlias } from '@/lib/alias-generator';
 import { sendWelcomeEmail } from '@/lib/email';
+import { notifyReferralJoined, resolveReferralLink } from '@/lib/share/referral';
 
 export async function POST(request: Request) {
   try {
@@ -64,6 +65,19 @@ export async function POST(request: Request) {
       }
     }
 
+    // Referral: if this user came from a share link and agreed to be named, tell the
+    // person who shared as soon as their real name is first saved (the account starts
+    // as the placeholder 'New User'). Captured before the update below overwrites it.
+    let referralToNotify: { linkId: string; firstName: string } | null = null;
+    if (typeof data.name === 'string' && data.name.trim()) {
+      const [before] = await db
+        .select({ name: users.name, linkId: users.referredByLinkId, consent: users.referralNameConsent })
+        .from(users).where(eq(users.id, userId));
+      if (before && before.name === 'New User' && before.linkId && before.consent) {
+        referralToNotify = { linkId: before.linkId, firstName: data.name.trim().split(/\s+/)[0] };
+      }
+    }
+
     if (Object.keys(userUpdates).length > 0) {
       try {
         await db.update(users).set(userUpdates).where(eq(users.id, userId));
@@ -80,6 +94,10 @@ export async function POST(request: Request) {
       if (shouldSendWelcome) {
         sendWelcomeEmail(userUpdates.email, welcomeName || 'there')
           .catch((err) => console.warn('[email] welcome send failed:', err));
+      }
+      if (referralToNotify) {
+        const link = await resolveReferralLink(referralToNotify.linkId);
+        if (link) await notifyReferralJoined(link, referralToNotify.firstName);
       }
     }
 

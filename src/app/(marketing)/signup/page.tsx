@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, Suspense } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useModeContext } from '@/lib/context/ModeContext';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { Chip } from '@/components/ui/Chip';
@@ -78,6 +78,10 @@ export default function SignupPage() {
 // 5 = bio; 6 = done. Preferences is intentionally dropped from this flow.
 function SignupWizard() {
   const router = useRouter();
+  // Arrived from someone's shared biodata? The Join button on that page adds ?ref=<link id>.
+  const refParam = useSearchParams().get('ref');
+  const referralLinkId = refParam && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(refParam) ? refParam : null;
+  const [referralConsent, setReferralConsent] = useState(false);
   const { mode } = useModeContext();
   const postAuthPath = mode === 'B' ? '/profile' : '/discover';
   const [step, setStep] = useState<number>(0); // 0 = loading/checking resume
@@ -200,7 +204,7 @@ function SignupWizard() {
       if (!isAuthed) {
         const res = await fetch('/api/v1/auth/signup', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ itsNumber, password }),
+          body: JSON.stringify(referralLinkId ? { itsNumber, password, referralLinkId, referralNameConsent: referralConsent } : { itsNumber, password }),
         });
         if (!res.ok) {
           const d = await res.json().catch(() => ({}));
@@ -446,6 +450,12 @@ function SignupWizard() {
 
       {step === 1 && (
         <form onSubmit={handleSignupSubmit}>
+          {referralLinkId && !isAuthed && (
+            <div className="mb-5 rounded-2xl px-5 py-4 text-white" style={{ background: 'linear-gradient(135deg, #3F2A16, #6E4520)' }}>
+              <div className="font-semibold" style={{ fontFamily: 'Georgia, serif' }}>You came from a shared biodata</div>
+              <p className="text-sm text-[#F3E3C8] mt-1">Create your Bohra Taaruf account in a minute.</p>
+            </div>
+          )}
           <h2 className="text-2xl font-bold mb-2">{isAuthed ? 'Finish verifying your ITS card' : 'Create your account'}</h2>
           <p className="text-muted text-sm mb-6">
             {isAuthed ? 'Your account is ready — just upload your ITS card photo to continue.' : 'Verify your ITS number and set a password to get started.'}
@@ -482,6 +492,12 @@ function SignupWizard() {
             disabled={isLoading || itsNumber.length !== 8}
           />
 
+          {referralLinkId && !isAuthed && (
+            <label className="flex gap-3 items-start p-4 mb-4 rounded-2xl bg-accent-light/50 cursor-pointer">
+              <input type="checkbox" checked={referralConsent} onChange={(e) => setReferralConsent(e.target.checked)} className="mt-1 w-5 h-5 accent-primary shrink-0" />
+              <span className="text-sm leading-relaxed text-foreground"><strong>Let the person who shared it know I joined.</strong> They will see my first name only. If you leave this off, they only learn that someone has joined.</span>
+            </label>
+          )}
           <button type="submit" disabled={isLoading || !step1Valid} className="w-full bg-primary text-surface font-bold py-4 rounded-xl mt-6 disabled:opacity-50">
             {isLoading ? 'Creating account...' : isAuthed ? 'Upload & continue' : 'Create account'}
           </button>

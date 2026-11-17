@@ -56,6 +56,10 @@ const PASSWORD_MESSAGE = 'Password must be at least 8 characters and include an 
 export const SignupSchema = z.object({
   itsNumber: z.string().length(8).regex(/^\d{8}$/, 'ITS number must be exactly 8 digits'),
   password: z.string().regex(PASSWORD_REGEX, PASSWORD_MESSAGE),
+  // Optional, web signup only: the share link the visitor came from, and whether they agreed
+  // to be named (first name) to the person who shared it. Absent for the mobile app.
+  referralLinkId: z.string().max(64).optional(), // validated as a UUID where it is used; a bad value is ignored, never blocks signup
+  referralNameConsent: z.boolean().optional(),
 });
 
 export const SetPasswordSchema = z.object({

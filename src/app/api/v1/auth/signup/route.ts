@@ -4,6 +4,7 @@ import { users, profiles, preferences } from '@/lib/db/schema';
 import { SignupSchema } from '@/lib/api/validators';
 import { signToken, hashItsNumber } from '@/lib/api/auth';
 import crypto from 'crypto';
+import { attachReferral, notifyReferralJoined } from '@/lib/share/referral';
 
 // New OTP-free signup path: ITS number + password only. The card photo is
 // attached in a second call (existing authenticated verification/upload-url
@@ -18,7 +19,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Invalid payload', details: parsed.error.format() }, { status: 400 });
     }
 
-    const { itsNumber, password } = parsed.data;
+    const { itsNumber, password, referralLinkId, referralNameConsent } = parsed.data;
 
     const itsNumberHash = hashItsNumber(itsNumber);
     const passwordHash = crypto.createHash('sha256').update(password).digest('hex');
@@ -62,6 +63,17 @@ export async function POST(request: Request) {
       });
     } catch (e) {
       console.error('[auth/signup] Failed to create preferences row:', e);
+    }
+
+    // Share-link referral (web only, optional). Never fails signup: an unknown,
+    // stopped or switched-off link is simply ignored.
+    if (referralLinkId) {
+      const consent = referralNameConsent === true;
+      const link = await attachReferral(userRow.id, referralLinkId, consent);
+      // Without consent she is told now, by the link's label only. With consent she is
+      // told once the new person saves their name (see profile/basics), so the first
+      // name can be included.
+      if (link && !consent) await notifyReferralJoined(link);
     }
 
     const token = await signToken(userRow.id);
