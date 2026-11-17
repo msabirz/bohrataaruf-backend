@@ -41,27 +41,33 @@ export function Header() {
     { href: '/contact', label: 'Contact' },
   ];
 
+  // A gated page (e.g. /discover, /share) redirected here with ?redirect=<path> when the
+  // visitor wasn't logged in: auto-open the login modal and remember where to send them
+  // back to after a successful login. This must only happen when they really are logged
+  // out. A logged-in person can land on a "/?redirect=..." address too (the browser's Back
+  // button returns to the old bounce page, or a stale bookmark), and showing a login popup
+  // to someone who is already logged in is wrong, so for them the leftover parameter is
+  // just dropped from the address bar.
   useEffect(() => {
+    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    const openLoginForRedirect = () => {
+      if (!redirect) return;
+      setRedirectTarget(redirect);
+      setIsLoginModalOpen(true);
+    };
     fetch('/api/v1/auth/me')
       .then(res => res.json())
       .then(data => {
         setIsAuthenticated(data.authenticated);
         if (data.photoUri) setPhotoUri(data.photoUri);
+        if (!redirect) return;
+        if (data.authenticated) window.history.replaceState(null, '', window.location.pathname + window.location.hash);
+        else openLoginForRedirect();
       })
-      .catch(() => setIsAuthenticated(false));
-  }, []);
-
-  // A gated page (e.g. /discover) redirected here with ?redirect=<path> when the
-  // visitor wasn't logged in — auto-open the login modal and remember where to
-  // send them back to after a successful login, instead of dropping them on a
-  // bare homepage they'd have to find the login button on themselves.
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const redirect = params.get('redirect');
-    if (redirect) {
-      setRedirectTarget(redirect);
-      setIsLoginModalOpen(true);
-    }
+      .catch(() => {
+        setIsAuthenticated(false);
+        openLoginForRedirect();
+      });
   }, []);
 
   const handleLogout = async () => {
