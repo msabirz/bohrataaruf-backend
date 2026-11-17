@@ -3,30 +3,10 @@ import { biodataLinks, biodataLinkHistory, users, profiles, preferences } from '
 import { eq, sql } from 'drizzle-orm';
 import { createHash } from 'crypto';
 import { fetchAndBlurPhoto } from '@/lib/blurPhoto';
+import { isBot } from '@/lib/botDetection';
 import { headers } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Briefcase, GraduationCap, Heart, MapPin, Users, Home, Activity } from 'lucide-react';
-
-// ── Bot / crawler detection ─────────────────────────────────────────────────
-const BOT_UA_PATTERNS = [
-  /whatsapp/i,
-  /telegrambot/i,
-  /twitterbot/i,
-  /facebookexternalhit/i,
-  /linkedinbot/i,
-  /discordbot/i,
-  /slackbot/i,
-  /googlebot/i,
-  /bingbot/i,
-  /applebot/i,
-  /ia_archiver/i,
-  /preview/i,
-];
-
-function isBot(ua: string | null | undefined): boolean {
-  if (!ua) return false;
-  return BOT_UA_PATTERNS.some((p) => p.test(ua));
-}
 
 function hashToken(token: string): string {
   return createHash('sha256').update(token).digest('hex');

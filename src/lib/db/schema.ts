@@ -13,7 +13,9 @@ import {
   jsonb,
   check,
   primaryKey,
-  numeric
+  numeric,
+  smallint,
+  type AnyPgColumn,
 } from 'drizzle-orm/pg-core';
 import { sql } from 'drizzle-orm';
 
@@ -60,6 +62,10 @@ export const users = pgTable('users', {
   isActive: boolean('is_active').default(true),
   abandonedAt: timestamp('abandoned_at'),
   isTestAccount: boolean('is_test_account').default(false).notNull(),
+  // Which share link this user signed up from (web signup only), and whether they
+  // agreed to be named (first name) to the person who shared it. See share_links.
+  referredByLinkId: uuid('referred_by_link_id').references((): AnyPgColumn => shareLinks.id, { onDelete: 'set null' }),
+  referralNameConsent: boolean('referral_name_consent').default(false).notNull(),
   createdAt: timestamp('created_at').defaultNow(),
   updatedAt: timestamp('updated_at').$onUpdate(() => new Date()),
 }, (table) => ({
@@ -537,3 +543,72 @@ export const taarufProgramApplications = pgTable('taaruf_program_applications', 
   statusCheck: check('taaruf_program_applications_status_check', sql`${table.status} IN ('submitted', 'selected', 'rejected', 'accepted', 'declined')`),
   paymentStatusCheck: check('taaruf_program_applications_payment_status_check', sql`${table.paymentStatus} IN ('not_required', 'pending', 'paid')`),
 }));
+
+
+// ── Share your biodata (web only) — see drizzle/0019_add_profile_sharing.sql ──
+
+export const shareSettings = pgTable('share_settings', {
+  userId: uuid('user_id').primaryKey().references(() => users.id, { onDelete: 'cascade' }),
+  sharingEnabled: boolean('sharing_enabled').default(true).notNull(),
+  // 'first' | 'full'
+  nameMode: text('name_mode').default('first').notNull(),
+  // 'blurred' | 'own'
+  photoMode: text('photo_mode').default('blurred').notNull(),
+  // Keys from the server-side allowlist in src/lib/share/fields.ts — never phone/email/ITS.
+  visibleFields: jsonb('visible_fields').$type<string[]>().default(sql`'["age","maritalStatus","city"]'::jsonb`).notNull(),
+  maxActiveLinks: integer('max_active_links').default(5).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).$onUpdate(() => new Date()),
+}, (table) => ({
+  nameModeCheck: check('share_settings_name_mode_check', sql`${table.nameMode} IN ('first', 'full')`),
+  photoModeCheck: check('share_settings_photo_mode_check', sql`${table.photoMode} IN ('blurred', 'own')`),
+}));
+
+export const shareExtraDetails = pgTable('share_extra_details', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  label: text('label').notNull(),
+  value: text('value').notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  userIdx: index('share_extra_details_user_idx').on(table.userId),
+}));
+
+export const shareLinks = pgTable('share_links', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').references(() => users.id, { onDelete: 'cascade' }).notNull(),
+  label: text('label').notNull(),
+  token: text('token').unique().notNull(),
+  // 'one_view' | '24h' | '3d' | '7d' | '30d'
+  expiryKind: text('expiry_kind').notNull(),
+  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+  usedAt: timestamp('used_at', { withTimezone: true }),
+  stoppedAt: timestamp('stopped_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow(),
+}, (table) => ({
+  userIdx: index('share_links_user_idx').on(table.userId),
+  expiryKindCheck: check('share_links_expiry_kind_check', sql`${table.expiryKind} IN ('one_view', '24h', '3d', '7d', '30d')`),
+}));
+
+export const shareLinkOpens = pgTable('share_link_opens', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  linkId: uuid('link_id').references(() => shareLinks.id, { onDelete: 'cascade' }).notNull(),
+  openedAt: timestamp('opened_at', { withTimezone: true }).defaultNow().notNull(),
+  // 'iphone' | 'android' | 'desktop' | 'other'
+  device: text('device').default('other').notNull(),
+  // 'whatsapp' | 'instagram' | 'facebook' | 'direct' | 'other'
+  source: text('source').default('other').notNull(),
+}, (table) => ({
+  linkIdx: index('share_link_opens_link_idx').on(table.linkId, table.openedAt),
+  openedAtIdx: index('share_link_opens_opened_at_idx').on(table.openedAt),
+}));
+
+export const sharePromoSettings = pgTable('share_promo_settings', {
+  id: smallint('id').primaryKey().default(1),
+  promoText: text('promo_text').notNull(),
+  joinLabel: text('join_label').notNull(),
+  instagramUrl: text('instagram_url').notNull(),
+  siteUrl: text('site_url').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }),
+});
