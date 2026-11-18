@@ -33,6 +33,9 @@ export async function middleware(request: NextRequest) {
   if (!pathname.startsWith('/api/')) {
     const requestHeaders = new Headers(request.headers);
     requestHeaders.set('x-pathname', pathname);
+    // The query string, so the signed-in app layout can keep campaign tags (utm_*) when it
+    // sends a logged-out visitor to the login popup. Only utm_* are ever used from it.
+    requestHeaders.set('x-search', request.nextUrl.search);
     return NextResponse.next({ request: { headers: requestHeaders } });
   }
 

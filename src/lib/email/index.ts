@@ -26,6 +26,7 @@ import { ProgramSelectionEmail } from './templates/ProgramSelectionEmail';
 import { ProgramPassEmail } from './templates/ProgramPassEmail';
 import { ShareInviteEmail } from './templates/ShareInviteEmail';
 import { DEFAULT_SHARE_INVITE_SUBJECT } from './defaultMessages';
+import { campaignQuery } from '../utm';
 
 const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -196,9 +197,10 @@ export async function sendShareInviteEmail(
     React.createElement(ShareInviteEmail, {
       name,
       message: opts.message,
-      // utm tags let Google Analytics show how many people came from this email.
-      pageUrl: `${PUBLIC_APP_URL}/my-taaruf-card?utm_source=email&utm_medium=email&utm_campaign=my-taaruf-card`,
-      shareUrl: `${PUBLIC_APP_URL}/share`,
+      // utm tags let Google Analytics show how many people came from this email, and
+      // utm_content says which button they pressed.
+      pageUrl: `${PUBLIC_APP_URL}/my-taaruf-card?${campaignQuery('see_how_it_works')}`,
+      shareUrl: `${PUBLIC_APP_URL}/share?${campaignQuery('share_now')}`,
     }),
     { bypassKillSwitch: true },
   );
