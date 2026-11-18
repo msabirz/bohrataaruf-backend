@@ -6,6 +6,7 @@ const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 export const metadata: Metadata = {
   title: 'Terms of Service',
   description: `Terms and conditions for using ${APP_NAME}.`,
+  alternates: { canonical: '/terms' },
 };
 
 export default function TermsPage() {

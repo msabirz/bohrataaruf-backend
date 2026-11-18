@@ -1,4 +1,5 @@
 import React from 'react';
+import type { Metadata } from 'next';
 import { ShieldCheck, Search, Heart, Users, ShieldOff, EyeOff, Lock, MessageCircleOff, Link as LinkIcon, Eye, Zap, MapPin, ChevronDown } from 'lucide-react';
 import IndiaMap from '@/components/marketing/IndiaMap';
 import RegisteredCounter from '@/components/marketing/RegisteredCounter';
@@ -6,6 +7,10 @@ import { MarketingModeGate } from '@/components/marketing/MarketingModeGate';
 import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBanner';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
+
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+};
 
 export default function MarketingHomePage() {
   return (

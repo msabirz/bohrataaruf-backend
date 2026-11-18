@@ -13,8 +13,9 @@ const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: `Taaruf Programs | ${APP_NAME}`,
+  title: 'Taaruf Programs',
   description: `In-person community gatherings organized by ${APP_NAME} where verified members can meet face to face, in a respectful and supervised setting.`,
+  alternates: { canonical: '/events' },
 };
 
 function formatDateRange(start: string, end: string | null): string {

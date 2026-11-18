@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, Filter, ShieldCheck, ShieldAlert, Shield, ShieldX, User, ChevronRight, X } from 'lucide-react';
-import { buildDefaultPrelaunchMessage } from '@/lib/email/defaultMessages';
+import { buildDefaultPrelaunchMessage, buildDefaultShareInviteMessage, DEFAULT_SHARE_INVITE_SUBJECT } from '@/lib/email/defaultMessages';
 
 interface AdminUser {
   id: string;
@@ -48,6 +48,9 @@ export default function AdminUsersList() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [sendingId, setSendingId] = useState<string | null>(null);
   const [shareSendingId, setShareSendingId] = useState<string | null>(null);
+  const [shareCompose, setShareCompose] = useState<AdminUser | null>(null);
+  const [shareSubject, setShareSubject] = useState(DEFAULT_SHARE_INVITE_SUBJECT);
+  const [shareMessage, setShareMessage] = useState(buildDefaultShareInviteMessage());
   const [composeUser, setComposeUser] = useState<AdminUser | null>(null);
   const [composeMessage, setComposeMessage] = useState('');
 
@@ -165,15 +168,30 @@ export default function AdminUsersList() {
     }
   };
 
-  const handleSendShareInvite = async (user: AdminUser, e: React.MouseEvent) => {
+  const openShareCompose = (user: AdminUser, e: React.MouseEvent) => {
     e.stopPropagation(); // don't trigger the row's navigate-to-detail click
-    if (!window.confirm(`Email ${user.name} (${user.email}) a button to her share settings?`)) return;
+    setShareCompose(user);
+    setShareSubject(DEFAULT_SHARE_INVITE_SUBJECT);
+    setShareMessage(buildDefaultShareInviteMessage());
+  };
+
+  const handleConfirmSendShare = async () => {
+    if (!shareCompose) return;
+    const user = shareCompose;
     setShareSendingId(user.id);
     try {
-      const res = await fetch(`/api/admin/users/${user.id}/share-invite`, { method: 'POST' });
+      const res = await fetch(`/api/admin/users/${user.id}/share-invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subject: shareSubject, message: shareMessage }),
+      });
       const data = await res.json();
-      if (res.ok && data.success) fetchUsers();
-      else alert(data.error || 'Failed to send email');
+      if (res.ok && data.success) {
+        setShareCompose(null);
+        fetchUsers();
+      } else {
+        alert(data.error || 'Failed to send email');
+      }
     } catch {
       alert('Network error sending email');
     } finally {
@@ -404,7 +422,7 @@ export default function AdminUsersList() {
                                     : 'Not sent yet'}
                           </span>
                           <button
-                            onClick={(e) => handleSendShareInvite(user, e)}
+                            onClick={(e) => openShareCompose(user, e)}
                             disabled={shareSendingId === user.id}
                             className="px-3 py-1.5 rounded-lg text-xs font-medium border border-[#8C6A3F] text-[#8C6A3F] hover:bg-[#8C6A3F] hover:text-white transition-colors disabled:opacity-50"
                           >
@@ -489,6 +507,106 @@ export default function AdminUsersList() {
               >
                 {sendingId === composeUser.id ? 'Sending...' : composeUser.prelaunchAckSentAt ? 'Re-send' : 'Send'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {shareCompose && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl">
+            <div className="px-6 py-4 border-b border-gray-100 flex justify-between items-center bg-gray-50">
+              <div>
+                <h2 className="text-lg font-bold text-gray-800">
+                  {shareCompose.shareInviteSentAt ? 'Send again' : 'Send'} &quot;{shareSubject || DEFAULT_SHARE_INVITE_SUBJECT}&quot; to {shareCompose.name}
+                </h2>
+                <p className="text-sm text-gray-500">{shareCompose.email} · one email, counts towards your monthly email quota</p>
+              </div>
+              <button onClick={() => setShareCompose(null)} className="text-gray-400 hover:text-gray-600 transition-colors p-2" aria-label="Close">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid md:grid-cols-2 overflow-y-auto">
+              <div className="p-6 space-y-4 md:border-r border-gray-100">
+                <div>
+                  <label htmlFor="share-subject" className="block text-sm font-medium text-gray-700 mb-1.5">Subject</label>
+                  <div className="flex border border-gray-300 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-[#8C6A3F]">
+                    <span className="bg-gray-100 px-3 py-2.5 text-sm text-gray-500 border-r border-gray-300 shrink-0">Bohra Taaruf:</span>
+                    <input id="share-subject" value={shareSubject} onChange={(e) => setShareSubject(e.target.value)} maxLength={100} className="flex-1 px-3 py-2.5 text-sm outline-none min-w-0" />
+                  </div>
+                </div>
+                <div>
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label htmlFor="share-message" className="text-sm font-medium text-gray-700">Message (right after &quot;Assalamu Alaikum {shareCompose.name},&quot;)</label>
+                    <button
+                      type="button"
+                      onClick={() => { setShareSubject(DEFAULT_SHARE_INVITE_SUBJECT); setShareMessage(buildDefaultShareInviteMessage()); }}
+                      className="text-[#8C6A3F] text-sm font-semibold hover:underline"
+                    >
+                      Reset to default
+                    </button>
+                  </div>
+                  <textarea
+                    id="share-message"
+                    value={shareMessage}
+                    onChange={(e) => setShareMessage(e.target.value)}
+                    rows={9}
+                    maxLength={2000}
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-[#8C6A3F] focus:border-[#8C6A3F] transition-all text-sm leading-relaxed resize-y"
+                  />
+                  <p className="text-xs text-gray-500 mt-1">A blank line starts a new paragraph.</p>
+                </div>
+                <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs leading-relaxed text-gray-600">
+                  <p className="font-bold text-gray-700 mb-1">Always included (not editable)</p>
+                  Header with the logo and &quot;Your Profile. Your Taaruf.&quot; · greeting with their name · the three steps · the two buttons (&quot;See how it works&quot;, &quot;Share now&quot;) · the old way vs new way picture · &quot;Before you share&quot; safety notes · Instagram and website links
+                </div>
+              </div>
+
+              <div className="p-6 bg-[#F8F5F0]">
+                <p className="text-sm font-medium text-gray-700 mb-2">Preview (updates as you type)</p>
+                <div className="bg-[#FFFFFC] border border-[#E5E0D8] rounded-xl overflow-hidden text-[13px] leading-relaxed" style={{ fontFamily: 'Georgia, serif', color: '#222' }}>
+                  <div className="bg-[#3F2A16] px-4 py-3 flex items-center">
+                    <div className="w-[72px]"><img src="/email/logo.png" alt="" className="w-7 h-auto" /><div className="text-white text-[11px] mt-1">Bohra Taaruf</div></div>
+                    <div className="flex-1 text-center text-white text-xl leading-tight">Your Profile.<br />Your Taaruf.</div>
+                    <div className="w-[72px]" />
+                  </div>
+                  <div className="px-5 py-4 space-y-2.5">
+                    <div className="text-[10px] tracking-[0.18em] uppercase text-[#8C6A3F] font-bold" style={{ fontFamily: 'Inter, sans-serif' }}>Bohra Taaruf brings you something new</div>
+                    <div>Assalamu Alaikum {shareCompose.name},</div>
+                    {(shareMessage.trim() ? shareMessage : buildDefaultShareInviteMessage()).split(/\n\s*\n/).map((p) => p.trim()).filter(Boolean).map((p, i) => (
+                      <p key={i}>{p}</p>
+                    ))}
+                    <div className="text-[12px] text-gray-600">1. Select details to share · 2. Create a link and send it · 3. Watch your analytics</div>
+                    <div className="flex gap-2 justify-center pt-1">
+                      <span className="bg-[#8C6A3F] text-white px-4 py-2 rounded-full">See how it works</span>
+                      <span className="border border-[#8C6A3F] text-[#8C6A3F] px-4 py-[7px] rounded-full">Share now</span>
+                    </div>
+                    <img src="/email/old-vs-new.png" alt="" className="w-40 mx-auto h-auto pt-2" />
+                    <div className="text-[11px] text-center text-gray-500">+ safety notes, Instagram @bohrataaruf and bohrataaruf.com</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="p-4 bg-white border-t border-gray-100 flex flex-wrap items-center justify-between gap-3">
+              <span className="text-xs text-gray-500 max-w-md">If the email provider rejects it (for example the monthly quota is used up), you will see an error and it is not marked as sent.</span>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShareCompose(null)}
+                  disabled={shareSendingId === shareCompose.id}
+                  className="px-5 py-2.5 rounded-lg border border-gray-300 text-gray-700 font-medium hover:bg-gray-50 transition-colors disabled:opacity-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleConfirmSendShare}
+                  disabled={shareSendingId === shareCompose.id || shareSubject.trim().length < 3}
+                  className="px-5 py-2.5 rounded-lg bg-[#8C6A3F] hover:bg-[#7a5b35] text-white font-semibold transition-colors disabled:opacity-50"
+                >
+                  {shareSendingId === shareCompose.id ? 'Sending...' : 'Send email'}
+                </button>
+              </div>
             </div>
           </div>
         </div>

@@ -5,8 +5,9 @@ import { breadcrumbJsonLd } from '@/lib/seo';
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
 export const metadata: Metadata = {
-  title: `About Us | ${APP_NAME}`,
+  title: 'About Us',
   description: `Learn why we built ${APP_NAME} and what we believe about privacy, dignity, and connecting the Dawoodi Bohra community.`,
+  alternates: { canonical: '/about' },
 };
 
 const breadcrumb = breadcrumbJsonLd([

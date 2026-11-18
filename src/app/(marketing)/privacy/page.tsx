@@ -6,6 +6,7 @@ const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 export const metadata: Metadata = {
   title: 'Privacy Policy',
   description: `How we protect your data and privacy at ${APP_NAME}.`,
+  alternates: { canonical: '/privacy' },
 };
 
 export default function PrivacyPage() {

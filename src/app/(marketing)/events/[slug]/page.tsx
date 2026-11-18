@@ -33,10 +33,11 @@ async function getProgram(slug: string) {
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }): Promise<Metadata> {
   const { slug } = await props.params;
   const program = await getProgram(slug);
-  if (!program) return { title: `Taaruf Program | ${APP_NAME}` };
+  if (!program) return { title: 'Taaruf Program' };
   return {
-    title: `${program.title} | ${APP_NAME}`,
+    title: program.title,
     description: program.description || `A Taaruf program in ${program.city}, organized by ${APP_NAME}.`,
+    alternates: { canonical: `/events/${slug}` },
   };
 }
 
