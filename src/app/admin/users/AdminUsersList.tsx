@@ -559,7 +559,7 @@ export default function AdminUsersList() {
                 </div>
                 <div className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-xs leading-relaxed text-gray-600">
                   <p className="font-bold text-gray-700 mb-1">Always included (not editable)</p>
-                  Header with the logo and &quot;Your Profile. Your Taaruf.&quot; · greeting with their name · the three steps · the two buttons (&quot;See how it works&quot;, &quot;Share now&quot;) · the old way vs new way picture · &quot;Before you share&quot; safety notes · Instagram and website links
+                  Header with the logo and &quot;Your Profile. Your Taaruf.&quot; · greeting with their name · the three steps · the two buttons (&quot;See how it works&quot;, &quot;Share now&quot;) · two short safety lines · the reply invitation · the Instagram line. The old-way-vs-new-way picture and the full safety list are on the web page.
                 </div>
               </div>
 
@@ -582,8 +582,9 @@ export default function AdminUsersList() {
                       <span className="bg-[#8C6A3F] text-white px-4 py-2 rounded-full">See how it works</span>
                       <span className="border border-[#8C6A3F] text-[#8C6A3F] px-4 py-[7px] rounded-full">Share now</span>
                     </div>
-                    <img src="/email/old-vs-new.png" alt="" className="w-40 mx-auto h-auto pt-2" />
-                    <div className="text-[11px] text-center text-gray-500">+ safety notes, Instagram @bohrataaruf and bohrataaruf.com</div>
+                    <div className="text-[12px] bg-[#FBF1D3] text-[#5B4308] rounded-lg px-3 py-2">Always trust links that start with bohrataaruf.com. Bohra Taaruf is always free and never charges money for any feature.</div>
+                    <div className="text-[12px]">Have a question? Just reply to this email and we will help.</div>
+                    <div className="text-[11px] text-gray-500 border-t border-gray-200 pt-2">Bohra Taaruf is awaiting Raza Mubarak. Follow us on Instagram: @bohrataaruf</div>
                   </div>
                 </div>
               </div>
