@@ -1,6 +1,9 @@
 import { shareCardImage, SHARE_CARD_SIZE } from '@/lib/share/ogCard';
 import { peekLink } from '@/lib/share/resolve';
 import { loadSharedProfile } from '@/lib/share/loadSharedProfile';
+import { allowRequest } from '@/lib/rateLimit';
+import { visitorKey } from '@/lib/share/visitor';
+import { headers } from 'next/headers';
 
 export const alt = 'A biodata shared on Bohra Taaruf';
 export const size = SHARE_CARD_SIZE;
@@ -14,7 +17,10 @@ export const dynamic = 'force-dynamic';
  */
 export default async function Image({ params }: { params: Promise<{ token: string }> }) {
   const { token } = await params;
-  const ctx = await peekLink(token);
+  // Per link and visitor only: chat apps fetch these cards from shared server addresses, so
+  // a per-address limit could block genuine previews. When limited, show the generic card.
+  const limited = !(await allowRequest('sharePublicViewLink', `og:${token}:${visitorKey(await headers())}`));
+  const ctx = limited ? null : await peekLink(token);
 
   let heading = 'Bohra Taaruf';
   let sub = 'A biodata shared with you';

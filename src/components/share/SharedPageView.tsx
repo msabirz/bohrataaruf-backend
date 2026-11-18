@@ -126,3 +126,15 @@ export function EndedPageView({ promo }: { promo: SharePromo }) {
     </main>
   );
 }
+
+export function RateLimitedView() {
+  return (
+    <main className="min-h-screen bg-background flex flex-col items-center justify-center px-6 py-12">
+      <div className="max-w-md w-full text-center">
+        <img src="/logo-light.svg" alt="" className="h-12 w-auto mx-auto" />
+        <h1 className="mt-5 text-2xl font-semibold text-foreground" style={SERIF}>Please wait a moment</h1>
+        <p className="mt-2 text-muted">This page was opened many times in a short while. Wait about a minute and try again.</p>
+      </div>
+    </main>
+  );
+}

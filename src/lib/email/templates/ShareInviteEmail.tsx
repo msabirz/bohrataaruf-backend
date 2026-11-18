@@ -1,24 +1,20 @@
 import * as React from 'react';
-import { Text, Button, Img, Row, Column, Section, Link } from '@react-email/components';
+import { Text, Button, Img, Row, Column, Section } from '@react-email/components';
 import { EmailLayout, bodyTextStyle, buttonStyle } from './Layout';
 import { buildDefaultShareInviteMessage } from '../defaultMessages';
-import { SAFETY_NOTES, STEPS } from '../../share/campaignContent';
+import { STEPS } from '../../share/campaignContent';
 
-// "Your Profile. Your Taaruf." campaign email, sent by an admin one user at a
-// time. Layout: one header (logo + name on the left, headline centred), a short
-// editable intro, the three steps, two side-by-side buttons, a picture of the old
-// way vs the new way, the safety notes, and Instagram + website links.
+// "Your Profile. Your Taaruf." campaign email, sent by an admin one user at a time.
+// Deliberately slim so it is less likely to be filed under Gmail's Promotions tab:
+// one header (logo + name left, headline centred), a short editable intro, the three
+// steps, two side-by-side buttons (the only two links), two short safety lines, an
+// invitation to reply, and Instagram + website as plain text. The old-way-vs-new-way
+// picture and the long safety list live on the public My Taaruf Card page instead.
 //
-// Email-safe on purpose: solid colours, table-based Row/Column, and a PNG logo and
-// picture (many email apps block SVG and ignore CSS patterns and gradients).
+// Email-safe: solid colours, table-based Row/Column, and a PNG logo (many email apps
+// block SVG and ignore CSS patterns and gradients).
 const SITE = 'https://bohrataaruf.com';
-const INSTAGRAM = 'https://www.instagram.com/bohrataaruf';
 const serif = 'Georgia, serif';
-
-const pill: React.CSSProperties = {
-  display: 'inline-block', border: '1px solid #C9A96E', borderRadius: '999px', padding: '8px 18px',
-  fontFamily: serif, fontSize: '13px', fontWeight: 600, color: '#6E4520', textDecoration: 'none', margin: '4px',
-};
 
 export function ShareInviteEmail({
   name, message, pageUrl, shareUrl,
@@ -80,33 +76,29 @@ export function ShareInviteEmail({
         </Row>
       </Section>
 
-      {/* Old way vs new way: a picture */}
-      <Section style={{ marginTop: '32px', textAlign: 'center' as const }}>
-        <Text style={{ fontFamily: serif, fontSize: '18px', color: '#211F1A', margin: '0 0 12px', textAlign: 'center' as const }}>The old way, and the new way</Text>
-        <Img
-          src={`${SITE}/email/old-vs-new.png`}
-          alt="The old way: a PDF forwarded to people you do not know, with no control. The new way: one private card that goes only to the person you chose."
-          width="340"
-          style={{ margin: '0 auto', display: 'block', width: '340px', maxWidth: '100%', height: 'auto' }}
-        />
-        <Text style={{ ...bodyTextStyle, color: '#B4442F', fontSize: '13px', textAlign: 'center' as const, margin: '10px 0 0' }}>
-          The biggest risk of a PDF in chats: you cannot control who sees it, or where it is forwarded.
+      <Text style={{ ...bodyTextStyle, fontSize: '12px', color: '#6B6558', textAlign: 'center' as const, margin: '12px 0 0' }}>
+        &quot;Share now&quot; asks you to log in first, then opens your share settings.
+      </Text>
+
+      {/* Two short safety lines (the full list is on the web page) */}
+      <Section style={{ marginTop: '26px', backgroundColor: '#FBF1D3', borderRadius: '12px', padding: '14px 18px' }}>
+        <Text style={{ ...bodyTextStyle, fontSize: '13px', color: '#5B4308', margin: '0 0 6px' }}>
+          Always trust links that start with bohrataaruf.com.
+        </Text>
+        <Text style={{ ...bodyTextStyle, fontSize: '13px', color: '#5B4308', margin: 0 }}>
+          Bohra Taaruf is always free and never charges money for any feature.
         </Text>
       </Section>
 
-      {/* Safety notes */}
-      <Section style={{ marginTop: '26px', backgroundColor: '#FBF1D3', borderRadius: '12px', padding: '16px 18px' }}>
-        <Text style={{ fontFamily: serif, fontSize: '16px', color: '#3F2A16', margin: '0 0 8px' }}>Before you share, please remember</Text>
-        {SAFETY_NOTES.slice(0, 6).map((n, i) => (
-          <Text key={n} style={{ ...bodyTextStyle, fontSize: '13px', color: '#5B4308', margin: '0 0 6px' }}>{i + 1}. {n}</Text>
-        ))}
-      </Section>
+      <Text style={{ ...bodyTextStyle, margin: '22px 0 0' }}>
+        Have a question? Just reply to this email and we will help.
+      </Text>
 
-      {/* Instagram + website */}
-      <Section style={{ marginTop: '26px', textAlign: 'center' as const, borderTop: '1px solid #E5E0D8', paddingTop: '18px' }}>
-        <Text style={{ ...bodyTextStyle, textAlign: 'center' as const, color: '#3F2A16' }}>Bohra Taaruf is awaiting Raza Mubarak. Stay in touch:</Text>
-        <Link href={INSTAGRAM} style={pill}>Instagram @bohrataaruf</Link>
-        <Link href={SITE} style={pill}>bohrataaruf.com</Link>
+      {/* Plain text, not links: fewer links keeps the email out of the Promotions tab */}
+      <Section style={{ marginTop: '22px', borderTop: '1px solid #E5E0D8', paddingTop: '16px' }}>
+        <Text style={{ ...bodyTextStyle, fontSize: '13px', color: '#6B6558', margin: 0 }}>
+          Bohra Taaruf is awaiting Raza Mubarak. Follow us on Instagram: @bohrataaruf
+        </Text>
       </Section>
     </EmailLayout>
   );

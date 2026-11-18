@@ -23,8 +23,9 @@ export function buildDefaultPrelaunchMessage(needsReupload: boolean, rejectionRe
 
 // "Your Profile. Your Taaruf." campaign email. The subject (shown as
 // "Bohra Taaruf: <subject>") and the intro text are editable per send in the
-// admin panel; the greeting, steps, buttons, the old-vs-new picture, the safety
-// notes and the Instagram and website links stay fixed.
+// admin panel; the header, greeting, steps, the two buttons, two short safety
+// lines, the reply invitation and the Instagram line stay fixed. (It is slim on
+// purpose, to stay out of Gmail's Promotions tab.)
 export const DEFAULT_SHARE_INVITE_SUBJECT = 'Your Profile. Your Taaruf.';
 
 export function buildDefaultShareInviteMessage(): string {
