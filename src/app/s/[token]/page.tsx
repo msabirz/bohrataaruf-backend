@@ -5,7 +5,9 @@ import { parseDevice, parseSource } from '@/lib/share/links';
 import { openLink, peekLink } from '@/lib/share/resolve';
 import { loadSharedProfile } from '@/lib/share/loadSharedProfile';
 import { getSharePromo } from '@/lib/share/promo';
-import { SharedPageView, EndedPageView } from '@/components/share/SharedPageView';
+import { SharedPageView, EndedPageView, RateLimitedView } from '@/components/share/SharedPageView';
+import { allowRequest } from '@/lib/rateLimit';
+import { visitorKey } from '@/lib/share/visitor';
 
 // Link state changes at any moment (stopped, used, switched off) — never cache.
 export const dynamic = 'force-dynamic';
@@ -46,6 +48,13 @@ export default async function SharedPage({ params }: { params: Promise<{ token: 
   // Link-preview crawlers get a neutral page and never spend a one-view link;
   // the preview card itself comes from generateMetadata + opengraph-image.
   if (isBot(ua)) return <EndedPageView promo={promo} />;
+
+  // Rate limit real visitors before any database work: per visitor address, and per link
+  // and visitor so reloading one link cannot inflate its opens. Fails open if Upstash is down.
+  const visitor = visitorKey(headerStore);
+  if (!(await allowRequest('sharePublicView', visitor)) || !(await allowRequest('sharePublicViewLink', `${token}:${visitor}`))) {
+    return <RateLimitedView />;
+  }
 
   const ctx = await openLink(token, {
     device: parseDevice(ua),
