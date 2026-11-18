@@ -3,6 +3,7 @@ import { redirect } from 'next/navigation';
 import { headers } from 'next/headers';
 import { getAuthenticatedUserFromCookie } from '@/lib/api/pageAuth';
 import { AppHeader } from '@/components/app/AppHeader';
+import { utmParamsFromSearch } from '@/lib/utm';
 import { ShareAnnouncement } from '@/components/share/ShareAnnouncement';
 import { GoogleTagManager } from '@/components/analytics/GoogleTagManager';
 import '../globals.css';
@@ -28,7 +29,12 @@ export default async function AppLayout({
     // Set by middleware for these specific routes (see src/middleware.ts) so the
     // login modal can send the user back to where they were trying to go.
     const pathname = headerList.get('x-pathname') || '';
-    const redirectTarget = pathname ? `/?redirect=${encodeURIComponent(pathname)}` : '/';
+    // Keep the email campaign's tags through the bounce so Google Analytics can still
+    // credit this visit to the campaign (see src/lib/utm.ts).
+    const params = utmParamsFromSearch(headerList.get('x-search'));
+    const redirectTarget = pathname
+      ? `/?${new URLSearchParams({ redirect: pathname, ...Object.fromEntries(params) }).toString()}`
+      : '/';
     redirect(redirectTarget);
   }
 
