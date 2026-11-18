@@ -22,14 +22,23 @@ const COLORS = {
   muted: '#6B6558',
 };
 
-export function EmailLayout({ previewText, children }: { previewText: string; children: React.ReactNode }) {
+export function EmailLayout({
+  previewText, children, header, maxWidth = 480,
+}: {
+  previewText: string;
+  children: React.ReactNode;
+  /** Replaces the default dark logo header (used by campaign emails). */
+  header?: React.ReactNode;
+  maxWidth?: number;
+}) {
   return (
     <Html>
       <Head>
         <title>{previewText}</title>
       </Head>
       <Body style={{ backgroundColor: COLORS.background, margin: 0, padding: '32px 16px', fontFamily: 'Georgia, serif' }}>
-        <Container style={{ maxWidth: '480px', margin: '0 auto', backgroundColor: COLORS.surface, borderRadius: '16px', border: `1px solid ${COLORS.border}`, overflow: 'hidden' }}>
+        <Container style={{ maxWidth: `${maxWidth}px`, margin: '0 auto', backgroundColor: COLORS.surface, borderRadius: '16px', border: `1px solid ${COLORS.border}`, overflow: 'hidden' }}>
+          {header ?? (
           <Section style={{ backgroundColor: '#211F1A', padding: '36px 32px', textAlign: 'center' as const }}>
             <Img
               src="https://bohrataaruf.com/logo-light.svg"
@@ -42,6 +51,7 @@ export function EmailLayout({ previewText, children }: { previewText: string; ch
               Bohra Taaruf
             </Text>
           </Section>
+          )}
 
           <Section style={{ padding: '32px' }}>
             {children}

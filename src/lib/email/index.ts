@@ -25,6 +25,7 @@ import { PreLaunchAcknowledgementEmail } from './templates/PreLaunchAcknowledgem
 import { ProgramSelectionEmail } from './templates/ProgramSelectionEmail';
 import { ProgramPassEmail } from './templates/ProgramPassEmail';
 import { ShareInviteEmail } from './templates/ShareInviteEmail';
+import { DEFAULT_SHARE_INVITE_SUBJECT } from './defaultMessages';
 
 const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -177,17 +178,28 @@ export async function sendProgramPassEmail(
 }
 
 /**
- * Admin-sent invitation to the "Share your biodata" feature. Unlike the other
- * sends, this one is NOT fire-and-forget: it throws if the provider rejects it
- * (for example when the monthly email quota is used up), so the admin sees
- * "could not send" and nothing is logged as sent. Like the pre-launch email it
- * is a deliberate one-at-a-time admin action, so it bypasses EMAIL_ENABLED.
+ * Admin-sent "Your Profile. Your Taaruf." campaign email (introduces the Share feature
+ * and links to the public My Taaruf Card page). The subject and the intro text are
+ * editable per send. Unlike the other sends it is NOT fire-and-forget: it throws if the
+ * provider rejects it (for example when the monthly quota is used up), so the admin
+ * sees "could not send" and nothing is logged as sent. Like the pre-launch email it is
+ * a deliberate one-at-a-time admin action, so it bypasses EMAIL_ENABLED.
  */
-export async function sendShareInviteEmail(to: string, name: string): Promise<void> {
+export async function sendShareInviteEmail(
+  to: string,
+  name: string,
+  opts: { subject?: string; message?: string } = {},
+): Promise<void> {
   await dispatch(
     to,
-    'Share your biodata, your way',
-    React.createElement(ShareInviteEmail, { name, shareUrl: `${PUBLIC_APP_URL}/share` }),
+    opts.subject?.trim() || DEFAULT_SHARE_INVITE_SUBJECT,
+    React.createElement(ShareInviteEmail, {
+      name,
+      message: opts.message,
+      // utm tags let Google Analytics show how many people came from this email.
+      pageUrl: `${PUBLIC_APP_URL}/my-taaruf-card?utm_source=email&utm_medium=email&utm_campaign=my-taaruf-card`,
+      shareUrl: `${PUBLIC_APP_URL}/share`,
+    }),
     { bypassKillSwitch: true },
   );
 }

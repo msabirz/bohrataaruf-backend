@@ -1,3 +1,5 @@
+import type { Metadata } from 'next';
+
 // Central place for the site's canonical public URL and shared JSON-LD
 // builders — used by sitemap.ts, robots.ts, the marketing layout's
 // Organization/SiteNavigationElement schema, and per-page BreadcrumbList
@@ -45,6 +47,33 @@ export function breadcrumbJsonLd(items: { name: string; path: string }[]) {
       position: i + 1,
       name: item.name,
       item: `${SITE_URL}${item.path}`,
+    })),
+  };
+}
+
+/**
+ * Per-page metadata for public pages: a unique title and description, a canonical
+ * address, and matching Open Graph tags. `title` must NOT include the brand name,
+ * because the marketing layout's title template adds " | Bohra Taaruf" itself.
+ */
+export function pageMetadata({ title, description, path }: { title: string; description: string; path: string }): Metadata {
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: { title: `${title} | ${APP_NAME}`, description, url: `${SITE_URL}${path}`, siteName: APP_NAME, type: 'website', locale: 'en_US' },
+  };
+}
+
+/** FAQPage structured data: lets search engines show the answers as expandable results. */
+export function faqJsonLd(items: { q: string; a: string }[]) {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: items.map((i) => ({
+      '@type': 'Question',
+      name: i.q,
+      acceptedAnswer: { '@type': 'Answer', text: i.a },
     })),
   };
 }

@@ -19,3 +19,16 @@ export function buildDefaultPrelaunchMessage(needsReupload: boolean, rejectionRe
 
   return `${base}\n\n${reuploadAsk}`;
 }
+
+
+// "Your Profile. Your Taaruf." campaign email. The subject (shown as
+// "Bohra Taaruf: <subject>") and the intro text are editable per send in the
+// admin panel; the greeting, steps, buttons, the old-vs-new picture, the safety
+// notes and the Instagram and website links stay fixed.
+export const DEFAULT_SHARE_INVITE_SUBJECT = 'Your Profile. Your Taaruf.';
+
+export function buildDefaultShareInviteMessage(): string {
+  return `While we wait for Raza Mubarak to open Bohra Taaruf to everyone, we have built something you can use today.
+
+Turn your biodata from a PDF forwarded in many chats into one private link that you control. You choose exactly what people see, and you can switch it off any time.`;
+}

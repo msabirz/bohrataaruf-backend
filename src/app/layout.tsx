@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ModeProvider } from "@/lib/context/ModeContext";
+import { SITE_URL } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,6 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  // Lets relative canonical and Open Graph addresses resolve to the real domain.
+  metadataBase: new URL(SITE_URL),
   title: "Bohra Taaruf",
   description: "Through the right door, together — a privacy-first matrimonial platform for the Dawoodi Bohra community.",
 };
