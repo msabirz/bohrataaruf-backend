@@ -9,6 +9,7 @@ import {
 import { useModeContext } from '@/lib/context/ModeContext';
 import { shareIsNew } from '@/lib/share/newBadge';
 import { ShareAnnouncement } from '@/components/share/ShareAnnouncement';
+import { safeRedirectPath, redirectLabel } from '@/lib/safeRedirect';
 import { useLocale, LOCALIZATION_ENABLED } from '@/lib/context/LocaleContext';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 
@@ -49,7 +50,8 @@ export function Header() {
   // to someone who is already logged in is wrong, so for them the leftover parameter is
   // just dropped from the address bar.
   useEffect(() => {
-    const redirect = new URLSearchParams(window.location.search).get('redirect');
+    // Only a path on this site is accepted; anything else is treated as if it were not there.
+    const redirect = safeRedirectPath(new URLSearchParams(window.location.search).get('redirect'));
     const openLoginForRedirect = () => {
       if (!redirect) return;
       setRedirectTarget(redirect);
@@ -330,6 +332,9 @@ export function Header() {
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
               </div>
+              {redirectTarget && redirectLabel(redirectTarget) && forgotPasswordStep === 0 && (
+                <p className="-mt-3 mb-5 text-sm text-muted">Log in to continue to {redirectLabel(redirectTarget)}.</p>
+              )}
               
               {isSuccess ? (
                 <div className="text-center py-8 animate-in fade-in zoom-in-95">

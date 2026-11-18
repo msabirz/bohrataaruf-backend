@@ -76,6 +76,10 @@ export function ShareInviteEmail({
         </Row>
       </Section>
 
+      <Text style={{ ...bodyTextStyle, fontSize: '12px', color: '#6B6558', textAlign: 'center' as const, margin: '12px 0 0' }}>
+        &quot;Share now&quot; asks you to log in first, then opens your share settings.
+      </Text>
+
       {/* Two short safety lines (the full list is on the web page) */}
       <Section style={{ marginTop: '26px', backgroundColor: '#FBF1D3', borderRadius: '12px', padding: '14px 18px' }}>
         <Text style={{ ...bodyTextStyle, fontSize: '13px', color: '#5B4308', margin: '0 0 6px' }}>

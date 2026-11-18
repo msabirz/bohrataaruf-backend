@@ -582,6 +582,7 @@ export default function AdminUsersList() {
                       <span className="bg-[#8C6A3F] text-white px-4 py-2 rounded-full">See how it works</span>
                       <span className="border border-[#8C6A3F] text-[#8C6A3F] px-4 py-[7px] rounded-full">Share now</span>
                     </div>
+                    <div className="text-[11px] text-center text-gray-500">&quot;Share now&quot; asks you to log in first, then opens your share settings.</div>
                     <div className="text-[12px] bg-[#FBF1D3] text-[#5B4308] rounded-lg px-3 py-2">Always trust links that start with bohrataaruf.com. Bohra Taaruf is always free and never charges money for any feature.</div>
                     <div className="text-[12px]">Have a question? Just reply to this email and we will help.</div>
                     <div className="text-[11px] text-gray-500 border-t border-gray-200 pt-2">Bohra Taaruf is awaiting Raza Mubarak. Follow us on Instagram: @bohrataaruf</div>
