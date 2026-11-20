@@ -119,7 +119,15 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
     editorProps: {
       attributes: { class: 'blog-editor-content min-h-[360px] px-4 py-3 focus:outline-none' },
       // A screenshot copied on a Mac (Cmd+Shift+Ctrl+4) or any copied picture: paste it straight in.
-      handlePaste: (_view, event) => {
+      handlePaste: (view, event) => {
+        // Words selected + a page on this site copied (such as /faq): turn the words into a link.
+        // The editor only does this by itself for full web addresses.
+        const pasted = event.clipboardData?.getData('text/plain')?.trim() ?? '';
+        if (!view.state.selection.empty && /^\/(?!\/)[A-Za-z0-9\-_/#?=&.%]*$/.test(pasted)) {
+          event.preventDefault();
+          editorRef.current?.chain().focus().extendMarkRange('link').setLink({ href: pasted }).run();
+          return true;
+        }
         const images = Array.from(event.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
         if (!images.length) return false;
         event.preventDefault();
