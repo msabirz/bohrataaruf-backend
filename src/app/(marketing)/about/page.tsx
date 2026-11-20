@@ -1,6 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { breadcrumbJsonLd } from '@/lib/seo';
+import { breadcrumbJsonLd, INDEPENDENCE_LONG } from '@/lib/seo';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -43,6 +43,9 @@ export default function AboutPage() {
           <p>
             Every verified member of the Dawoodi Bohra community, wherever they are — because geography shouldn't be the reason two right-fit people never meet.
           </p>
+
+          <h2>Independent, not official</h2>
+          <p>{INDEPENDENCE_LONG}</p>
         </div>
       </div>
     </div>

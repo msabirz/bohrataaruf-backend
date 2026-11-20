@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { InstagramIcon } from './InstagramIcon';
+import { INDEPENDENCE_SHORT } from '@/lib/seo';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -61,8 +62,8 @@ export function Footer() {
           <p className="text-sm text-muted">
             &copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.
           </p>
-          <p className="text-xs text-muted/70">
-            An independent initiative for the Dawoodi Bohra community. Not affiliated with any institution.
+          <p className="max-w-xl text-xs leading-relaxed text-muted md:text-right">
+            {INDEPENDENCE_SHORT}
           </p>
         </div>
       </div>

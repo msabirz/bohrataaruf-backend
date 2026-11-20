@@ -1,6 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
-
+import { INDEPENDENCE_LONG } from '@/lib/seo';
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
 export const metadata: Metadata = {
@@ -41,6 +41,9 @@ export default function TermsPage() {
         <p>
           {APP_NAME} is provided on an "as is" and "as available" basis. We make no warranties regarding the accuracy of profiles or the outcome of using the platform.
         </p>
+
+        <h2 className="text-2xl font-semibold text-foreground mt-12 mb-4">6. Independence</h2>
+        <p>{INDEPENDENCE_LONG}</p>
       </div>
     </div>
   );

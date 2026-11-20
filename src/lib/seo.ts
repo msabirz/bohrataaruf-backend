@@ -31,6 +31,15 @@ export const DEFAULT_SHARE_IMAGE = {
   alt: 'Bohra Taaruf: free, private matchmaking for Dawoodi Bohra families',
 };
 
+/**
+ * Wording that makes clear we are independent. Shown in the footer on every page, on About, and in the Terms.
+ * Never write that the site is "official" or "approved" by any Bohra body.
+ */
+export const INDEPENDENCE_SHORT =
+  'Bohra Taaruf is an independent community initiative. It is not an official website of, and is not affiliated with or endorsed by, ITNC, ITS, any Jamaat or any other Bohra institution or official site.';
+export const INDEPENDENCE_LONG =
+  'Bohra Taaruf is run independently by community volunteers. It is not an official website or service of, and is not affiliated with, endorsed by or connected to, ITNC, ITS, any Jamaat or any other Bohra institution or official site. We ask for a photo of your ITS card only so that our own team can check that each member is genuine; ITS itself takes no part in this and we have no access to any ITS system.';
+
 /** Site name and the spellings people search for (shown to search engines as alternate names). */
 export function websiteJsonLd() {
   return {
