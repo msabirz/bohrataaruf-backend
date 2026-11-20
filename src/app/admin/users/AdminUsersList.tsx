@@ -257,8 +257,8 @@ export default function AdminUsersList() {
       )}
 
       {/* Filters */}
-      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="relative flex-1 w-full">
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col gap-4">
+        <div className="relative w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
           <input 
             type="text"
@@ -269,7 +269,7 @@ export default function AdminUsersList() {
           />
         </div>
         
-        <div className="flex gap-4 w-full md:w-auto shrink-0 flex-wrap">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-3 w-full">
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}

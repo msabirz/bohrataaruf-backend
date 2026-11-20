@@ -162,7 +162,7 @@ export default function AdminReportsClient() {
       </div>
 
       <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col md:flex-row gap-4 items-center">
-        <div className="flex gap-4 w-full md:w-auto shrink-0">
+        <div className="flex flex-wrap gap-3 w-full md:w-auto">
           <select 
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
