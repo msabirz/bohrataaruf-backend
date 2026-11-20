@@ -1,9 +1,23 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useState, useSyncExternalStore } from 'react';
 import { Menu, X } from 'lucide-react';
 import AdminSidebar from '@/components/admin/AdminSidebar';
 import { AdminSessionPayload } from '@/lib/adminAuth';
+
+const COLLAPSE_KEY = 'admin-sidebar-collapsed';
+const COLLAPSE_EVENT = 'admin-sidebar-collapse-change';
+
+// The collapsed choice is remembered in this browser. useSyncExternalStore keeps the first
+// (server) render and the browser's first render identical, then switches to the saved value.
+function subscribe(callback: () => void) {
+  window.addEventListener(COLLAPSE_EVENT, callback);
+  window.addEventListener('storage', callback);
+  return () => { window.removeEventListener(COLLAPSE_EVENT, callback); window.removeEventListener('storage', callback); };
+}
+function readCollapsed(): boolean {
+  try { return window.localStorage.getItem(COLLAPSE_KEY) === '1'; } catch { return false; }
+}
 
 /**
  * The signed-in admin frame. On a computer the sidebar sits beside the page as before. On a
@@ -12,6 +26,11 @@ import { AdminSessionPayload } from '@/lib/adminAuth';
  */
 export default function AdminShell({ session, appName, children }: { session: AdminSessionPayload; appName: string; children: React.ReactNode }) {
   const [open, setOpen] = useState(false);
+  const collapsed = useSyncExternalStore(subscribe, readCollapsed, () => false);
+  const toggleCollapsed = useCallback(() => {
+    try { window.localStorage.setItem(COLLAPSE_KEY, readCollapsed() ? '0' : '1'); } catch { /* storage blocked: the menu still toggles for this visit */ }
+    window.dispatchEvent(new Event(COLLAPSE_EVENT));
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex font-sans text-gray-900">
@@ -21,7 +40,7 @@ export default function AdminShell({ session, appName, children }: { session: Ad
       <div
         className={`fixed inset-y-0 left-0 z-40 transition-transform duration-200 lg:sticky lg:top-0 lg:z-auto lg:h-screen lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
       >
-        <AdminSidebar session={session} onNavigate={() => setOpen(false)} />
+        <AdminSidebar session={session} onNavigate={() => setOpen(false)} collapsed={collapsed} onToggleCollapsed={toggleCollapsed} />
       </div>
 
       <div className="flex-1 flex flex-col min-w-0">
