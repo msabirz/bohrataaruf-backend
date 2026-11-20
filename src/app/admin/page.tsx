@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import { requireAdminAuth } from '@/lib/adminAuth';
 import Link from 'next/link';
 import { ChevronRight, Users, CheckCircle, Clock, XCircle, Heart, Share2, Mail, Flag } from 'lucide-react';
+import { formatDate } from '@/lib/formatDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -252,15 +253,15 @@ export default async function AdminDashboardOverview() {
                     className="opacity-70 group-hover:opacity-100 transition-opacity"
                     rx="0.5"
                   />
-                  <title>{`${d.date}: ${d.count} signups`}</title>
+                  <title>{`${formatDate(d.date)}: ${d.count} signups`}</title>
                 </g>
               );
             })}
           </svg>
         </div>
         <div className="flex justify-between mt-2 text-xs text-gray-400 font-medium">
-          <span>{dailySignups[0].date}</span>
-          <span>{dailySignups[29].date} (Today)</span>
+          <span>{formatDate(dailySignups[0].date)}</span>
+          <span>{formatDate(dailySignups[29].date)} (Today)</span>
         </div>
       </div>
     </div>

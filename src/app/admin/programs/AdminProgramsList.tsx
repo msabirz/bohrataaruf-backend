@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Calendar, MapPin, Plus } from 'lucide-react';
+import { formatDateRange } from '@/lib/formatDate';
 
 interface AdminProgram {
   id: string;
@@ -44,12 +45,6 @@ export default function AdminProgramsList() {
 
   useEffect(() => { fetchPrograms(); }, [fetchPrograms]);
 
-  const formatDateRange = (start: string, end: string | null) => {
-    const startD = new Date(start).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-    if (!end || end === start) return startD;
-    const endD = new Date(end).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-    return `${startD} – ${endD}`;
-  };
 
   return (
     <div className="space-y-6">

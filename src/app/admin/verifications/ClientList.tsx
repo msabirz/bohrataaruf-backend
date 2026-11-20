@@ -2,6 +2,7 @@
 
 import React, { useState } from "react";
 import { approveVerification, rejectVerification } from "./actions";
+import { formatDate } from '@/lib/formatDate';
 
 type VerificationItem = {
   id: string;
@@ -93,7 +94,7 @@ export default function ClientList({ items }: { items: VerificationItem[] }) {
               <p className="text-xs text-gray-400">
                 Submitted:{" "}
                 {item.createdAt
-                  ? new Date(item.createdAt).toLocaleDateString("en-US")
+                  ? formatDate(item.createdAt)
                   : "Unknown"}
               </p>
             </div>

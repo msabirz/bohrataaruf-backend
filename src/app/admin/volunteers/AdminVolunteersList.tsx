@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { ShieldCheck, ShieldAlert, ShieldX, UserCheck, Activity, Power, PowerOff } from 'lucide-react';
+import { formatDate } from '@/lib/formatDate';
 
 interface AdminVolunteer {
   id: string;
@@ -141,10 +142,10 @@ export default function AdminVolunteersList({ currentVolunteerId }: { currentVol
                         </div>
                       </td>
                       <td className="px-6 py-4 text-gray-600">
-                        {volunteer.lastActive ? new Date(volunteer.lastActive).toLocaleDateString() : 'Never'}
+                        {volunteer.lastActive ? formatDate(volunteer.lastActive) : 'Never'}
                       </td>
                       <td className="px-6 py-4 text-gray-500">
-                        {new Date(volunteer.createdAt).toLocaleDateString()}
+                        {formatDate(volunteer.createdAt)}
                       </td>
                       <td className="px-6 py-4 text-right">
                         <button

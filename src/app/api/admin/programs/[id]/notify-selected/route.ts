@@ -4,12 +4,8 @@ import { taarufProgramApplications, taarufPrograms, users, adminActionLog } from
 import { and, eq, isNull } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/adminAuth';
 import { sendProgramSelectionEmail } from '@/lib/email';
+import { formatDate, formatDateRange } from '@/lib/formatDate';
 
-function formatDateRange(start: string, end: string | null): string {
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  if (!end || end === start) return fmt(start);
-  return `${fmt(start)} – ${fmt(end)}`;
-}
 
 // Manual, admin-triggered step — deliberately not automatic on marking
 // someone 'selected', so the admin can finish selecting everyone for a

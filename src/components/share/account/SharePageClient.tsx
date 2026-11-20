@@ -6,6 +6,7 @@ import { Copy, Check, ShieldAlert, Trash2, Eye } from 'lucide-react';
 import { Modal } from '@/components/ui/Modal';
 import { PasswordInput } from '@/components/ui/PasswordInput';
 import { SHARE_FIELD_KEYS, SHARE_FIELD_LABELS, type ShareFieldKey } from '@/lib/share/fields';
+import { formatDate, formatDateTime } from '@/lib/formatDate';
 
 type LinkStatus = 'active' | 'used' | 'expired' | 'stopped';
 type ExpiryKind = 'one_view' | '24h' | '3d' | '7d' | '30d';
@@ -42,7 +43,7 @@ const SERIF = { fontFamily: "Georgia, 'Times New Roman', serif" } as const;
 
 function fmt(iso: string | null) {
   if (!iso) return '';
-  return new Date(iso).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+  return formatDateTime(iso);
 }
 const DEVICE_LABEL: Record<string, string> = { iphone: 'iPhone', android: 'Android', desktop: 'Computer', other: 'Other device' };
 const SOURCE_LABEL: Record<string, string> = { whatsapp: 'WhatsApp', instagram: 'Instagram', facebook: 'Facebook', direct: 'Direct', other: 'Other' };
@@ -571,7 +572,7 @@ function ActivityTab({ data }: { data: Overview }) {
       <div className="bg-surface border border-border rounded-2xl px-5 py-5">
         <div className="flex items-end gap-[3px] h-28" role="img" aria-label={`Opens per day over the last ${days} days`}>
           {(activity?.series ?? []).map((s) => (
-            <div key={s.day} title={`${s.day}: ${s.opens}`} className="flex-1 rounded-t bg-[#C9A24B]" style={{ height: `${Math.max(3, (s.opens / max) * 100)}%`, opacity: s.opens === 0 ? 0.25 : 1 }} />
+            <div key={s.day} title={`${formatDate(s.day)}: ${s.opens}`} className="flex-1 rounded-t bg-[#C9A24B]" style={{ height: `${Math.max(3, (s.opens / max) * 100)}%`, opacity: s.opens === 0 ? 0.25 : 1 }} />
           ))}
         </div>
         <p className="text-xs text-muted mt-3">Opens per day. We cannot tell who opened a link.</p>

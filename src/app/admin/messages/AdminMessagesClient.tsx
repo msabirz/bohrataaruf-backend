@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Mail, CheckCircle, Clock, XCircle, ChevronLeft, Send, X } from 'lucide-react';
+import { formatDate, formatDateTime } from '@/lib/formatDate';
 
 interface ContactMessage {
   id: string;
@@ -183,7 +184,7 @@ export default function AdminMessagesClient() {
               <h1 className="text-2xl font-bold text-gray-900 mb-2">{selectedMessage.subject}</h1>
               <div className="flex flex-col gap-1 text-sm text-gray-600">
                 <p><span className="font-medium text-gray-900">From:</span> {selectedMessage.name} &lt;{selectedMessage.email}&gt;</p>
-                <p><span className="font-medium text-gray-900">Date:</span> {new Date(selectedMessage.createdAt).toLocaleString()}</p>
+                <p><span className="font-medium text-gray-900">Date:</span> {formatDateTime(selectedMessage.createdAt)}</p>
                 {selectedMessage.handledByName && (
                   <p><span className="font-medium text-gray-900">Handled By:</span> {selectedMessage.handledByName}</p>
                 )}
@@ -229,7 +230,7 @@ export default function AdminMessagesClient() {
               <div className="flex items-center gap-2 mb-2">
                 <CheckCircle className="w-4 h-4 text-green-600" />
                 <span className="text-sm font-semibold text-green-800">
-                  Replied {selectedMessage.repliedAt ? new Date(selectedMessage.repliedAt).toLocaleString() : ''}
+                  Replied {formatDateTime(selectedMessage.repliedAt)}
                 </span>
               </div>
               <p className="text-sm text-green-900 whitespace-pre-wrap">{selectedMessage.adminReplyText}</p>
@@ -372,7 +373,7 @@ export default function AdminMessagesClient() {
                       {getStatusBadge(msg.status)}
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs">
-                      {new Date(msg.createdAt).toLocaleDateString()}
+                      {formatDate(msg.createdAt)}
                     </td>
                   </tr>
                 ))

@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { ChevronDown, ChevronUp, Send, Users } from 'lucide-react';
 import type { ProgramFormField } from '@/lib/programFormSchema';
+import { formatDate } from '@/lib/formatDate';
 
 interface Application {
   id: string;
@@ -148,7 +149,7 @@ export default function AdminProgramApplicationsList({ programId, fields }: { pr
                         {app.email && <p className="text-gray-400 text-xs">{app.email}</p>}
                       </td>
                       <td className="px-6 py-4 text-gray-600 whitespace-nowrap">
-                        {new Date(app.createdAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                        {formatDate(app.createdAt)}
                       </td>
                       <td className="px-6 py-4">
                         <select
@@ -163,7 +164,7 @@ export default function AdminProgramApplicationsList({ programId, fields }: { pr
                       <td className="px-6 py-4 text-gray-500 text-xs">
                         {app.status === 'selected'
                           ? (app.selectionNotifiedAt
-                            ? new Date(app.selectionNotifiedAt).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })
+                            ? formatDate(app.selectionNotifiedAt)
                             : 'Not yet')
                           : '—'}
                       </td>

@@ -9,6 +9,7 @@ import { LifestyleBadges } from '@/components/app/LifestyleBadges';
 import type { TraitPair } from '@/components/app/LifestyleToggle';
 import { WebRangeSlider } from '@/components/app/WebRangeSlider';
 import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBanner';
+import { formatDateTime } from '@/lib/formatDate';
 
 const NEARBY_DEFAULT_RADIUS_KM = 25;
 
@@ -329,7 +330,7 @@ export default function DiscoverPage() {
                             ? 'Photo unlocked for this view'
                             : current.photoRequestStatus === 'approved'
                             ? current.photoGrantedUntil
-                              ? `You can view this photo until ${new Date(current.photoGrantedUntil).toLocaleString()}`
+                              ? `You can view this photo until ${formatDateTime(current.photoGrantedUntil)}`
                               : 'You have permanent access to this photo'
                             : current.photoRequestStatus === 'pending'
                             ? 'Photo request sent — awaiting response'

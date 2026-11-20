@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { ShieldCheck, ShieldAlert, ShieldQuestion, Upload } from 'lucide-react';
+import { formatDate } from '@/lib/formatDate';
 
 type Status = 'none' | 'pending' | 'verified' | 'rejected';
 
@@ -134,7 +135,7 @@ export default function VerificationPage() {
           {status?.submittedAt && (
             <div className="flex justify-between w-full pt-3 border-t border-border text-sm">
               <span className="text-muted">Submitted</span>
-              <span className="text-foreground">{new Date(status.submittedAt).toLocaleDateString()}</span>
+              <span className="text-foreground">{formatDate(status.submittedAt, '—')}</span>
             </div>
           )}
         </div>

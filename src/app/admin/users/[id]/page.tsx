@@ -14,6 +14,7 @@ import AdminUserActions from './AdminUserActions';
 import { notFound } from 'next/navigation';
 import { getViewUrl } from '@/lib/storage';
 import { decryptItsNumber } from '@/lib/api/itsEncryption';
+import { formatDate, formatDateTime } from '@/lib/formatDate';
 
 // Same snake_case -> Title Case treatment used elsewhere in the app
 // (src/app/(app)/profile/page.tsx, ProfileDetailModal.tsx) — kept as its
@@ -159,7 +160,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                 <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {user.city || 'No city'}</span>
                 <span className="flex items-center gap-1"><Phone className="w-4 h-4" /> {user.countryCode}{user.phone || 'No phone'}</span>
                 {user.email && <span className="flex items-center gap-1"><Mail className="w-4 h-4" /> {user.email}</span>}
-                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> Joined {new Date(user.createdAt!).toLocaleDateString()}</span>
+                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> Joined {formatDate(user.createdAt)}</span>
                 <span className="flex items-center gap-1"><Heart className="w-4 h-4" /> {matchCount} match{matchCount === 1 ? '' : 'es'}</span>
               </p>
             </div>
@@ -272,8 +273,8 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
               <div className="grid grid-cols-2 gap-6">
                 <Field label="Status" value={getStatusBadge(verification?.status || null)} />
                 <Field label="ITS Number" value={itsNumber ? <span className="font-mono">{itsNumber}</span> : null} />
-                <Field label="Submitted" value={verification?.createdAt ? new Date(verification.createdAt).toLocaleString() : null} />
-                <Field label="Reviewed" value={verification?.reviewedAt ? `${new Date(verification.reviewedAt).toLocaleString()}${verification.reviewerName ? ` by ${verification.reviewerName}` : ''}` : null} />
+                <Field label="Submitted" value={verification?.createdAt ? formatDateTime(verification.createdAt) : null} />
+                <Field label="Reviewed" value={verification?.reviewedAt ? `${formatDateTime(verification.reviewedAt)}${verification.reviewerName ? ` by ${verification.reviewerName}` : ''}` : null} />
               </div>
               {verification?.rejectionReason && (
                 <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
@@ -316,7 +317,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                         {' '}<span className="capitalize">{labelize(log.action)}</span> the account.
                       </p>
                       {log.reason && <p className="text-gray-500 mt-1 bg-gray-50 p-2 rounded italic text-xs border border-gray-100">"{log.reason}"</p>}
-                      <p className="text-gray-400 text-xs mt-1">{new Date(log.createdAt!).toLocaleString()}</p>
+                      <p className="text-gray-400 text-xs mt-1">{formatDateTime(log.createdAt)}</p>
                     </div>
                   </div>
                 ))

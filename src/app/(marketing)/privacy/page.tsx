@@ -1,5 +1,6 @@
 import React from 'react';
 import { Metadata } from 'next';
+import { formatDate } from '@/lib/formatDate';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -15,7 +16,7 @@ export default function PrivacyPage() {
       <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
       
       <div className="prose prose-zinc max-w-none text-muted space-y-6">
-        <p>Last updated: {new Date().toLocaleDateString()}</p>
+        <p>Last updated: {formatDate(new Date())}</p>
         
         <h2 className="text-2xl font-semibold text-foreground mt-12 mb-4">1. Introduction</h2>
         <p>

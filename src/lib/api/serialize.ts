@@ -6,6 +6,12 @@ export function keysToCamelCase(obj: any): any {
   if (obj === null || typeof obj !== 'object') {
     return obj;
   }
+
+  // A Date has no keys of its own, so the key-by-key copy below would turn it into {} and the
+  // client would show "Invalid Date". Keep it as a Date: JSON turns it into an ISO string.
+  if (obj instanceof Date) {
+    return obj;
+  }
   
   if (Array.isArray(obj)) {
     return obj.map(keysToCamelCase);

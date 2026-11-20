@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { MapPin, ArrowRight } from 'lucide-react';
 import { DateBadge } from './DateBadge';
+import { formatDateRange } from '@/lib/formatDate';
 
 interface FeaturedProgram {
   id: string;
@@ -14,11 +15,6 @@ interface FeaturedProgram {
   endDate: string | null;
 }
 
-function formatDateRange(start: string, end: string | null): string {
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
-  if (!end || end === start) return fmt(start);
-  return `${fmt(start)} – ${fmt(end)}`;
-}
 
 // Shared by both homepages (Plan A's page.tsx and Plan B's PreLaunchPage.tsx)
 // and the Discover feed's compact highlight box. The ONLY gate for whether a

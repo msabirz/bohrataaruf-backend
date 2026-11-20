@@ -13,16 +13,12 @@ import { isValidFormSchema } from '@/lib/programFormSchema';
 import { ProgramApplyForm } from '@/components/marketing/ProgramApplyForm';
 import { DateBadge } from '@/components/marketing/DateBadge';
 import { breadcrumbJsonLd } from '@/lib/seo';
+import { formatDate, formatDateRange } from '@/lib/formatDate';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
 export const dynamic = 'force-dynamic';
 
-function formatDateRange(start: string, end: string | null): string {
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  if (!end || end === start) return fmt(start);
-  return `${fmt(start)} – ${fmt(end)}`;
-}
 
 async function getProgram(slug: string) {
   const program = await db.select().from(taarufPrograms).where(eq(taarufPrograms.slug, slug)).limit(1).then(r => r[0]);
@@ -149,7 +145,7 @@ export default async function ProgramDetailPage(props: { params: Promise<{ slug:
                 <div className="bg-surface border border-border rounded-xl p-4">
                   <Clock className="w-4 h-4 text-primary mb-2" />
                   <p className="text-sm font-bold text-foreground">
-                    {new Date(program.registrationDeadline).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })}
+                    {formatDate(program.registrationDeadline)}
                   </p>
                   <p className="text-xs text-muted">registration closes</p>
                 </div>

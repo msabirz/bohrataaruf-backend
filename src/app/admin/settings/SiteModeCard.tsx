@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
+import { formatDateTime } from '@/lib/formatDate';
 
 interface ModeInfo {
   mode: 'A' | 'B';
@@ -89,7 +90,7 @@ export default function SiteModeCard() {
       {info && (
         <p className="text-xs text-gray-500">
           {info.source === 'admin'
-            ? `Last changed ${info.updatedAt ? new Date(info.updatedAt).toLocaleString() : ''}${info.updatedByName ? ` by ${info.updatedByName}` : ''}.`
+            ? `Last changed ${formatDateTime(info.updatedAt)}${info.updatedByName ? ` by ${info.updatedByName}` : ''}.`
             : `Never changed here yet. It is following the SITE_MODE environment setting (${info.environmentMode}).`}
         </p>
       )}
