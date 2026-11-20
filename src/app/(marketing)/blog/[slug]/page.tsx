@@ -4,6 +4,7 @@ import { SITE_URL, breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
 import { getPublishedPost, readingMinutes } from '@/lib/blog';
 import { BlogContent } from '@/components/BlogContent';
 import { ContentPage } from '@/components/marketing/ContentPage';
+import { formatDate } from '@/lib/formatDate';
 
 export const revalidate = 300;
 
@@ -47,7 +48,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
     >
       <p className="-mt-2 mb-8 text-sm text-muted">
         By {post.authorName}
-        {post.publishedAt && <> &middot; {post.publishedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</>}
+        {post.publishedAt && <> &middot; {formatDate(post.publishedAt)}</>}
         {' '}&middot; {readingMinutes(post.body)} min read
       </p>
       <article className="text-base">

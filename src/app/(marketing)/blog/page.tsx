@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
 import { listPublishedPosts } from '@/lib/blog';
 import { ContentPage } from '@/components/marketing/ContentPage';
+import { formatDate } from '@/lib/formatDate';
 
 export const revalidate = 300;
 
@@ -36,7 +37,7 @@ export default async function BlogIndexPage() {
               </h2>
               <p className="mt-1 text-sm text-muted">
                 {p.authorName}
-                {p.publishedAt && <> &middot; {p.publishedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}</>}
+                {p.publishedAt && <> &middot; {formatDate(p.publishedAt)}</>}
               </p>
               {p.excerpt && <p className="mt-3 leading-relaxed text-muted">{p.excerpt}</p>}
               <Link href={`/blog/${p.slug}`} className="mt-3 inline-block text-sm font-semibold text-primary hover:underline">Read more &rarr;</Link>

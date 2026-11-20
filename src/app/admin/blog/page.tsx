@@ -3,6 +3,7 @@ import { desc } from 'drizzle-orm';
 import { requireAdminAuth } from '@/lib/adminAuth';
 import { db } from '@/lib/db';
 import { blogPosts } from '@/lib/db/schema';
+import { formatDate } from '@/lib/formatDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -44,7 +45,7 @@ export default async function AdminBlogPage() {
                       {p.status === 'published' ? 'Published' : 'Draft'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{p.updatedAt.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                  <td className="px-4 py-3 text-gray-500">{formatDate(p.updatedAt)}</td>
                 </tr>
               ))}
             </tbody>
