@@ -8,6 +8,8 @@
  */
 
 // Not under /api, so search engines (robots.txt blocks /api) may fetch and index the pictures.
+import { DEFAULT_IMAGE_ALIGN, DEFAULT_IMAGE_SIZE, IMAGE_ALIGNS, IMAGE_SIZES, type ImageAlign, type ImageSize } from '@/lib/blogImageStyle';
+
 export const BLOG_IMAGE_PREFIX = '/blog-images/';
 const IMAGE_SRC = /^\/blog-images\/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}\.webp$/;
 
@@ -16,7 +18,7 @@ export type Mark = { type: 'bold' } | { type: 'italic' } | { type: 'link'; attrs
 export type DocNode = {
   type: string;
   text?: string;
-  attrs?: { level?: number; src?: string; alt?: string; caption?: string };
+  attrs?: { level?: number; src?: string; alt?: string; caption?: string; size?: ImageSize; align?: ImageAlign };
   marks?: Mark[];
   content?: DocNode[];
 };
@@ -84,7 +86,9 @@ function cleanNode(raw: unknown, parent: string, depth: number, state: { count: 
       if (!IMAGE_SRC.test(src)) return null; // only pictures uploaded through our own editor
       const alt = typeof n.attrs?.alt === 'string' ? n.attrs.alt.slice(0, 200) : '';
       const caption = typeof n.attrs?.caption === 'string' ? n.attrs.caption.slice(0, 300) : '';
-      return { type, attrs: { src, alt, caption } };
+      const size = (IMAGE_SIZES as readonly string[]).includes(n.attrs?.size as string) ? (n.attrs?.size as ImageSize) : DEFAULT_IMAGE_SIZE;
+      const align = (IMAGE_ALIGNS as readonly string[]).includes(n.attrs?.align as string) ? (n.attrs?.align as ImageAlign) : DEFAULT_IMAGE_ALIGN;
+      return { type, attrs: { src, alt, caption, size, align } };
     }
     default: {
       const children = Array.isArray(n.content) ? n.content : [];

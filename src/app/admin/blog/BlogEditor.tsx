@@ -8,6 +8,7 @@ import type { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import { parseStoredBody } from '@/lib/blogDoc';
+import { ALIGN_CLASS, ALIGN_LABEL, DEFAULT_IMAGE_ALIGN, DEFAULT_IMAGE_SIZE, IMAGE_ALIGNS, IMAGE_SIZES, SIZE_CLASS, SIZE_LABEL } from '@/lib/blogImageStyle';
 
 interface EditablePost {
   id: string;
@@ -21,27 +22,46 @@ interface EditablePost {
 
 const slugify = (t: string) => t.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80);
 
-/** A picture in the editor, with the caption typed right underneath it, as it will look on the page. */
+/** A picture in the editor: size and alignment buttons above it, the caption under it, laid out as on the page. */
 function ImageWithCaption({ node, updateAttributes, selected }: NodeViewProps) {
+  const size = node.attrs.size || DEFAULT_IMAGE_SIZE;
+  const align = node.attrs.align || DEFAULT_IMAGE_ALIGN;
+  const btn = (on: boolean) => `rounded px-2 py-0.5 text-xs font-medium ${on ? 'bg-[#8C6A3F] text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`;
   return (
-    <NodeViewWrapper className="my-4" contentEditable={false}>
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={node.attrs.src} alt={node.attrs.alt || ''} className={`h-auto w-full rounded-xl border ${selected ? 'border-[#C9A24B] ring-2 ring-[#C9A24B]' : 'border-gray-200'}`} draggable={false} />
-      <input
-        type="text"
-        value={node.attrs.caption || ''}
-        maxLength={300}
-        placeholder="Add a caption (optional)"
-        onChange={(e) => updateAttributes({ caption: e.target.value })}
-        className="mt-2 w-full border-0 border-b border-dashed border-gray-300 bg-transparent px-1 py-1 text-center text-sm italic text-gray-600 focus:border-[#8C6A3F] focus:outline-none"
-      />
+    <NodeViewWrapper className="my-5" contentEditable={false}>
+      <div className="mb-1.5 flex flex-wrap items-center gap-x-4 gap-y-1">
+        <div className="flex items-center gap-1" role="group" aria-label="Picture size">
+          <span className="mr-1 text-xs text-gray-400">Size</span>
+          {IMAGE_SIZES.map((s) => (
+            <button key={s} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => updateAttributes({ size: s })} className={btn(size === s)}>{SIZE_LABEL[s]}</button>
+          ))}
+        </div>
+        <div className="flex items-center gap-1" role="group" aria-label="Picture alignment">
+          <span className="mr-1 text-xs text-gray-400">Align</span>
+          {IMAGE_ALIGNS.map((a) => (
+            <button key={a} type="button" onMouseDown={(e) => e.preventDefault()} onClick={() => updateAttributes({ align: a })} className={btn(align === a)}>{ALIGN_LABEL[a]}</button>
+          ))}
+        </div>
+      </div>
+      <figure className={`${SIZE_CLASS[size as keyof typeof SIZE_CLASS]} ${ALIGN_CLASS[align as keyof typeof ALIGN_CLASS]}`}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={node.attrs.src} alt={node.attrs.alt || ''} className={`h-auto w-full rounded-xl border ${selected ? 'border-[#C9A24B] ring-2 ring-[#C9A24B]' : 'border-gray-200'}`} draggable={false} />
+        <input
+          type="text"
+          value={node.attrs.caption || ''}
+          maxLength={300}
+          placeholder="Add a caption (optional)"
+          onChange={(e) => updateAttributes({ caption: e.target.value })}
+          className="mt-2 w-full border-0 border-b border-dashed border-gray-300 bg-transparent px-1 py-1 text-center text-sm italic text-gray-600 focus:border-[#8C6A3F] focus:outline-none"
+        />
+      </figure>
     </NodeViewWrapper>
   );
 }
 
 const ImageWithCaptionExtension = Image.extend({
   addAttributes() {
-    return { ...this.parent?.(), caption: { default: '' } };
+    return { ...this.parent?.(), caption: { default: '' }, size: { default: DEFAULT_IMAGE_SIZE }, align: { default: DEFAULT_IMAGE_ALIGN } };
   },
   addNodeView() {
     return ReactNodeViewRenderer(ImageWithCaption);
@@ -74,7 +94,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
       const res = await fetch('/api/admin/blog/upload', { method: 'POST', body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error || 'Could not upload the picture'); return; }
-      editorRef.current?.chain().focus().setImage({ src: data.url, alt: '', caption: '' } as never).run();
+      editorRef.current?.chain().focus().setImage({ src: data.url, alt: '', caption: '', size: DEFAULT_IMAGE_SIZE, align: DEFAULT_IMAGE_ALIGN } as never).run();
     } catch {
       setError('Could not reach the server to upload the picture');
     } finally {

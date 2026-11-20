@@ -1,5 +1,6 @@
 import React from 'react';
 import { type Doc, type DocNode, parseStoredBody } from '@/lib/blogDoc';
+import { ALIGN_CLASS, DEFAULT_IMAGE_ALIGN, DEFAULT_IMAGE_SIZE, SIZE_CLASS } from '@/lib/blogImageStyle';
 
 function renderText(node: DocNode, key: string): React.ReactNode {
   let out: React.ReactNode = node.text;
@@ -38,7 +39,7 @@ function renderNode(node: DocNode, key: string): React.ReactNode {
     case 'image': {
       const caption = node.attrs?.caption ?? '';
       return (
-        <figure key={key} className="my-8">
+        <figure key={key} className={`my-8 ${SIZE_CLASS[node.attrs?.size ?? DEFAULT_IMAGE_SIZE]} ${ALIGN_CLASS[node.attrs?.align ?? DEFAULT_IMAGE_ALIGN]}`}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={node.attrs?.src} alt={node.attrs?.alt || caption} loading="lazy" className="h-auto w-full rounded-xl border border-border" />
           {caption && <figcaption className="mt-2 text-center text-sm italic text-muted">{caption}</figcaption>}
