@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import { X, ShieldCheck, GraduationCap, Briefcase, MapPin, Heart, Home, Users, Baby, Sparkles, Lock } from 'lucide-react';
 import { LifestyleBadges } from '@/components/app/LifestyleBadges';
 import type { TraitPair } from '@/components/app/LifestyleToggle';
+import { formatDateTime } from '@/lib/formatDate';
 
 type RichProfile = {
   profileId: string;
@@ -209,7 +210,7 @@ export function ProfileDetailModal({
                       ? 'Photo unlocked for this view'
                       : profile.photoRequestStatus === 'approved'
                       ? profile.photoGrantedUntil
-                        ? `You can view this photo until ${new Date(profile.photoGrantedUntil).toLocaleString()}`
+                        ? `You can view this photo until ${formatDateTime(profile.photoGrantedUntil)}`
                         : 'You have permanent access to this photo'
                       : profile.photoRequestStatus === 'pending'
                       ? 'Photo request sent — awaiting response'

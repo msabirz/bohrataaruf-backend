@@ -125,13 +125,13 @@ export function AppHeader() {
   return (
     <header className="sticky top-0 z-50 w-full bg-background/80 backdrop-blur-md border-b border-border">
       <div className="container mx-auto px-6 h-20 flex items-center justify-between">
-        <div className="flex items-center gap-10">
+        <div className="flex items-center gap-4 md:gap-10 min-w-0">
           <button className="md:hidden text-foreground" onClick={() => setIsMobileNavOpen(true)} aria-label="Open menu">
             <Menu className="w-6 h-6" />
           </button>
-          <Link href="/" className="flex items-center" style={{ gap: '14px' }}>
-            <img src="/logo-light.svg" alt="" width={48} height={63} />
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+          <Link href="/" className="flex items-center min-w-0" style={{ gap: '10px' }}>
+            <img src="/logo-light.svg" alt="" width={48} height={63} className="h-12 w-auto shrink-0 md:h-[63px]" />
+            <div style={{ display: 'flex', flexDirection: 'column', whiteSpace: 'nowrap' }}>
               <span style={{
                 fontFamily: 'Georgia, serif',
                 fontSize: '22px',
@@ -141,7 +141,8 @@ export function AppHeader() {
               }}>
                 Bohra Taaruf
               </span>
-              <span style={{
+              {/* The tagline needs room: it is hidden on small phones so the name never wraps or clips. */}
+              <span className="hidden sm:inline" style={{
                 fontFamily: 'Georgia, serif',
                 fontSize: '13px',
                 fontStyle: 'italic',

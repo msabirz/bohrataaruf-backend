@@ -7,14 +7,10 @@ import { and, eq } from 'drizzle-orm';
 import { getAdminSession } from '@/lib/adminAuth';
 import { generatePassCode } from '@/lib/programPass';
 import { sendProgramPassEmail } from '@/lib/email';
+import { formatDate, formatDateRange } from '@/lib/formatDate';
 
 const VALID_STATUSES = ['submitted', 'selected', 'rejected', 'accepted', 'declined'];
 
-function formatDateRange(start: string, end: string | null): string {
-  const fmt = (d: string) => new Date(d).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
-  if (!end || end === start) return fmt(start);
-  return `${fmt(start)} – ${fmt(end)}`;
-}
 
 export async function PATCH(request: Request, props: { params: Promise<{ id: string; appId: string }> }) {
   try {

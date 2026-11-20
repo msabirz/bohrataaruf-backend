@@ -4,6 +4,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { Search, Filter, ShieldCheck, ShieldAlert, Shield, ShieldX, User, ChevronRight, X } from 'lucide-react';
 import { buildDefaultPrelaunchMessage, buildDefaultShareInviteMessage, DEFAULT_SHARE_INVITE_SUBJECT } from '@/lib/email/defaultMessages';
+import { formatDate } from '@/lib/formatDate';
 
 interface AdminUser {
   id: string;
@@ -218,7 +219,7 @@ export default function AdminUsersList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">User Management</h1>
           <p className="text-gray-500 mt-2">Search, view, and manage volunteer actions on user accounts.</p>
@@ -386,14 +387,14 @@ export default function AdminUsersList() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-gray-600">{user.matchCount}</td>
-                    <td className="px-6 py-4 text-gray-500">{new Date(user.createdAt).toLocaleDateString()}</td>
+                    <td className="px-6 py-4 text-gray-500">{formatDate(user.createdAt)}</td>
                     <td className="px-6 py-4">
                       {!user.email ? (
                         <span className="text-xs text-gray-400 italic">No email</span>
                       ) : (
                         <div className="flex flex-col items-start gap-1">
                           {user.prelaunchAckSentAt && (
-                            <span className="text-xs text-green-700">Sent {new Date(user.prelaunchAckSentAt).toLocaleDateString()}</span>
+                            <span className="text-xs text-green-700">Sent {formatDate(user.prelaunchAckSentAt)}</span>
                           )}
                           <button
                             onClick={(e) => openComposePrelaunchAck(user, e)}
@@ -418,7 +419,7 @@ export default function AdminUsersList() {
                                 : user.shareLinkCount > 0
                                   ? `${user.shareLinkCount} links made, none active`
                                   : user.shareInviteSentAt
-                                    ? `Sent ${new Date(user.shareInviteSentAt).toLocaleDateString()}`
+                                    ? `Sent ${formatDate(user.shareInviteSentAt)}`
                                     : 'Not sent yet'}
                           </span>
                           <button

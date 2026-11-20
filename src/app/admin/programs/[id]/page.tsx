@@ -7,6 +7,7 @@ import { ArrowLeft, Users } from 'lucide-react';
 import { notFound } from 'next/navigation';
 import { ProgramForm } from '@/components/admin/ProgramForm';
 import { isValidFormSchema, type ProgramFormField } from '@/lib/programFormSchema';
+import { formatDate } from '@/lib/formatDate';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,7 @@ export default async function EditProgramPage(props: { params: Promise<{ id: str
       <div className="flex items-start justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-extrabold text-gray-900 tracking-tight mb-1">{program.title}</h1>
-          <p className="text-gray-500">{program.city} · {new Date(program.startDate).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
+          <p className="text-gray-500">{program.city} · {formatDate(program.startDate)}</p>
         </div>
         <Link
           href={`/admin/programs/${id}/applications`}

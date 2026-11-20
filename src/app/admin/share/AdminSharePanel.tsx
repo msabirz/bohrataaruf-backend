@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useCallback, useEffect, useState } from 'react';
+import { formatDate } from '@/lib/formatDate';
 
 interface Stats {
   days: number;
@@ -107,7 +108,7 @@ export default function AdminSharePanel() {
                 <h4 className="font-semibold text-gray-800 mb-3">Opens per day (last {stats?.days} days)</h4>
                 <div className="flex items-end gap-[3px] h-32" role="img" aria-label="Opens per day">
                   {stats?.series.map((s) => (
-                    <div key={s.day} title={`${s.day}: ${s.opens}`} className="flex-1 rounded-t bg-[#C9A96E]" style={{ height: `${Math.max(3, (s.opens / maxOpens) * 100)}%`, opacity: s.opens ? 1 : 0.3 }} />
+                    <div key={s.day} title={`${formatDate(s.day)}: ${s.opens}`} className="flex-1 rounded-t bg-[#C9A96E]" style={{ height: `${Math.max(3, (s.opens / maxOpens) * 100)}%`, opacity: s.opens ? 1 : 0.3 }} />
                   ))}
                 </div>
               </div>

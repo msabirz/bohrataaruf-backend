@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Flag, Search, ChevronLeft, AlertTriangle, ExternalLink } from 'lucide-react';
 import Link from 'next/link';
+import { formatDate, formatDateTime } from '@/lib/formatDate';
 
 interface ReportUser {
   id: string;
@@ -107,7 +108,7 @@ export default function AdminReportsClient() {
                 <p><span className="font-medium text-gray-900">Reported User:</span> {selectedReport.reportedUser.alias || 'Unknown'} ({selectedReport.reportedUser.phone})</p>
                 <p><span className="font-medium text-gray-900">Total Reports on User:</span> <span className="text-red-600 font-bold">{selectedReport.totalReportsForUser}</span></p>
                 <p><span className="font-medium text-gray-900">Submitted By:</span> {selectedReport.reporter.alias || 'Unknown'} ({selectedReport.reporter.phone})</p>
-                <p><span className="font-medium text-gray-900">Date:</span> {new Date(selectedReport.createdAt).toLocaleString()}</p>
+                <p><span className="font-medium text-gray-900">Date:</span> {formatDateTime(selectedReport.createdAt)}</p>
                 {selectedReport.reviewedBy && (
                   <p><span className="font-medium text-gray-900">Reviewed By:</span> {selectedReport.reviewedBy.name}</p>
                 )}
@@ -153,7 +154,7 @@ export default function AdminReportsClient() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">User Reports</h1>
           <p className="text-gray-500 mt-2">Review flags and manage reported users.</p>
@@ -229,7 +230,7 @@ export default function AdminReportsClient() {
                       {getStatusBadge(report.status)}
                     </td>
                     <td className="px-6 py-4 text-gray-500 text-xs">
-                      {new Date(report.createdAt).toLocaleDateString()}
+                      {formatDate(report.createdAt)}
                     </td>
                   </tr>
                 ))

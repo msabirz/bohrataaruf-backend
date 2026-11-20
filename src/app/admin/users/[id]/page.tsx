@@ -14,6 +14,7 @@ import AdminUserActions from './AdminUserActions';
 import { notFound } from 'next/navigation';
 import { getViewUrl } from '@/lib/storage';
 import { decryptItsNumber } from '@/lib/api/itsEncryption';
+import { formatDate, formatDateTime } from '@/lib/formatDate';
 
 // Same snake_case -> Title Case treatment used elsewhere in the app
 // (src/app/(app)/profile/page.tsx, ProfileDetailModal.tsx) — kept as its
@@ -159,7 +160,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                 <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {user.city || 'No city'}</span>
                 <span className="flex items-center gap-1"><Phone className="w-4 h-4" /> {user.countryCode}{user.phone || 'No phone'}</span>
                 {user.email && <span className="flex items-center gap-1"><Mail className="w-4 h-4" /> {user.email}</span>}
-                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> Joined {new Date(user.createdAt!).toLocaleDateString()}</span>
+                <span className="flex items-center gap-1"><Calendar className="w-4 h-4" /> Joined {formatDate(user.createdAt)}</span>
                 <span className="flex items-center gap-1"><Heart className="w-4 h-4" /> {matchCount} match{matchCount === 1 ? '' : 'es'}</span>
               </p>
             </div>
@@ -174,7 +175,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
         {/* Left Column: Details */}
         <div className="md:col-span-2 space-y-6">
           <Card title="Profile Details" icon={<User className="w-5 h-5 text-gray-500" />}>
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <Field label="Alias" value={profile?.alias} />
               <Field label="Gender" value={labelize(user.gender)} />
               <Field label="Date of Birth" value={user.dateOfBirth} />
@@ -199,7 +200,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
           </Card>
 
           <Card title="Family Background" icon={<UsersIcon className="w-5 h-5 text-gray-500" />}>
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <Field label="Siblings" value={siblingsLine} />
               <Field
                 label="Children"
@@ -244,7 +245,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                   </div>
                 )}
                 {(prefs!.practiceLevel || prefs!.familyExpectation || prefs!.childrenAcceptance) && (
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
                     <Field label="Practice Level" value={labelize(prefs!.practiceLevel)} />
                     <Field label="Family Expectation" value={labelize(prefs!.familyExpectation)} />
                     <Field label="Open to Children" value={labelize(prefs!.childrenAcceptance)} />
@@ -256,7 +257,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
 
           {answeredPairs.length > 0 && (
             <Card title="Lifestyle & Personality" icon={<Sparkles className="w-5 h-5 text-gray-500" />}>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {answeredPairs.map((p) => (
                   <div key={p.question} className="border border-dashed border-gray-300 rounded-lg px-3 py-2">
                     <p className="text-gray-500 text-xs">{p.question}</p>
@@ -269,11 +270,11 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
 
           <Card title="ITS Verification" icon={<ShieldCheck className="w-5 h-5 text-gray-500" />}>
             <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Field label="Status" value={getStatusBadge(verification?.status || null)} />
                 <Field label="ITS Number" value={itsNumber ? <span className="font-mono">{itsNumber}</span> : null} />
-                <Field label="Submitted" value={verification?.createdAt ? new Date(verification.createdAt).toLocaleString() : null} />
-                <Field label="Reviewed" value={verification?.reviewedAt ? `${new Date(verification.reviewedAt).toLocaleString()}${verification.reviewerName ? ` by ${verification.reviewerName}` : ''}` : null} />
+                <Field label="Submitted" value={verification?.createdAt ? formatDateTime(verification.createdAt) : null} />
+                <Field label="Reviewed" value={verification?.reviewedAt ? `${formatDateTime(verification.reviewedAt)}${verification.reviewerName ? ` by ${verification.reviewerName}` : ''}` : null} />
               </div>
               {verification?.rejectionReason && (
                 <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 rounded-lg text-sm">
@@ -291,7 +292,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
           </Card>
 
           <Card title="Photo Privacy" icon={<EyeOff className="w-5 h-5 text-gray-500" />}>
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <Field label="Privacy Mode" value={labelize(profile?.photoPrivacyMode)} />
               <Field label="Photo Uploaded" value={profile?.photoKey ? 'Yes' : 'No'} />
             </div>
@@ -316,7 +317,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                         {' '}<span className="capitalize">{labelize(log.action)}</span> the account.
                       </p>
                       {log.reason && <p className="text-gray-500 mt-1 bg-gray-50 p-2 rounded italic text-xs border border-gray-100">"{log.reason}"</p>}
-                      <p className="text-gray-400 text-xs mt-1">{new Date(log.createdAt!).toLocaleString()}</p>
+                      <p className="text-gray-400 text-xs mt-1">{formatDateTime(log.createdAt)}</p>
                     </div>
                   </div>
                 ))

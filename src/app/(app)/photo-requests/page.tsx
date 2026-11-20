@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Check, X as XIcon, Clock, ShieldOff } from 'lucide-react';
+import { formatDateTime } from '@/lib/formatDate';
 
 type RequestItem = {
   viewerId: string;
@@ -188,7 +189,7 @@ export default function PhotoRequestsPage() {
                     <p className="font-medium text-foreground">{g.alias}</p>
                     <p className="text-xs text-muted flex items-center gap-1.5 mt-0.5">
                       <Clock className="w-3 h-3" />
-                      {g.grantedUntil ? `Until ${new Date(g.grantedUntil).toLocaleString()}` : 'Permanent access'}
+                      {g.grantedUntil ? `Until ${formatDateTime(g.grantedUntil)}` : 'Permanent access'}
                     </p>
                   </div>
                   <button
