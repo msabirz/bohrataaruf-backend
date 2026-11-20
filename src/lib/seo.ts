@@ -15,7 +15,7 @@ export function organizationJsonLd() {
     name: APP_NAME,
     url: SITE_URL,
     logo: `${SITE_URL}/logo-light.svg`,
-    description: 'A free, private space where Dawoodi Bohra families looking for a partner can create a verified profile, share it safely with the Smart Taaruf Card, and see suggested profiles.',
+    description: 'Private, verified Dawoodi Bohra profiles you can view and show interest in, and the Smart Taaruf Card: your biodata as a private link you control. Free.',
     sameAs: ['https://www.instagram.com/bohrataaruf'],
   };
 }
@@ -55,7 +55,10 @@ export function websiteJsonLd() {
 /** Search words for the whole site. Search engines give them little weight; the page text matters more. */
 export const SITE_KEYWORDS = [
   'Bohra Taaruf', 'Smart Taaruf Card', 'Bohri taruf', 'Bohra biodata', 'Bohra biodata format', 'private biodata link',
-  'share biodata privately', 'Dawoodi Bohra profiles', 'Bohra partner profiles', 'Bohra families looking for a partner',
+  'share biodata privately', 'Dawoodi Bohra profiles', 'Bohra partner profiles',
+  // Only here, in the hidden keywords tag: search engines give it little weight, and no page, title,
+  // description or structured data says Bohra Taaruf is a matrimony or marriage service.
+  'Bohra matrimony', 'Bohra matrimonial', 'Bohra rishta', 'Bohra nisbat', 'nisbat', 'nikah', 'Bohra nikah', 'Bohra shaadi', 'shaadi',
 ];
 
 // Lets Google understand the site's primary navigation for potential

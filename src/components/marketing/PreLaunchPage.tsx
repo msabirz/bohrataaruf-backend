@@ -295,6 +295,10 @@ export default function PreLaunchPage() {
               Marriage is one of life&apos;s most sacred moments. It should never cost you anything.
             </h1>
 
+            <p className="text-base font-medium leading-relaxed" style={{ color: '#E8D3A8', marginBottom: '14px', maxWidth: '480px' }}>
+              Private Bohra profiles and the Smart Taaruf Card: your biodata as a private link you control.
+            </p>
+
             <p className="text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '32px', maxWidth: '480px' }}>
               Watching matchmaking become a business — inaccessible for many in our own community — a fellow momin decided to do something about it. Bohra Taaruf is free, private, and built on trust.
             </p>
