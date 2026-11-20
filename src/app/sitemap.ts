@@ -1,6 +1,6 @@
 import type { MetadataRoute } from 'next';
 import { db } from '@/lib/db';
-import { taarufPrograms } from '@/lib/db/schema';
+import { taarufPrograms, blogPosts } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
 import { SITE_URL } from '@/lib/seo';
 
@@ -19,6 +19,9 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/signup`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/events`, changeFrequency: 'weekly', priority: 0.8 },
     { url: `${SITE_URL}/smart-taaruf-card`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/how-it-works`, changeFrequency: 'monthly', priority: 0.8 },
+    { url: `${SITE_URL}/faq`, changeFrequency: 'monthly', priority: 0.7 },
+    { url: `${SITE_URL}/glossary`, changeFrequency: 'monthly', priority: 0.7 },
   ];
 
   const programs = await db.select({ slug: taarufPrograms.slug, updatedAt: taarufPrograms.updatedAt })
@@ -32,5 +35,16 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.7,
   }));
 
-  return [...staticRoutes, ...programRoutes];
+  // The blog index is listed only once there is something to read.
+  const posts = await db.select({ slug: blogPosts.slug, updatedAt: blogPosts.updatedAt })
+    .from(blogPosts)
+    .where(eq(blogPosts.status, 'published'));
+  const blogRoutes: MetadataRoute.Sitemap = posts.length
+    ? [
+        { url: `${SITE_URL}/blog`, changeFrequency: 'weekly', priority: 0.7 },
+        ...posts.map((p) => ({ url: `${SITE_URL}/blog/${p.slug}`, lastModified: p.updatedAt, changeFrequency: 'monthly' as const, priority: 0.6 })),
+      ]
+    : [];
+
+  return [...staticRoutes, ...programRoutes, ...blogRoutes];
 }

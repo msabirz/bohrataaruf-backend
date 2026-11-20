@@ -621,3 +621,19 @@ export const siteSettings = pgTable('site_settings', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
   updatedBy: uuid('updated_by').references(() => volunteers.id, { onDelete: 'set null' }),
 });
+
+// Blog posts written in Admin > Blog and shown on /blog. Body is Markdown; only
+// status 'published' rows are public. Each post carries its own author name.
+export const blogPosts = pgTable('blog_posts', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  slug: text('slug').unique().notNull(),
+  title: text('title').notNull(),
+  excerpt: text('excerpt').notNull().default(''),
+  body: text('body').notNull().default(''),
+  authorName: text('author_name').notNull(),
+  status: text('status').notNull().default('draft'), // 'draft' | 'published'
+  publishedAt: timestamp('published_at', { withTimezone: true }),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  updatedBy: uuid('updated_by').references(() => volunteers.id, { onDelete: 'set null' }),
+});

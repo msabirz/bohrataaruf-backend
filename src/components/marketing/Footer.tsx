@@ -23,9 +23,11 @@ export function Footer() {
           <div>
             <h3 className="font-semibold text-foreground mb-4">Platform</h3>
             <ul className="space-y-3">
-              <li><Link href="/#how-it-works" className="text-sm text-muted hover:text-primary transition-colors">How it works</Link></li>
+              <li><Link href="/how-it-works" className="text-sm text-muted hover:text-primary transition-colors">How it works</Link></li>
               <li><Link href="/#features" className="text-sm text-muted hover:text-primary transition-colors">Features</Link></li>
               <li><Link href="/smart-taaruf-card" className="text-sm text-muted hover:text-primary transition-colors">Smart Taaruf Card</Link></li>
+              <li><Link href="/faq" className="text-sm text-muted hover:text-primary transition-colors">FAQ</Link></li>
+              <li><Link href="/glossary" className="text-sm text-muted hover:text-primary transition-colors">Glossary</Link></li>
               <li><Link href="/about" className="text-sm text-muted hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/signup" className="text-sm text-muted hover:text-primary transition-colors">Sign up</Link></li>
             </ul>

@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import {
-  LayoutDashboard, ShieldCheck, LogOut, Users, UserCog, Mail, Flag, CalendarDays, Share2,
+  LayoutDashboard, ShieldCheck, LogOut, Users, UserCog, Mail, Flag, CalendarDays, Share2, FileText,
   Settings, SlidersHorizontal, ChevronDown, PanelLeftClose, PanelLeftOpen,
   type LucideIcon,
 } from 'lucide-react';
@@ -48,6 +48,10 @@ const SECTIONS: { title: string; entries: Entry[] }[] = [
       },
       { label: 'Share Profile', href: '/admin/share', icon: Share2 },
     ],
+  },
+  {
+    title: 'Content',
+    entries: [{ label: 'Blog', href: '/admin/blog', icon: FileText }],
   },
   {
     title: 'Inbox',

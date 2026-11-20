@@ -36,7 +36,7 @@ export function Header() {
 
   const NAV_LINKS = [
     { href: '/about', label: 'About Us' },
-    { href: '/#how-it-works', label: 'How it works' },
+    { href: '/how-it-works', label: 'How it works' },
     { href: '/#features', label: 'Features' },
     { href: '/smart-taaruf-card', label: 'Smart Taaruf Card', isNew: true },
     { href: '/events', label: 'Events' },
