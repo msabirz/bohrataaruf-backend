@@ -5,12 +5,22 @@ import IndiaMap from '@/components/marketing/IndiaMap';
 import RegisteredCounter from '@/components/marketing/RegisteredCounter';
 import PreLaunchPage from '@/components/marketing/PreLaunchPage';
 import { getSiteMode } from '@/lib/modeGuard';
+import { DEFAULT_SHARE_IMAGE } from '@/lib/seo';
 import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBanner';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
+const HOME_TITLE = 'Bohra Taaruf | Free Dawoodi Bohra Matrimonial & Rishta Platform';
+const HOME_DESCRIPTION =
+  'Bohra Taaruf is a free, private matrimonial platform for Dawoodi Bohra families. Find a rishta, share your marriage biodata safely with the Smart Taaruf Card, and meet at Taaruf programs.';
+
 export const metadata: Metadata = {
+  // Absolute, so the layout's " | Bohra Taaruf" suffix is not added a second time.
+  title: { absolute: HOME_TITLE },
+  description: HOME_DESCRIPTION,
   alternates: { canonical: '/' },
+  openGraph: { title: HOME_TITLE, description: HOME_DESCRIPTION, url: 'https://bohrataaruf.com', siteName: APP_NAME, type: 'website', locale: 'en_US', images: [DEFAULT_SHARE_IMAGE] },
+  twitter: { card: 'summary_large_image', title: HOME_TITLE, description: HOME_DESCRIPTION, images: [DEFAULT_SHARE_IMAGE.url] },
 };
 
 // Refreshed at most every minute, and immediately when an admin changes the site mode

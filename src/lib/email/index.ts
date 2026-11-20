@@ -27,6 +27,7 @@ import { ProgramPassEmail } from './templates/ProgramPassEmail';
 import { ShareInviteEmail } from './templates/ShareInviteEmail';
 import { DEFAULT_SHARE_INVITE_SUBJECT } from './defaultMessages';
 import { campaignQuery } from '../utm';
+import { CARD_PATH } from '../share/campaignContent';
 
 const PUBLIC_APP_URL = process.env.PUBLIC_APP_URL ?? 'http://localhost:3000';
 
@@ -180,7 +181,7 @@ export async function sendProgramPassEmail(
 
 /**
  * Admin-sent "Your Profile. Your Taaruf." campaign email (introduces the Share feature
- * and links to the public My Taaruf Card page). The subject and the intro text are
+ * and links to the public Smart Taaruf Card page). The subject and the intro text are
  * editable per send. Unlike the other sends it is NOT fire-and-forget: it throws if the
  * provider rejects it (for example when the monthly quota is used up), so the admin
  * sees "could not send" and nothing is logged as sent. Like the pre-launch email it is
@@ -199,7 +200,7 @@ export async function sendShareInviteEmail(
       message: opts.message,
       // utm tags let Google Analytics show how many people came from this email, and
       // utm_content says which button they pressed.
-      pageUrl: `${PUBLIC_APP_URL}/my-taaruf-card?${campaignQuery('see_how_it_works')}`,
+      pageUrl: `${PUBLIC_APP_URL}${CARD_PATH}?${campaignQuery('see_how_it_works')}`,
       shareUrl: `${PUBLIC_APP_URL}/share?${campaignQuery('share_now')}`,
     }),
     { bypassKillSwitch: true },

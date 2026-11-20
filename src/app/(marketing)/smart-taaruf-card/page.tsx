@@ -2,13 +2,19 @@ import Link from 'next/link';
 import { SITE_URL, breadcrumbJsonLd, faqJsonLd, pageMetadata } from '@/lib/seo';
 import { CARD_PATH, FAQS, INSTAGRAM_URL, OLD_VS_NEW, SAFETY_NOTES, STEPS } from '@/lib/share/campaignContent';
 
-// Title is the search listing: "My Taaruf Card: Share Your Biodata Privately | Bohra Taaruf".
-export const metadata = pageMetadata({
-  title: 'My Taaruf Card: Share Your Biodata Privately',
+// Title is the search listing: "Smart Taaruf Card: Share Your Biodata Privately | Bohra Taaruf".
+export const metadata = {
+  ...pageMetadata({
+  title: 'Smart Taaruf Card: Share Your Biodata Privately',
   description:
-    'Share your biodata as a private link with My Taaruf Card. Choose exactly what people see, keep your photo blurred, send it on WhatsApp, and switch it off any time. Always free.',
+    'Share your marriage biodata as a private link with the Smart Taaruf Card. Choose exactly what people see, keep your photo blurred, send it on WhatsApp, and switch it off any time. Always free.',
   path: CARD_PATH,
-});
+  }),
+  keywords: [
+    'Smart Taaruf Card', 'Bohra biodata', 'Bohra marriage biodata', 'share biodata privately', 'Bohra rishta biodata',
+    'Bohra matrimonial biodata format', 'private biodata link', 'Bohra Taaruf', 'Bohri taruf', 'matrimony biodata WhatsApp',
+  ],
+};
 
 const SERIF = { fontFamily: "Georgia, 'Times New Roman', serif" } as const;
 
@@ -44,14 +50,14 @@ export default function MyTaarufCardPage() {
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }} />
       <script
         type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'My Taaruf Card', path: CARD_PATH }])) }}
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Smart Taaruf Card', path: CARD_PATH }])) }}
       />
 
       {/* Hero */}
       <section className="relative text-white text-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #3F2A16, #6E4520)' }}>
         <Lattice />
         <div className="relative container mx-auto max-w-[900px] px-6 py-16 sm:py-24">
-          <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-[#E8D3A8] font-semibold">Bohra Taaruf Introduces the Private Taaruf Card</p>
+          <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-[#E8D3A8] font-semibold">Bohra Taaruf Introduces the Smart Taaruf Card</p>
           <h1 className="mt-4 text-5xl sm:text-7xl leading-[1.05] font-semibold" style={SERIF}>
             Your Profile.<br />Your Taaruf.
           </h1>
@@ -94,14 +100,14 @@ export default function MyTaarufCardPage() {
         <div className="text-center">
           <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-primary font-bold">Digitalise your biodata</p>
           <h2 className="mt-3 text-3xl sm:text-5xl leading-tight font-semibold text-foreground" style={SERIF}>
-            From PDFs and chat messages to one Private Taaruf Card.
+            From PDFs and chat messages to one Smart Taaruf Card.
           </h2>
         </div>
 
         <div className="mt-8 max-w-[940px] mx-auto flex gap-4 items-start sm:items-center rounded-2xl border-2 border-[#B4442F] bg-[#FBEDE9] px-5 sm:px-7 py-4">
           <span className="shrink-0 w-9 h-9 rounded-full bg-[#B4442F] text-white font-extrabold text-xl inline-flex items-center justify-center" aria-hidden="true">!</span>
           <p className="text-base sm:text-lg leading-relaxed text-[#7A2A1B]">
-            <strong>The biggest red flag of a PDF in chats:</strong> once it is sent, you have no control over who sees it or where it is forwarded. With your Private Taaruf Card, you decide who sees it and you can stop it any time.
+            <strong>The biggest red flag of a PDF in chats:</strong> once it is sent, you have no control over who sees it or where it is forwarded. With your Smart Taaruf Card, you decide who sees it and you can stop it any time.
           </p>
         </div>
 

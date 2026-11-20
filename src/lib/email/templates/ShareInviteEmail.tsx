@@ -9,7 +9,7 @@ import { STEPS } from '../../share/campaignContent';
 // one header (logo + name left, headline centred), a short editable intro, the three
 // steps, two side-by-side buttons (the only two links), two short safety lines, an
 // invitation to reply, and Instagram + website as plain text. The old-way-vs-new-way
-// picture and the long safety list live on the public My Taaruf Card page instead.
+// picture and the long safety list live on the public Smart Taaruf Card page instead.
 //
 // Email-safe: solid colours, table-based Row/Column, and a PNG logo (many email apps
 // block SVG and ignore CSS patterns and gradients).

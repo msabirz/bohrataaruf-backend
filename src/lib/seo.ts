@@ -20,6 +20,36 @@ export function organizationJsonLd() {
   };
 }
 
+/**
+ * The default share image (src/app/opengraph-image.tsx). Pages that set their own openGraph
+ * replace the inherited one, including its image, so each of them lists this explicitly.
+ */
+export const DEFAULT_SHARE_IMAGE = {
+  url: `${SITE_URL}/opengraph-image`,
+  width: 1200,
+  height: 630,
+  alt: 'Bohra Taaruf: free, private matchmaking for Dawoodi Bohra families',
+};
+
+/** Site name and the spellings people search for (shown to search engines as alternate names). */
+export function websiteJsonLd() {
+  return {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: APP_NAME,
+    alternateName: ['Bohra Taaruf', 'BohraTaaruf', 'Bohri Taruf', 'Bohra Taruf', 'Bohra Rishta', 'Dawoodi Bohra Matrimonial'],
+    url: SITE_URL,
+    inLanguage: 'en',
+  };
+}
+
+/** Search words for the whole site. Search engines give them little weight; the page text matters more. */
+export const SITE_KEYWORDS = [
+  'Bohra Taaruf', 'Bohra matrimonial', 'Bohra rishta', 'Dawoodi Bohra matrimony', 'Dawoodi Bohra marriage',
+  'Bohri taruf', 'Bohri rishta', 'Bohra matchmaking', 'free Bohra matrimonial site', 'Bohra shaadi',
+  'Bohra marriage biodata', 'Smart Taaruf Card',
+];
+
 // Lets Google understand the site's primary navigation for potential
 // sitelinks — algorithmic, not directly controllable, but this is the
 // standard signal a real site provides.
@@ -61,7 +91,8 @@ export function pageMetadata({ title, description, path }: { title: string; desc
     title,
     description,
     alternates: { canonical: path },
-    openGraph: { title: `${title} | ${APP_NAME}`, description, url: `${SITE_URL}${path}`, siteName: APP_NAME, type: 'website', locale: 'en_US' },
+    openGraph: { title: `${title} | ${APP_NAME}`, description, url: `${SITE_URL}${path}`, siteName: APP_NAME, type: 'website', locale: 'en_US', images: [DEFAULT_SHARE_IMAGE] },
+    twitter: { card: 'summary_large_image', title: `${title} | ${APP_NAME}`, description, images: [DEFAULT_SHARE_IMAGE.url] },
   };
 }
 

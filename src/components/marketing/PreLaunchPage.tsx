@@ -8,6 +8,8 @@ import {
 import { InstagramIcon } from './InstagramIcon';
 import { useLocale } from '@/lib/context/LocaleContext';
 import { ProgramHomepageBanner } from './ProgramHomepageBanner';
+import { shareIsNew } from '@/lib/share/newBadge';
+import { CARD_PATH, CARD_NAME } from '@/lib/share/campaignContent';
 
 // Lisan-ud-Dawat, romanized (not Gujarati script) — matches how the
 // community actually writes it day to day, e.g. "Kem Cho?" for "How are
@@ -238,6 +240,22 @@ export default function PreLaunchPage() {
 
   return (
     <div className="flex flex-col">
+      {/* ANNOUNCEMENT: the new Smart Taaruf Card, directly under the header. Disappears on
+          its own when the "New" window ends (src/lib/share/newBadge.ts). */}
+      {shareIsNew() && (
+        <div className="border-b border-[#DCCBA8]" style={{ background: 'linear-gradient(90deg, #F3E3C8, #EADFCB)' }}>
+          <div className="mx-auto flex max-w-[1080px] flex-wrap items-center gap-x-4 gap-y-2 px-6 py-3 md:px-8">
+            <span className="rounded-full bg-[#C9A24B] px-3 py-1 text-[10px] font-bold tracking-wider text-[#3F2A16]">NEW</span>
+            <p className="min-w-[220px] flex-1 text-sm leading-snug text-[#3F2A16]">
+              <strong>{CARD_NAME}.</strong> Share your biodata as a private link. You choose what shows, and you can stop it any time. Free.
+            </p>
+            <Link href={CARD_PATH} className="rounded-full bg-[#8C6A3F] px-5 py-2 text-sm font-semibold text-[#FFFFFC] transition-colors hover:bg-[#7a5b35]">
+              Try it →
+            </Link>
+          </div>
+        </div>
+      )}
+
       {/* SECTION 1: HERO */}
       <section
         className="relative w-full"
@@ -461,7 +479,7 @@ export default function PreLaunchPage() {
 
         {/* 2B — CTAs */}
         <div className="mx-auto" style={{ maxWidth: '1080px' }}>
-          <div className="mx-6 mt-5 mb-8 grid grid-cols-1 gap-4 md:mx-8 md:grid-cols-2">
+          <div className="mx-6 mt-5 mb-8 grid grid-cols-1 gap-4 md:mx-8 md:grid-cols-3">
             {/* Create your profile */}
             <div className="flex flex-col gap-3 rounded-2xl border border-[#E5E0D8] bg-[#FFFFFC] p-6">
               <div className="mb-1 inline-flex w-fit items-center gap-1.5 rounded-full border border-[rgba(201,169,110,0.25)] bg-[rgba(201,169,110,0.12)] px-2.5 py-1">
@@ -525,6 +543,24 @@ export default function PreLaunchPage() {
                 </div>
               </div>
             </div>
+
+            {/* Smart Taaruf Card */}
+            <div className="flex flex-col gap-3 rounded-2xl border-2 border-[#C9A24B] bg-[#FFF9EA] p-6 shadow-[0_8px_24px_rgba(201,162,75,0.2)]">
+              <div className="mb-1 inline-flex w-fit items-center gap-2">
+                <span className="text-xs uppercase tracking-widest text-[#8C6A3F]">Use it today</span>
+                {shareIsNew() && <span className="rounded-full bg-[#C9A24B] px-2 py-0.5 text-[10px] font-bold text-[#3F2A16]">New</span>}
+              </div>
+              <h3 className="font-serif text-lg font-medium leading-snug text-[#211F1A]">Share your biodata privately</h3>
+              <p className="text-sm leading-relaxed text-[#6B6558]">
+                Make a {CARD_NAME}: a private link that shows only what you choose. Stop it any time.
+              </p>
+              <Link
+                href={CARD_PATH}
+                className="mt-auto flex h-11 w-full items-center justify-center rounded-xl bg-[#3F2A16] text-center text-sm font-medium text-[#FFFFFC] transition-colors hover:bg-[#2b1c0f]"
+              >
+                Open {CARD_NAME}
+              </Link>
+            </div>
           </div>
         </div>
       </section>
@@ -537,14 +573,32 @@ export default function PreLaunchPage() {
           <span className="block text-xs tracking-widest uppercase" style={{ color: '#8C6A3F', marginBottom: '14px' }}>
             Why different
           </span>
-          <h2 className="font-serif text-3xl font-medium" style={{ color: '#211F1A', maxWidth: '440px', marginBottom: '8px' }}>
+          <h2 className="font-serif text-3xl font-medium md:whitespace-nowrap" style={{ color: '#211F1A', marginBottom: '8px' }}>
             Built on principles, not a business model
           </h2>
           <p className="text-base leading-relaxed" style={{ color: '#6B6558', maxWidth: '500px' }}>
             Every decision about how this platform works comes from one question: what&apos;s right for our community?
           </p>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: '16px', marginTop: '40px' }}>
+          <div className="mt-10 flex flex-col gap-4 rounded-2xl border-2 border-[#C9A24B] bg-[#FFF9EA] p-6 md:flex-row md:items-center md:gap-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#F3E3C8]">
+              <Mail size={24} color="#8C6A3F" />
+            </div>
+            <div className="flex-1">
+              <div className="flex items-center gap-2.5">
+                <h3 className="text-lg font-bold text-[#211F1A]">{CARD_NAME}</h3>
+                {shareIsNew() && <span className="rounded-full bg-[#C9A24B] px-2 py-0.5 text-[10px] font-bold text-[#3F2A16]">New</span>}
+              </div>
+              <p className="mt-1.5 text-sm leading-relaxed text-[#4A4036]">
+                Share your biodata as one private link instead of a PDF in many chats. You choose what shows, your photo stays blurred unless you say otherwise, and you see how many times it was opened.
+              </p>
+            </div>
+            <Link href={CARD_PATH} className="inline-flex h-11 shrink-0 items-center justify-center whitespace-nowrap rounded-full bg-[#8C6A3F] px-6 text-sm font-semibold text-[#FFFFFC] transition-colors hover:bg-[#7a5b35]">
+              See How It Works →
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" style={{ gap: '16px', marginTop: '16px' }}>
             {FEATURES.map(({ Icon, title, body }) => (
               <div key={title} className="rounded-xl" style={{ backgroundColor: '#FFFFFC', border: '0.5px solid #E5E0D8', padding: '20px' }}>
                 <div className="flex items-center justify-center rounded-full" style={{ width: '36px', height: '36px', backgroundColor: '#EADFCB', marginBottom: '12px' }}>
@@ -651,6 +705,21 @@ export default function PreLaunchPage() {
               ))}
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ABOUT: plain-language description with the words people actually search for. */}
+      <section style={{ backgroundColor: '#F8F5F0', padding: '48px 24px 56px' }} aria-label="About Bohra Taaruf">
+        <div className="mx-auto" style={{ maxWidth: '760px' }}>
+          <h2 className="font-serif text-2xl font-medium" style={{ color: '#211F1A', marginBottom: '14px' }}>
+            About Bohra Taaruf
+          </h2>
+          <p className="text-sm leading-relaxed" style={{ color: '#4A4036', marginBottom: '12px' }}>
+            Bohra Taaruf (also searched as Bohri Taruf, Bohra Taruf or Bohra Rishta) is a free, private matchmaking platform for Dawoodi (Daudi) Bohra families looking for a rishta. Profiles are verified, names and photos stay protected until both sides are interested, and nothing is ever behind a paywall.
+          </p>
+          <p className="text-sm leading-relaxed" style={{ color: '#4A4036' }}>
+            While the platform opens to everyone, you can already create your profile, share your marriage biodata safely with the {CARD_NAME}, and meet other families at Taaruf programs. Whether you call it a taaruf, a rishta or shaadi matchmaking, the aim is the same: a respectful, trustworthy way for families to find the right match.
+          </p>
         </div>
       </section>
     </div>
