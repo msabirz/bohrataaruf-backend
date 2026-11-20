@@ -18,10 +18,10 @@ export const metadata: Metadata = {
   // Lets relative canonical and Open Graph addresses resolve to the real domain.
   metadataBase: new URL(SITE_URL),
   title: "Bohra Taaruf",
-  description: "Through the right door, together — a privacy-first matrimonial platform for the Dawoodi Bohra community.",
+  description: "Through the right door, together — private Dawoodi Bohra profiles, and the Smart Taaruf Card: your biodata as a private link you control.",
   keywords: SITE_KEYWORDS,
   // Large image card when a link is shared on X / WhatsApp-style previews.
-  twitter: { card: "summary_large_image", images: [`${SITE_URL}/opengraph-image`], title: "Bohra Taaruf", description: "A free, private matchmaking platform for Dawoodi Bohra families." },
+  twitter: { card: "summary_large_image", images: [`${SITE_URL}/opengraph-image`], title: "Bohra Taaruf", description: "View private Dawoodi Bohra profiles and show interest. Share your biodata as a private link you control, not a forwarded PDF." },
 };
 
 export default function RootLayout({

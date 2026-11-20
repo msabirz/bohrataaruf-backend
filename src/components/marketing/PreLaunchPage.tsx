@@ -295,6 +295,10 @@ export default function PreLaunchPage() {
               Marriage is one of life&apos;s most sacred moments. It should never cost you anything.
             </h1>
 
+            <p className="text-base font-medium leading-relaxed" style={{ color: '#E8D3A8', marginBottom: '14px', maxWidth: '480px' }}>
+              Private Bohra profiles and the Smart Taaruf Card: your biodata as a private link you control.
+            </p>
+
             <p className="text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.6)', marginBottom: '32px', maxWidth: '480px' }}>
               Watching matchmaking become a business — inaccessible for many in our own community — a fellow momin decided to do something about it. Bohra Taaruf is free, private, and built on trust.
             </p>
@@ -715,10 +719,10 @@ export default function PreLaunchPage() {
             About Bohra Taaruf
           </h2>
           <p className="text-sm leading-relaxed" style={{ color: '#4A4036', marginBottom: '12px' }}>
-            Bohra Taaruf (also searched as Bohri Taruf, Bohra Taruf or Bohra Rishta) is a free, private matchmaking platform for Dawoodi (Daudi) Bohra families looking for a rishta. Profiles are verified, names and photos stay protected until both sides are interested, and nothing is ever behind a paywall.
+            Bohra Taaruf (also searched as Bohri Taruf or Bohra Taruf) is a free, private platform for Dawoodi (Daudi) Bohra individuals and families who are looking for a partner. We suggest profiles; we do not arrange marriages. Families talk, decide and take it forward themselves. Profiles are verified, names and photos stay protected until both sides are interested, and nothing is ever behind a paywall.
           </p>
           <p className="text-sm leading-relaxed" style={{ color: '#4A4036' }}>
-            While the platform opens to everyone, you can already create your profile, share your marriage biodata safely with the {CARD_NAME}, and meet other families at Taaruf programs. Whether you call it a taaruf, a rishta or shaadi matchmaking, the aim is the same: a respectful, trustworthy way for families to find the right match.
+            At the heart of it is the {CARD_NAME}: one private link to your biodata, where you choose exactly what shows and can switch it off any time. You can create your profile and make your card today, and meet other families at Taaruf programs.
           </p>
         </div>
       </section>

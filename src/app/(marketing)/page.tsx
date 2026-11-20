@@ -10,9 +10,9 @@ import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBan
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
-const HOME_TITLE = 'Bohra Taaruf | Free Dawoodi Bohra Matrimonial & Rishta Platform';
+const HOME_TITLE = 'Bohra Taaruf | Private Profiles & Biodata You Control';
 const HOME_DESCRIPTION =
-  'Bohra Taaruf is a free, private matrimonial platform for Dawoodi Bohra families. Find a rishta, share your marriage biodata safely with the Smart Taaruf Card, and meet at Taaruf programs.';
+  'View private Dawoodi Bohra profiles and show interest. Share your biodata as a private link you control, not a forwarded PDF. Free.';
 
 export const metadata: Metadata = {
   // Absolute, so the layout's " | Bohra Taaruf" suffix is not added a second time.
@@ -60,6 +60,9 @@ export default async function MarketingHomePage() {
           </h1>
           <p className="text-lg text-muted max-w-lg mb-6 leading-relaxed">
             A thoughtful space designed for meaningful connections, built entirely around ITS verification and strict privacy controls.
+          </p>
+          <p className="text-base text-muted max-w-lg mb-6 leading-relaxed">
+            Private Bohra profiles and the Smart Taaruf Card: your biodata as a private link you control.
           </p>
 
           <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2 mb-8">
@@ -252,7 +255,7 @@ export default async function MarketingHomePage() {
           <div className="text-center mb-16 scroll-reveal">
             <h2 className="text-3xl md:text-5xl font-bold mb-6">Built differently, on purpose.</h2>
             <p className="text-lg md:text-xl text-accent-light/90 max-w-2xl mx-auto leading-relaxed">
-              Most matchmaking apps ask you to pay before you can see anything real, then design every feature to keep you scrolling. {APP_NAME} works the other way.
+              Most matchmaking apps ask you to pay before you can see anything real, then design every feature to keep you scrolling. {APP_NAME} is not one of them: it is free, and built to help you decide.
             </p>
           </div>
           

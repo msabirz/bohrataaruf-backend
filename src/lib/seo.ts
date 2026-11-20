@@ -15,7 +15,7 @@ export function organizationJsonLd() {
     name: APP_NAME,
     url: SITE_URL,
     logo: `${SITE_URL}/logo-light.svg`,
-    description: 'A verified, private, and thoughtful matchmaking platform exclusively for the Dawoodi Bohra community.',
+    description: 'Private, verified Dawoodi Bohra profiles you can view and show interest in, and the Smart Taaruf Card: your biodata as a private link you control. Free.',
     sameAs: ['https://www.instagram.com/bohrataaruf'],
   };
 }
@@ -28,7 +28,7 @@ export const DEFAULT_SHARE_IMAGE = {
   url: `${SITE_URL}/opengraph-image`,
   width: 1200,
   height: 630,
-  alt: 'Bohra Taaruf: free, private matchmaking for Dawoodi Bohra families',
+  alt: 'Bohra Taaruf: Smart Taaruf Card and private profiles for Dawoodi Bohra families',
 };
 
 /**
@@ -46,7 +46,7 @@ export function websiteJsonLd() {
     '@context': 'https://schema.org',
     '@type': 'WebSite',
     name: APP_NAME,
-    alternateName: ['Bohra Taaruf', 'BohraTaaruf', 'Bohri Taruf', 'Bohra Taruf', 'Bohra Rishta', 'Dawoodi Bohra Matrimonial'],
+    alternateName: ['Bohra Taaruf', 'BohraTaaruf', 'Bohri Taruf', 'Bohra Taruf', 'Smart Taaruf Card'],
     url: SITE_URL,
     inLanguage: 'en',
   };
@@ -54,9 +54,11 @@ export function websiteJsonLd() {
 
 /** Search words for the whole site. Search engines give them little weight; the page text matters more. */
 export const SITE_KEYWORDS = [
-  'Bohra Taaruf', 'Bohra matrimonial', 'Bohra rishta', 'Dawoodi Bohra matrimony', 'Dawoodi Bohra marriage',
-  'Bohri taruf', 'Bohri rishta', 'Bohra matchmaking', 'free Bohra matrimonial site', 'Bohra shaadi',
-  'Bohra marriage biodata', 'Smart Taaruf Card',
+  'Bohra Taaruf', 'Smart Taaruf Card', 'Bohri taruf', 'Bohra biodata', 'Bohra biodata format', 'private biodata link',
+  'share biodata privately', 'Dawoodi Bohra profiles', 'Bohra partner profiles',
+  // Only here, in the hidden keywords tag: search engines give it little weight, and no page, title,
+  // description or structured data says Bohra Taaruf is a matrimony or marriage service.
+  'Bohra matrimony', 'Bohra matrimonial', 'Bohra rishta', 'Bohra nisbat', 'nisbat', 'nikah', 'Bohra nikah', 'Bohra shaadi', 'shaadi',
 ];
 
 // Lets Google understand the site's primary navigation for potential
