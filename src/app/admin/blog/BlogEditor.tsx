@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import { EditorContent, NodeViewWrapper, ReactNodeViewRenderer, useEditor, useEditorState, type NodeViewProps } from '@tiptap/react';
 import type { Editor } from '@tiptap/core';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
@@ -20,6 +20,33 @@ interface EditablePost {
 }
 
 const slugify = (t: string) => t.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '').slice(0, 80);
+
+/** A picture in the editor, with the caption typed right underneath it, as it will look on the page. */
+function ImageWithCaption({ node, updateAttributes, selected }: NodeViewProps) {
+  return (
+    <NodeViewWrapper className="my-4" contentEditable={false}>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img src={node.attrs.src} alt={node.attrs.alt || ''} className={`h-auto w-full rounded-xl border ${selected ? 'border-[#C9A24B] ring-2 ring-[#C9A24B]' : 'border-gray-200'}`} draggable={false} />
+      <input
+        type="text"
+        value={node.attrs.caption || ''}
+        maxLength={300}
+        placeholder="Add a caption (optional)"
+        onChange={(e) => updateAttributes({ caption: e.target.value })}
+        className="mt-2 w-full border-0 border-b border-dashed border-gray-300 bg-transparent px-1 py-1 text-center text-sm italic text-gray-600 focus:border-[#8C6A3F] focus:outline-none"
+      />
+    </NodeViewWrapper>
+  );
+}
+
+const ImageWithCaptionExtension = Image.extend({
+  addAttributes() {
+    return { ...this.parent?.(), caption: { default: '' } };
+  },
+  addNodeView() {
+    return ReactNodeViewRenderer(ImageWithCaption);
+  },
+});
 
 const inputCls = 'w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-[#8C6A3F] focus:outline-none';
 
@@ -47,7 +74,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
       const res = await fetch('/api/admin/blog/upload', { method: 'POST', body: form });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error || 'Could not upload the picture'); return; }
-      editorRef.current?.chain().focus().setImage({ src: data.url, alt: '' }).run();
+      editorRef.current?.chain().focus().setImage({ src: data.url, alt: '', caption: '' } as never).run();
     } catch {
       setError('Could not reach the server to upload the picture');
     } finally {
@@ -66,7 +93,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
         code: false, codeBlock: false, strike: false, underline: false,
         link: { openOnClick: false, autolink: false },
       }),
-      Image.configure({ inline: false, allowBase64: false }),
+      ImageWithCaptionExtension.configure({ inline: false, allowBase64: false }),
     ],
     content: parseStoredBody(post?.body ?? ''),
     editorProps: {

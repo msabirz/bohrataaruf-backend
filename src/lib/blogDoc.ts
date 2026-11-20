@@ -16,7 +16,7 @@ export type Mark = { type: 'bold' } | { type: 'italic' } | { type: 'link'; attrs
 export type DocNode = {
   type: string;
   text?: string;
-  attrs?: { level?: number; src?: string; alt?: string };
+  attrs?: { level?: number; src?: string; alt?: string; caption?: string };
   marks?: Mark[];
   content?: DocNode[];
 };
@@ -83,7 +83,8 @@ function cleanNode(raw: unknown, parent: string, depth: number, state: { count: 
       const src = typeof n.attrs?.src === 'string' ? n.attrs.src : '';
       if (!IMAGE_SRC.test(src)) return null; // only pictures uploaded through our own editor
       const alt = typeof n.attrs?.alt === 'string' ? n.attrs.alt.slice(0, 200) : '';
-      return { type, attrs: { src, alt } };
+      const caption = typeof n.attrs?.caption === 'string' ? n.attrs.caption.slice(0, 300) : '';
+      return { type, attrs: { src, alt, caption } };
     }
     default: {
       const children = Array.isArray(n.content) ? n.content : [];

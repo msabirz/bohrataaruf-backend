@@ -35,11 +35,16 @@ function renderNode(node: DocNode, key: string): React.ReactNode {
     case 'orderedList': return <ol key={key} className="my-4 list-decimal space-y-2 pl-6 text-muted">{renderChildren(node.content, key)}</ol>;
     case 'listItem': return <li key={key}>{renderChildren(node.content, key)}</li>;
     case 'blockquote': return <blockquote key={key} className="my-6 border-l-4 border-primary/40 pl-4 italic text-muted">{renderChildren(node.content, key)}</blockquote>;
-    case 'image':
+    case 'image': {
+      const caption = node.attrs?.caption ?? '';
       return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img key={key} src={node.attrs?.src} alt={node.attrs?.alt ?? ''} loading="lazy" className="my-6 h-auto max-w-full rounded-xl" />
+        <figure key={key} className="my-8">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img src={node.attrs?.src} alt={node.attrs?.alt || caption} loading="lazy" className="h-auto w-full rounded-xl border border-border" />
+          {caption && <figcaption className="mt-2 text-center text-sm italic text-muted">{caption}</figcaption>}
+        </figure>
       );
+    }
     default: return null;
   }
 }
