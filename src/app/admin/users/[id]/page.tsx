@@ -175,7 +175,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
         {/* Left Column: Details */}
         <div className="md:col-span-2 space-y-6">
           <Card title="Profile Details" icon={<User className="w-5 h-5 text-gray-500" />}>
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <Field label="Alias" value={profile?.alias} />
               <Field label="Gender" value={labelize(user.gender)} />
               <Field label="Date of Birth" value={user.dateOfBirth} />
@@ -200,7 +200,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
           </Card>
 
           <Card title="Family Background" icon={<UsersIcon className="w-5 h-5 text-gray-500" />}>
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <Field label="Siblings" value={siblingsLine} />
               <Field
                 label="Children"
@@ -245,7 +245,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
                   </div>
                 )}
                 {(prefs!.practiceLevel || prefs!.familyExpectation || prefs!.childrenAcceptance) && (
-                  <div className="grid grid-cols-2 gap-4 pt-2 border-t border-gray-100">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-100">
                     <Field label="Practice Level" value={labelize(prefs!.practiceLevel)} />
                     <Field label="Family Expectation" value={labelize(prefs!.familyExpectation)} />
                     <Field label="Open to Children" value={labelize(prefs!.childrenAcceptance)} />
@@ -257,7 +257,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
 
           {answeredPairs.length > 0 && (
             <Card title="Lifestyle & Personality" icon={<Sparkles className="w-5 h-5 text-gray-500" />}>
-              <div className="grid grid-cols-2 gap-3 text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
                 {answeredPairs.map((p) => (
                   <div key={p.question} className="border border-dashed border-gray-300 rounded-lg px-3 py-2">
                     <p className="text-gray-500 text-xs">{p.question}</p>
@@ -270,7 +270,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
 
           <Card title="ITS Verification" icon={<ShieldCheck className="w-5 h-5 text-gray-500" />}>
             <div className="space-y-4 text-sm">
-              <div className="grid grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <Field label="Status" value={getStatusBadge(verification?.status || null)} />
                 <Field label="ITS Number" value={itsNumber ? <span className="font-mono">{itsNumber}</span> : null} />
                 <Field label="Submitted" value={verification?.createdAt ? formatDateTime(verification.createdAt) : null} />
@@ -292,7 +292,7 @@ export default async function AdminUserDetailPage(props: { params: Promise<{ id:
           </Card>
 
           <Card title="Photo Privacy" icon={<EyeOff className="w-5 h-5 text-gray-500" />}>
-            <div className="grid grid-cols-2 gap-6 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
               <Field label="Privacy Mode" value={labelize(profile?.photoPrivacyMode)} />
               <Field label="Photo Uploaded" value={profile?.photoKey ? 'Yes' : 'No'} />
             </div>

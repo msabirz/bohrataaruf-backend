@@ -57,7 +57,7 @@ export default async function AdminVerificationsPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end mb-8">
+      <div className="flex flex-wrap justify-between items-end gap-3 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Review Verifications</h1>
           <p className="text-gray-500 mt-2">Welcome back, {session.name}. Please review the pending ITS cards below.</p>

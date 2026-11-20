@@ -8,6 +8,8 @@ import { AdminSessionPayload } from '@/lib/adminAuth';
 
 interface AdminSidebarProps {
   session: AdminSessionPayload;
+  /** Called when a page is chosen, so the phone drawer can close. */
+  onNavigate?: () => void;
 }
 
 const NAV_ITEMS = [
@@ -25,7 +27,7 @@ const NAV_ITEMS = [
   { label: 'Settings', href: '/admin/settings', icon: Settings },
 ];
 
-export default function AdminSidebar({ session }: AdminSidebarProps) {
+export default function AdminSidebar({ session, onNavigate }: AdminSidebarProps) {
   const pathname = usePathname();
 
   const handleLogout = async () => {
@@ -35,7 +37,7 @@ export default function AdminSidebar({ session }: AdminSidebarProps) {
   };
 
   return (
-    <div className="w-64 bg-[#8C6A3F] flex flex-col text-white shadow-xl h-screen sticky top-0 shrink-0">
+    <div className="w-64 max-w-[85vw] bg-[#8C6A3F] flex flex-col text-white shadow-xl h-screen shrink-0">
       {/* Brand Header */}
       <div className="p-6 border-b border-[#7a5a34] bg-[#826139]">
         <h2 className="text-xl font-extrabold tracking-tight">{process.env.NEXT_PUBLIC_APP_DISPLAY_NAME ?? 'Bohra Taaruf'}</h2>
@@ -52,6 +54,7 @@ export default function AdminSidebar({ session }: AdminSidebarProps) {
             <Link 
               key={item.href} 
               href={item.href}
+              onClick={onNavigate}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg font-medium transition-all ${
                 isActive 
                   ? 'bg-white text-[#8C6A3F] shadow-sm' 

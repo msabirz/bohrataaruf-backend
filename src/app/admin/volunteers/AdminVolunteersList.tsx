@@ -76,7 +76,7 @@ export default function AdminVolunteersList({ currentVolunteerId }: { currentVol
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-end">
+      <div className="flex flex-wrap justify-between items-end gap-3">
         <div>
           <h1 className="text-3xl font-extrabold text-gray-900 tracking-tight">Volunteer Team</h1>
           <p className="text-gray-500 mt-2">Manage admin access and view verification activity for all volunteers.</p>

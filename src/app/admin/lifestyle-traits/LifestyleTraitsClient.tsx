@@ -239,7 +239,7 @@ export default function LifestyleTraitsClient() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <IconSideForm
                   title="Left option"
                   optionKey={form.leftOptionKey}
