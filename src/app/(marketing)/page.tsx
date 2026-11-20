@@ -13,12 +13,16 @@ export const metadata: Metadata = {
   alternates: { canonical: '/' },
 };
 
-export default function MarketingHomePage() {
+// Refreshed at most every minute, and immediately when an admin changes the site mode
+// (the save clears this page's cache), so no redeploy is needed to launch.
+export const revalidate = 60;
+
+export default async function MarketingHomePage() {
   // The site mode is decided on the SERVER, so the HTML that search engines (and slow
   // phones) receive already contains the whole page, including the main heading.
   // This used to be a client-side gate that rendered nothing until the browser had
   // fetched the mode, which left the first HTML of the homepage almost empty.
-  if (getSiteMode() === 'B') return <PreLaunchPage />;
+  if ((await getSiteMode({ fresh: true })) === 'B') return <PreLaunchPage />;
 
   return (
     <div className="flex flex-col min-h-screen">

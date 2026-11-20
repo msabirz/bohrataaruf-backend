@@ -14,7 +14,7 @@ export async function GET(request: Request) {
   try {
     const userId = await getAuthenticatedUserId(request);
     if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (isModeB()) return NextResponse.json({ error: 'MODE_B', message: 'Coming soon' }, { status: 200 });
+    if (await isModeB()) return NextResponse.json({ error: 'MODE_B', message: 'Coming soon' }, { status: 200 });
 
     // Fire-and-forget — opportunistic day-28/29 retention warning check,
     // not on the response's critical path.
