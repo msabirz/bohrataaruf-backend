@@ -76,3 +76,18 @@ export async function uploadObject(key: string, body: Buffer, contentType: strin
     ContentType: contentType,
   }));
 }
+
+/**
+ * Reads an object's bytes server-side. Returns null if it does not exist. Callers must only
+ * pass keys they built themselves (never a key taken straight from a request).
+ */
+export async function downloadObject(key: string): Promise<{ body: Buffer; contentType: string } | null> {
+  try {
+    const res = await s3Client.send(new GetObjectCommand({ Bucket: R2_BUCKET_NAME, Key: key }));
+    if (!res.Body) return null;
+    const bytes = await res.Body.transformToByteArray();
+    return { body: Buffer.from(bytes), contentType: res.ContentType || 'application/octet-stream' };
+  } catch {
+    return null;
+  }
+}

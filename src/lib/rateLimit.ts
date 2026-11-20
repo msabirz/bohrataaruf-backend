@@ -90,6 +90,14 @@ function getLimiters() {
       prefix: 'ratelimit:sharePublicViewLink',
     }),
 
+    // Blog pictures uploaded by an admin: 30 per 10 minutes per volunteer.
+    blogImageUpload: new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '10 m'),
+      analytics: true,
+      prefix: 'ratelimit:blogImageUpload',
+    }),
+
     // 5 password resets per 60 minutes per IP/User
     passwordReset: new Ratelimit({
       redis,
@@ -139,7 +147,7 @@ export function getLimiterForPath(pathname: string): Ratelimit | null {
   return null;
 }
 
-export type NamedLimiter = 'shareLinkCreate' | 'sharePasswordCheck' | 'sharePublicView' | 'sharePublicViewLink';
+export type NamedLimiter = 'shareLinkCreate' | 'sharePasswordCheck' | 'sharePublicView' | 'sharePublicViewLink' | 'blogImageUpload';
 
 /**
  * For limits that the path-based middleware cannot express (they depend on the request
