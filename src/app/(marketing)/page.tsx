@@ -3,7 +3,8 @@ import type { Metadata } from 'next';
 import { ShieldCheck, Search, Heart, Users, ShieldOff, EyeOff, Lock, MessageCircleOff, Link as LinkIcon, Eye, Zap, MapPin, ChevronDown } from 'lucide-react';
 import IndiaMap from '@/components/marketing/IndiaMap';
 import RegisteredCounter from '@/components/marketing/RegisteredCounter';
-import { MarketingModeGate } from '@/components/marketing/MarketingModeGate';
+import PreLaunchPage from '@/components/marketing/PreLaunchPage';
+import { getSiteMode } from '@/lib/modeGuard';
 import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBanner';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
@@ -13,8 +14,13 @@ export const metadata: Metadata = {
 };
 
 export default function MarketingHomePage() {
+  // The site mode is decided on the SERVER, so the HTML that search engines (and slow
+  // phones) receive already contains the whole page, including the main heading.
+  // This used to be a client-side gate that rendered nothing until the browser had
+  // fetched the mode, which left the first HTML of the homepage almost empty.
+  if (getSiteMode() === 'B') return <PreLaunchPage />;
+
   return (
-    <MarketingModeGate>
     <div className="flex flex-col min-h-screen">
       {/* 1. HERO SECTION */}
       <section className="relative pt-12 md:pt-16 pb-20 overflow-hidden px-6">
@@ -273,6 +279,5 @@ export default function MarketingHomePage() {
       </section>
 
     </div>
-    </MarketingModeGate>
   );
 }
