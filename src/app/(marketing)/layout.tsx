@@ -3,7 +3,7 @@ import { Header } from '@/components/marketing/Header';
 import { Footer } from '@/components/marketing/Footer';
 import { GoogleTagManager } from '@/components/analytics/GoogleTagManager';
 import { LocaleProvider } from '@/lib/context/LocaleContext';
-import { organizationJsonLd, siteNavigationJsonLd } from '@/lib/seo';
+import { DEFAULT_SHARE_IMAGE, organizationJsonLd, siteNavigationJsonLd, websiteJsonLd } from '@/lib/seo';
 import '../globals.css';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
@@ -21,7 +21,9 @@ export const metadata: Metadata = {
     siteName: APP_NAME,
     locale: 'en_US',
     type: 'website',
+    images: [DEFAULT_SHARE_IMAGE],
   },
+  twitter: { card: 'summary_large_image', images: [DEFAULT_SHARE_IMAGE.url] },
 };
 
 export default function MarketingLayout({
@@ -35,6 +37,7 @@ export default function MarketingLayout({
           not per-page, since it describes the site itself. */}
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd()) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(siteNavigationJsonLd()) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(websiteJsonLd()) }} />
       <GoogleTagManager />
       <LocaleProvider>
         <Header />

@@ -18,7 +18,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { url: `${SITE_URL}/terms`, changeFrequency: 'yearly', priority: 0.3 },
     { url: `${SITE_URL}/signup`, changeFrequency: 'monthly', priority: 0.7 },
     { url: `${SITE_URL}/events`, changeFrequency: 'weekly', priority: 0.8 },
-    { url: `${SITE_URL}/my-taaruf-card`, changeFrequency: 'monthly', priority: 0.9 },
+    { url: `${SITE_URL}/smart-taaruf-card`, changeFrequency: 'monthly', priority: 0.9 },
   ];
 
   const programs = await db.select({ slug: taarufPrograms.slug, updatedAt: taarufPrograms.updatedAt })

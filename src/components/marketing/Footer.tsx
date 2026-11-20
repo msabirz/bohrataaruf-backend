@@ -1,6 +1,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { InstagramIcon } from './InstagramIcon';
+import { INDEPENDENCE_SHORT } from '@/lib/seo';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -24,6 +25,7 @@ export function Footer() {
             <ul className="space-y-3">
               <li><Link href="/#how-it-works" className="text-sm text-muted hover:text-primary transition-colors">How it works</Link></li>
               <li><Link href="/#features" className="text-sm text-muted hover:text-primary transition-colors">Features</Link></li>
+              <li><Link href="/smart-taaruf-card" className="text-sm text-muted hover:text-primary transition-colors">Smart Taaruf Card</Link></li>
               <li><Link href="/about" className="text-sm text-muted hover:text-primary transition-colors">About Us</Link></li>
               <li><Link href="/signup" className="text-sm text-muted hover:text-primary transition-colors">Sign up</Link></li>
             </ul>
@@ -60,8 +62,8 @@ export function Footer() {
           <p className="text-sm text-muted">
             &copy; {new Date().getFullYear()} {APP_NAME}. All rights reserved.
           </p>
-          <p className="text-xs text-muted/70">
-            An independent initiative for the Dawoodi Bohra community. Not affiliated with any institution.
+          <p className="max-w-xl text-xs leading-relaxed text-muted md:text-right">
+            {INDEPENDENCE_SHORT}
           </p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ModeProvider } from "@/lib/context/ModeContext";
-import { SITE_URL } from "@/lib/seo";
+import { SITE_URL, SITE_KEYWORDS } from "@/lib/seo";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -19,6 +19,9 @@ export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: "Bohra Taaruf",
   description: "Through the right door, together — a privacy-first matrimonial platform for the Dawoodi Bohra community.",
+  keywords: SITE_KEYWORDS,
+  // Large image card when a link is shared on X / WhatsApp-style previews.
+  twitter: { card: "summary_large_image", images: [`${SITE_URL}/opengraph-image`], title: "Bohra Taaruf", description: "A free, private matchmaking platform for Dawoodi Bohra families." },
 };
 
 export default function RootLayout({

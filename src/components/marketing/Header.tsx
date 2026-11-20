@@ -38,6 +38,7 @@ export function Header() {
     { href: '/about', label: 'About Us' },
     { href: '/#how-it-works', label: 'How it works' },
     { href: '/#features', label: 'Features' },
+    { href: '/smart-taaruf-card', label: 'Smart Taaruf Card', isNew: true },
     { href: '/events', label: 'Events' },
     { href: '/contact', label: 'Contact' },
   ];
@@ -191,8 +192,9 @@ export function Header() {
           
           <nav className="hidden md:flex items-center gap-8">
             {NAV_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} className="text-sm font-medium text-muted hover:text-foreground transition-colors">
+              <Link key={link.href} href={link.href} className="text-sm font-medium text-muted hover:text-foreground transition-colors inline-flex items-center gap-1.5">
                 {link.label}
+                {link.isNew && shareIsNew() && <span className="px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
               </Link>
             ))}
           </nav>
@@ -306,6 +308,7 @@ export function Header() {
                   className="py-3 text-sm font-medium text-muted hover:text-foreground transition-colors border-b border-border last:border-b-0"
                 >
                   {link.label}
+                  {link.isNew && shareIsNew() && <span className="ml-2 px-1.5 py-0.5 rounded-full bg-[#C9A24B] text-[#3F2A16] text-[10px] font-bold">New</span>}
                 </Link>
               ))}
             </div>

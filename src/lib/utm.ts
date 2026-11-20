@@ -22,6 +22,7 @@ export function campaignQuery(content: string): string {
   return new URLSearchParams({
     utm_source: 'email',
     utm_medium: 'email',
+    // Kept as is on purpose: renaming it would split the campaign's history in GA4.
     utm_campaign: 'my-taaruf-card',
     utm_content: content,
   }).toString();

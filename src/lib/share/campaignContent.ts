@@ -2,7 +2,8 @@
  * Copy shared by the public My Taaruf Card page, its FAQ structured data, and the
  * campaign email, so the wording is defined once.
  */
-export const CARD_PATH = '/my-taaruf-card';
+export const CARD_PATH = '/smart-taaruf-card';
+export const CARD_NAME = 'Smart Taaruf Card';
 export const INSTAGRAM_URL = 'https://www.instagram.com/bohrataaruf';
 
 export const STEPS = [
