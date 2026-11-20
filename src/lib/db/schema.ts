@@ -612,3 +612,12 @@ export const sharePromoSettings = pgTable('share_promo_settings', {
   siteUrl: text('site_url').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }),
 });
+
+// Site-wide settings an admin can change without a redeploy (see src/lib/modeGuard.ts).
+// First key: 'site_mode' = 'A' (launch) | 'B' (pre-launch).
+export const siteSettings = pgTable('site_settings', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow(),
+  updatedBy: uuid('updated_by').references(() => volunteers.id, { onDelete: 'set null' }),
+});
