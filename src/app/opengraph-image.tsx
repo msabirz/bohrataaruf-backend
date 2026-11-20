@@ -1,6 +1,6 @@
 import { ImageResponse } from 'next/og';
 
-export const alt = 'Bohra Taaruf: a free, private matrimonial platform for Dawoodi Bohra families';
+export const alt = 'Bohra Taaruf: Smart Taaruf Card and private profiles for Dawoodi Bohra families';
 export const size = { width: 1200, height: 630 };
 export const contentType = 'image/png';
 
@@ -35,8 +35,8 @@ export default function Image() {
         </svg>
         <div style={{ fontSize: 88, fontWeight: 700, marginTop: 18 }}>Bohra Taaruf</div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', fontSize: 34, marginTop: 10, color: '#F3E3C8' }}>
-          <div>Free, private matchmaking</div>
-          <div>for Dawoodi Bohra families</div>
+          <div style={{ fontSize: 42, fontWeight: 700, color: '#E8D3A8' }}>Smart Taaruf Card</div>
+          <div style={{ fontSize: 30, marginTop: 6 }}>Private profiles for Bohra families</div>
         </div>
       </div>
     ),

@@ -13,10 +13,10 @@ export const metadata: Metadata = {
     template: `%s | ${APP_NAME}`,
     default: `${APP_NAME} - A Trusted Space for the Dawoodi Bohra Community`,
   },
-  description: 'A verified, private, and thoughtful matchmaking platform exclusively for the Dawoodi Bohra community.',
+  description: 'A free, private space where Dawoodi Bohra families looking for a partner can create a verified profile, share it safely with the Smart Taaruf Card, and see suggested profiles.',
   openGraph: {
     title: APP_NAME,
-    description: 'A verified, private, and thoughtful matchmaking platform exclusively for the Dawoodi Bohra community.',
+    description: 'A free, private space where Dawoodi Bohra families looking for a partner can create a verified profile, share it safely with the Smart Taaruf Card, and see suggested profiles.',
     url: 'https://bohrataaruf.com',
     siteName: APP_NAME,
     locale: 'en_US',

@@ -29,7 +29,7 @@ export default function TermsPage() {
 
         <h2 className="text-2xl font-semibold text-foreground mt-12 mb-4">3. User Conduct</h2>
         <p>
-          You agree to use {APP_NAME} respectfully and solely for the purpose of finding a matrimonial match. Harassment, abuse, or inappropriate behavior will result in immediate account termination.
+          You agree to use {APP_NAME} respectfully and solely for the purpose of finding a suitable partner. Harassment, abuse, or inappropriate behavior will result in immediate account termination.
         </p>
 
         <h2 className="text-2xl font-semibold text-foreground mt-12 mb-4">4. Account Termination</h2>

@@ -10,9 +10,9 @@ import { ProgramHomepageBanner } from '@/components/marketing/ProgramHomepageBan
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
-const HOME_TITLE = 'Bohra Taaruf | Free Dawoodi Bohra Matrimonial & Rishta Platform';
+const HOME_TITLE = 'Bohra Taaruf | Smart Taaruf Card & Private Bohra Profiles';
 const HOME_DESCRIPTION =
-  'Bohra Taaruf is a free, private matrimonial platform for Dawoodi Bohra families. Find a rishta, share your marriage biodata safely with the Smart Taaruf Card, and meet at Taaruf programs.';
+  'Private, verified profiles for Dawoodi Bohra families looking for a partner. Share yours safely with the Smart Taaruf Card and choose who sees what. Free.';
 
 export const metadata: Metadata = {
   // Absolute, so the layout's " | Bohra Taaruf" suffix is not added a second time.

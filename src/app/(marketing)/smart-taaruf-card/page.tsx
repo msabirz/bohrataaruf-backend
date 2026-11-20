@@ -7,12 +7,12 @@ export const metadata = {
   ...pageMetadata({
   title: 'Smart Taaruf Card: Share Your Biodata Privately',
   description:
-    'Share your marriage biodata as a private link with the Smart Taaruf Card. Choose exactly what people see, keep your photo blurred, send it on WhatsApp, and switch it off any time. Always free.',
+    'Share your biodata as a private link with the Smart Taaruf Card. Choose exactly what people see, keep your photo blurred, send it on WhatsApp, and switch it off any time. Always free.',
   path: CARD_PATH,
   }),
   keywords: [
-    'Smart Taaruf Card', 'Bohra biodata', 'Bohra marriage biodata', 'share biodata privately', 'Bohra rishta biodata',
-    'Bohra matrimonial biodata format', 'private biodata link', 'Bohra Taaruf', 'Bohri taruf', 'matrimony biodata WhatsApp',
+    'Smart Taaruf Card', 'Bohra biodata', 'Bohra biodata format', 'share biodata privately', 'private biodata link',
+    'biodata link WhatsApp', 'Bohra Taaruf', 'Bohri taruf', 'Dawoodi Bohra profiles',
   ],
 };
 
