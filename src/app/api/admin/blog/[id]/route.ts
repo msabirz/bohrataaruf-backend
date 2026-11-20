@@ -47,6 +47,7 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
       .returning();
 
     revalidatePath('/blog');
+    revalidatePath('/', 'layout'); // the footer's Blog link depends on whether any post is public
     revalidatePath(`/blog/${existing.slug}`);
     revalidatePath(`/blog/${slug}`);
     return NextResponse.json({ post });
@@ -65,6 +66,7 @@ export async function DELETE(_req: Request, { params }: { params: Promise<{ id: 
     const [gone] = await db.delete(blogPosts).where(eq(blogPosts.id, id)).returning({ slug: blogPosts.slug });
     if (!gone) return NextResponse.json({ error: 'Not found' }, { status: 404 });
     revalidatePath('/blog');
+    revalidatePath('/', 'layout'); // the footer's Blog link depends on whether any post is public
     revalidatePath(`/blog/${gone.slug}`);
     return NextResponse.json({ ok: true });
   } catch (error) {

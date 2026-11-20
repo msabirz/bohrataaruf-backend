@@ -42,6 +42,7 @@ export async function POST(request: Request) {
       .returning();
 
     revalidatePath('/blog');
+    revalidatePath('/', 'layout'); // the footer's Blog link depends on whether any post is public
     return NextResponse.json({ post }, { status: 201 });
   } catch (error) {
     console.error('[Admin blog POST]', error);

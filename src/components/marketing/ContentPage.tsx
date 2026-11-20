@@ -7,7 +7,7 @@ export function ContentPage({ title, intro, children, jsonLd }: { title: string;
   return (
     <div className="bg-background min-h-screen pt-24 pb-24 px-6">
       {(jsonLd ?? []).map((d, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(d) }} />
+        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(d).replace(/</g, '\\u003c') }} />
       ))}
       <div className="container mx-auto max-w-3xl">
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{title}</h1>

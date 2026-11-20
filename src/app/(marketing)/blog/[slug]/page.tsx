@@ -2,7 +2,7 @@ import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import { SITE_URL, breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
 import { getPublishedPost, readingMinutes } from '@/lib/blog';
-import { Markdown } from '@/components/Markdown';
+import { BlogContent } from '@/components/BlogContent';
 import { ContentPage } from '@/components/marketing/ContentPage';
 
 export const revalidate = 300;
@@ -51,7 +51,7 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
         {' '}&middot; {readingMinutes(post.body)} min read
       </p>
       <article className="text-base">
-        <Markdown source={post.body} />
+        <BlogContent body={post.body} />
       </article>
     </ContentPage>
   );

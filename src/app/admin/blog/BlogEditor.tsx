@@ -1,9 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Markdown } from '@/components/Markdown';
+import { EditorContent, useEditor, useEditorState } from '@tiptap/react';
+import type { Editor } from '@tiptap/core';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import { parseStoredBody } from '@/lib/blogDoc';
 
 interface EditablePost {
   id: string;
@@ -26,11 +30,75 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
   const [slugTouched, setSlugTouched] = useState(!!post);
   const [excerpt, setExcerpt] = useState(post?.excerpt ?? '');
   const [authorName, setAuthorName] = useState(post?.authorName ?? '');
-  const [body, setBody] = useState(post?.body ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
-  const [preview, setPreview] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const fileInput = useRef<HTMLInputElement>(null);
+  const editorRef = useRef<Editor | null>(null);
+
+  // Uploads a picture (pasted, dropped or chosen) and puts it in the post where the cursor is.
+  const addImage = useCallback(async (file: File) => {
+    setError('');
+    setUploading(true);
+    try {
+      const form = new FormData();
+      form.append('file', file);
+      const res = await fetch('/api/admin/blog/upload', { method: 'POST', body: form });
+      const data = await res.json().catch(() => ({}));
+      if (!res.ok) { setError(data.error || 'Could not upload the picture'); return; }
+      editorRef.current?.chain().focus().setImage({ src: data.url, alt: '' }).run();
+    } catch {
+      setError('Could not reach the server to upload the picture');
+    } finally {
+      setUploading(false);
+    }
+  }, []);
+
+  const openPicker = useCallback(() => fileInput.current?.click(), []);
+
+  const editor = useEditor({
+    immediatelyRender: false, // the page is rendered on the server first
+    extensions: [
+      StarterKit.configure({
+        heading: { levels: [2, 3] },
+        // Kept to what the public page can show.
+        code: false, codeBlock: false, strike: false, underline: false,
+        link: { openOnClick: false, autolink: false },
+      }),
+      Image.configure({ inline: false, allowBase64: false }),
+    ],
+    content: parseStoredBody(post?.body ?? ''),
+    editorProps: {
+      attributes: { class: 'blog-editor-content min-h-[360px] px-4 py-3 focus:outline-none' },
+      // A screenshot copied on a Mac (Cmd+Shift+Ctrl+4) or any copied picture: paste it straight in.
+      handlePaste: (_view, event) => {
+        const images = Array.from(event.clipboardData?.files ?? []).filter((f) => f.type.startsWith('image/'));
+        if (!images.length) return false;
+        event.preventDefault();
+        images.forEach((f) => void addImage(f));
+        return true;
+      },
+      handleDrop: (_view, event) => {
+        const images = Array.from(event.dataTransfer?.files ?? []).filter((f) => f.type.startsWith('image/'));
+        if (!images.length) return false;
+        event.preventDefault();
+        images.forEach((f) => void addImage(f));
+        return true;
+      },
+    },
+  });
+  useEffect(() => { editorRef.current = editor; }, [editor]);
+
+  const active = useEditorState({
+    editor,
+    selector: ({ editor: e }) => ({
+      bold: !!e?.isActive('bold'), italic: !!e?.isActive('italic'),
+      h2: !!e?.isActive('heading', { level: 2 }), h3: !!e?.isActive('heading', { level: 3 }),
+      bullet: !!e?.isActive('bulletList'), ordered: !!e?.isActive('orderedList'),
+      quote: !!e?.isActive('blockquote'), link: !!e?.isActive('link'), image: !!e?.isActive('image'),
+    }),
+  });
 
   const save = async (status: 'draft' | 'published') => {
     setSaving(true);
@@ -40,7 +108,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
       const res = await fetch(post ? `/api/admin/blog/${post.id}` : '/api/admin/blog', {
         method: post ? 'PUT' : 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, slug: slug || undefined, excerpt, body, authorName, status }),
+        body: JSON.stringify({ title, slug: slug || undefined, excerpt, body: editor?.getJSON(), authorName, status }),
       });
       const data = await res.json().catch(() => ({}));
       if (!res.ok) { setError(data.error || 'Could not save the post'); return; }
@@ -104,21 +172,86 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
         </div>
 
         <div>
-          <div className="mb-1 flex items-center justify-between">
-            <label className="text-sm font-medium text-gray-700">Post <span className="font-normal text-gray-400">(Markdown)</span></label>
-            <div className="flex overflow-hidden rounded-lg border border-gray-300 text-xs font-medium">
-              <button type="button" onClick={() => setPreview(false)} className={`px-3 py-1 ${!preview ? 'bg-[#8C6A3F] text-white' : 'bg-white text-gray-600'}`}>Write</button>
-              <button type="button" onClick={() => setPreview(true)} className={`px-3 py-1 ${preview ? 'bg-[#8C6A3F] text-white' : 'bg-white text-gray-600'}`}>Preview</button>
+          <label className="mb-1 block text-sm font-medium text-gray-700">Post <span className="font-normal text-gray-400">(paste or drop pictures straight in, including screenshots copied on a Mac)</span></label>
+          <div className="overflow-hidden rounded-lg border border-gray-300 bg-white">
+            <div className="flex flex-wrap items-center gap-1 border-b border-gray-200 bg-gray-50 px-2 py-1.5">
+              {[
+                { label: 'B', title: 'Bold', on: active?.bold, run: () => editor?.chain().focus().toggleBold().run(), cls: 'font-bold' },
+                { label: 'I', title: 'Italic', on: active?.italic, run: () => editor?.chain().focus().toggleItalic().run(), cls: 'italic' },
+                { label: 'H2', title: 'Heading', on: active?.h2, run: () => editor?.chain().focus().toggleHeading({ level: 2 }).run() },
+                { label: 'H3', title: 'Smaller heading', on: active?.h3, run: () => editor?.chain().focus().toggleHeading({ level: 3 }).run() },
+                { label: '• List', title: 'Bullet list', on: active?.bullet, run: () => editor?.chain().focus().toggleBulletList().run() },
+                { label: '1. List', title: 'Numbered list', on: active?.ordered, run: () => editor?.chain().focus().toggleOrderedList().run() },
+                { label: '“ Quote', title: 'Quote', on: active?.quote, run: () => editor?.chain().focus().toggleBlockquote().run() },
+                {
+                  label: 'Link', title: 'Add or remove a link', on: active?.link,
+                  run: () => {
+                    if (!editor) return;
+                    if (editor.isActive('link')) { editor.chain().focus().unsetLink().run(); return; }
+                    const url = window.prompt('Link address (https://… or /page)');
+                    if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run();
+                  },
+                },
+                { label: '―', title: 'Divider line', on: false, run: () => editor?.chain().focus().setHorizontalRule().run() },
+                { label: '↶', title: 'Undo', on: false, run: () => editor?.chain().focus().undo().run() },
+                { label: '↷', title: 'Redo', on: false, run: () => editor?.chain().focus().redo().run() },
+              ].map((b) => (
+                <button
+                  key={b.title}
+                  type="button"
+                  title={b.title}
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={b.run}
+                  className={`rounded px-2.5 py-1 text-sm ${b.cls ?? ''} ${b.on ? 'bg-[#8C6A3F] text-white' : 'text-gray-700 hover:bg-gray-200'}`}
+                >
+                  {b.label}
+                </button>
+              ))}
+              <button
+                type="button"
+                title="Add a picture"
+                disabled={uploading}
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={openPicker}
+                className="rounded px-2.5 py-1 text-sm text-gray-700 hover:bg-gray-200"
+              >
+                {uploading ? 'Uploading…' : 'Picture'}
+              </button>
+              {active?.image && (
+                <button
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => {
+                    const alt = window.prompt('Describe the picture (read out for people who cannot see it, and used by search engines)');
+                    if (alt !== null) editor?.chain().focus().updateAttributes('image', { alt: alt.slice(0, 200) }).run();
+                  }}
+                  className="rounded bg-amber-100 px-2.5 py-1 text-sm text-amber-900 hover:bg-amber-200"
+                >
+                  Picture description
+                </button>
+              )}
+              <input
+                ref={fileInput}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/gif"
+                className="hidden"
+                onChange={(e) => { const f = e.target.files?.[0]; if (f) void addImage(f); e.target.value = ''; }}
+              />
             </div>
+            <EditorContent editor={editor} className="blog-editor" />
           </div>
-          {preview ? (
-            <div className="min-h-[360px] rounded-lg border border-gray-200 bg-[#FAF6EF] p-5 text-base">
-              {body.trim() ? <Markdown source={body} /> : <p className="text-sm text-gray-400">Nothing to preview yet.</p>}
-            </div>
-          ) : (
-            <textarea className={`${inputCls} font-mono`} rows={18} value={body} onChange={(e) => setBody(e.target.value)} placeholder={'## A heading\n\nA paragraph with **bold**, *italic* and a [link](/smart-taaruf-card).\n\n- A list item\n- Another one'} />
-          )}
-          <p className="mt-1 text-xs text-gray-400">Headings: ## and ###. Lists: start lines with - or 1. Quotes: start with &gt;. Links: [text](address).</p>
+          <style>{`
+            .blog-editor-content > * + * { margin-top: 0.75rem; }
+            .blog-editor-content h2 { font-size: 1.5rem; font-weight: 700; margin-top: 1.5rem; }
+            .blog-editor-content h3 { font-size: 1.25rem; font-weight: 600; margin-top: 1.25rem; }
+            .blog-editor-content ul { list-style: disc; padding-left: 1.5rem; }
+            .blog-editor-content ol { list-style: decimal; padding-left: 1.5rem; }
+            .blog-editor-content blockquote { border-left: 4px solid #d8c7a5; padding-left: 1rem; font-style: italic; color: #6b6558; }
+            .blog-editor-content a { color: #8C6A3F; text-decoration: underline; }
+            .blog-editor-content img { max-width: 100%; height: auto; border-radius: 0.75rem; }
+            .blog-editor-content img.ProseMirror-selectednode { outline: 3px solid #C9A24B; }
+            .blog-editor-content hr { border-color: #e5e0d8; margin: 1.5rem 0; }
+          `}</style>
         </div>
 
         {error && <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
