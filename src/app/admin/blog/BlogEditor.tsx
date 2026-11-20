@@ -59,6 +59,61 @@ function ImageWithCaption({ node, updateAttributes, selected }: NodeViewProps) {
   );
 }
 
+/** Pages people link to most. One click applies the link to the selected words. */
+const QUICK_LINKS = [
+  { label: 'Smart Taaruf Card', href: '/smart-taaruf-card' },
+  { label: 'FAQ', href: '/faq' },
+  { label: 'How it works', href: '/how-it-works' },
+  { label: 'Glossary', href: '/glossary' },
+  { label: 'Events', href: '/events' },
+];
+
+/**
+ * Shown while the cursor is inside a link (or after pressing Link / Cmd+K). Edit the address,
+ * open it, or remove it, without selecting and re-adding the link. Remounted (via key) whenever
+ * the cursor moves to a different link, so the address box always shows the link under the cursor.
+ */
+function LinkBar({ editor, href, autoFocus, onClose }: { editor: Editor; href: string | null; autoFocus: boolean; onClose: () => void }) {
+  const [draft, setDraft] = useState(href ?? '');
+  const apply = (value: string) => {
+    const url = value.trim();
+    if (!url) return;
+    editor.chain().focus().extendMarkRange('link').setLink({ href: url }).run();
+    onClose();
+  };
+  const hasWords = !editor.state.selection.empty || !!href;
+  return (
+    <div className="flex flex-wrap items-center gap-2 border-b border-gray-200 bg-amber-50 px-3 py-2 text-sm">
+      <span className="font-medium text-gray-700">{href ? 'Edit link' : 'Add link'}</span>
+      <input
+        type="text"
+        value={draft}
+        autoFocus={autoFocus}
+        placeholder={hasWords ? 'https://… or /faq' : 'Select some words first'}
+        onChange={(e) => setDraft(e.target.value)}
+        onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); apply(draft); } if (e.key === 'Escape') onClose(); }}
+        className="min-w-[200px] flex-1 rounded border border-gray-300 bg-white px-2 py-1 text-sm focus:border-[#8C6A3F] focus:outline-none"
+      />
+      <button type="button" disabled={!hasWords || !draft.trim()} onClick={() => apply(draft)} className="rounded bg-[#8C6A3F] px-3 py-1 text-xs font-semibold text-white hover:bg-[#7a5b35] disabled:opacity-50">
+        {href ? 'Update' : 'Add'}
+      </button>
+      {href && (
+        <>
+          <a href={href} target="_blank" rel="noopener noreferrer" className="rounded border border-gray-300 bg-white px-2.5 py-1 text-xs text-gray-700 hover:bg-gray-50">Open</a>
+          <button type="button" onClick={() => { editor.chain().focus().extendMarkRange('link').unsetLink().run(); onClose(); }} className="rounded border border-red-200 bg-white px-2.5 py-1 text-xs text-red-700 hover:bg-red-50">Remove link</button>
+        </>
+      )}
+      <div className="flex w-full flex-wrap items-center gap-1.5 pt-1">
+        <span className="text-xs text-gray-500">Quick:</span>
+        {QUICK_LINKS.map((q) => (
+          <button key={q.href} type="button" disabled={!hasWords} onClick={() => apply(q.href)} className="rounded-full border border-gray-300 bg-white px-2.5 py-0.5 text-xs text-gray-700 hover:bg-gray-50 disabled:opacity-50">{q.label}</button>
+        ))}
+        <button type="button" onClick={onClose} className="ml-auto text-xs text-gray-500 hover:text-gray-800">Close</button>
+      </div>
+    </div>
+  );
+}
+
 const ImageWithCaptionExtension = Image.extend({
   addAttributes() {
     return { ...this.parent?.(), caption: { default: '' }, size: { default: DEFAULT_IMAGE_SIZE }, align: { default: DEFAULT_IMAGE_ALIGN } };
@@ -81,6 +136,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
   const [error, setError] = useState('');
   const [notice, setNotice] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [linkBarOpen, setLinkBarOpen] = useState(false);
   const fileInput = useRef<HTMLInputElement>(null);
   const editorRef = useRef<Editor | null>(null);
 
@@ -119,6 +175,14 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
     editorProps: {
       attributes: { class: 'blog-editor-content min-h-[360px] px-4 py-3 focus:outline-none' },
       // A screenshot copied on a Mac (Cmd+Shift+Ctrl+4) or any copied picture: paste it straight in.
+      handleKeyDown: (_view, event) => {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+          event.preventDefault();
+          setLinkBarOpen(true);
+          return true;
+        }
+        return false;
+      },
       handlePaste: (view, event) => {
         // Words selected + a page on this site copied (such as /faq): turn the words into a link.
         // The editor only does this by itself for full web addresses.
@@ -152,6 +216,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
       h2: !!e?.isActive('heading', { level: 2 }), h3: !!e?.isActive('heading', { level: 3 }),
       bullet: !!e?.isActive('bulletList'), ordered: !!e?.isActive('orderedList'),
       quote: !!e?.isActive('blockquote'), link: !!e?.isActive('link'), image: !!e?.isActive('image'),
+      linkHref: (e?.getAttributes('link').href as string | undefined) ?? null,
     }),
   });
 
@@ -238,15 +303,7 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
                 { label: '• List', title: 'Bullet list', on: active?.bullet, run: () => editor?.chain().focus().toggleBulletList().run() },
                 { label: '1. List', title: 'Numbered list', on: active?.ordered, run: () => editor?.chain().focus().toggleOrderedList().run() },
                 { label: '“ Quote', title: 'Quote', on: active?.quote, run: () => editor?.chain().focus().toggleBlockquote().run() },
-                {
-                  label: 'Link', title: 'Add or remove a link', on: active?.link,
-                  run: () => {
-                    if (!editor) return;
-                    if (editor.isActive('link')) { editor.chain().focus().unsetLink().run(); return; }
-                    const url = window.prompt('Link address (https://… or /page)');
-                    if (url) editor.chain().focus().extendMarkRange('link').setLink({ href: url.trim() }).run();
-                  },
-                },
+                { label: 'Link', title: 'Add or edit a link (Cmd+K)', on: active?.link, run: () => setLinkBarOpen(true) },
                 { label: '―', title: 'Divider line', on: false, run: () => editor?.chain().focus().setHorizontalRule().run() },
                 { label: '↶', title: 'Undo', on: false, run: () => editor?.chain().focus().undo().run() },
                 { label: '↷', title: 'Redo', on: false, run: () => editor?.chain().focus().redo().run() },
@@ -293,6 +350,9 @@ export default function BlogEditor({ post }: { post: EditablePost | null }) {
                 onChange={(e) => { const f = e.target.files?.[0]; if (f) void addImage(f); e.target.value = ''; }}
               />
             </div>
+            {editor && (linkBarOpen || active?.linkHref) && (
+              <LinkBar key={active?.linkHref ?? 'new'} editor={editor} href={active?.linkHref ?? null} autoFocus={linkBarOpen} onClose={() => setLinkBarOpen(false)} />
+            )}
             <EditorContent editor={editor} className="blog-editor" />
           </div>
           <style>{`
