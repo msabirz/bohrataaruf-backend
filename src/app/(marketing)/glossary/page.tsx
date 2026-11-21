@@ -1,4 +1,4 @@
-import { breadcrumbJsonLd, pageMetadata, SITE_URL } from '@/lib/seo';
+import { pageMetadata, SITE_URL } from '@/lib/seo';
 import { ContentPage } from '@/components/marketing/ContentPage';
 
 export const metadata = pageMetadata({
@@ -33,7 +33,8 @@ export default function GlossaryPage() {
     <ContentPage
       title="Taaruf, nisbat, nikah and other terms explained"
       intro="The words families come across when a proposal is being considered, in plain language. Bohra Taaruf helps with the first step only: seeing profiles and sharing a biodata privately. Everything after that is for families."
-      jsonLd={[breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Glossary', path: '/glossary' }]), glossaryLd]}
+      breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Glossary', path: '/glossary' }]}
+      jsonLd={[glossaryLd]}
     >
       <dl className="space-y-6">
         {TERMS.map((t) => (

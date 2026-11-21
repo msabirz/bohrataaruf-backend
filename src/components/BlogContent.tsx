@@ -1,5 +1,5 @@
 import React from 'react';
-import { type Doc, type DocNode, parseStoredBody } from '@/lib/blogDoc';
+import { type Doc, type DocNode, docText, parseStoredBody } from '@/lib/blogDoc';
 import { ALIGN_CLASS, DEFAULT_IMAGE_ALIGN, DEFAULT_IMAGE_SIZE, SIZE_CLASS } from '@/lib/blogImageStyle';
 
 function renderText(node: DocNode, key: string): React.ReactNode {
@@ -18,8 +18,31 @@ function renderText(node: DocNode, key: string): React.ReactNode {
   return <React.Fragment key={key}>{out}</React.Fragment>;
 }
 
+/** A paragraph that says only "Quick answer" (with or without a colon) labels the quote that follows it. */
+function isQuickAnswerLabel(node: DocNode | undefined, next: DocNode | undefined): boolean {
+  return node?.type === 'paragraph' && next?.type === 'blockquote' && /^quick answer:?$/i.test(docText(node).trim());
+}
+
 function renderChildren(nodes: DocNode[] | undefined, key: string): React.ReactNode[] {
-  return (nodes ?? []).map((n, i) => renderNode(n, `${key}-${i}`));
+  const list = nodes ?? [];
+  const out: React.ReactNode[] = [];
+  for (let i = 0; i < list.length; i++) {
+    if (isQuickAnswerLabel(list[i], list[i + 1])) {
+      // One highlighted box: the label, then the answer. Same colours as the call-out at the end of every page.
+      out.push(
+        <aside key={`${key}-${i}`} aria-label="Quick answer" className="my-8 rounded-2xl border-2 border-[#C9A24B] bg-[#FFF9EA] p-5 md:p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.18em] text-[#8C6A3F]">Quick answer</p>
+          <div className="mt-2 [&>p]:my-2 [&>p]:text-base [&>p]:leading-relaxed [&>p]:text-[#3F2A16]">
+            {renderChildren(list[i + 1].content, `${key}-${i}q`)}
+          </div>
+        </aside>
+      );
+      i++;
+      continue;
+    }
+    out.push(renderNode(list[i], `${key}-${i}`));
+  }
+  return out;
 }
 
 function renderNode(node: DocNode, key: string): React.ReactNode {

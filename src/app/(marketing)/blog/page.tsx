@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
+import { SITE_URL, pageMetadata } from '@/lib/seo';
 import { listPublishedPosts } from '@/lib/blog';
 import { ContentPage } from '@/components/marketing/ContentPage';
 import { formatDate } from '@/lib/formatDate';
@@ -20,11 +20,25 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function BlogIndexPage() {
   const posts = await listPublishedPosts();
+  const blogLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Blog',
+    name: 'Bohra Taaruf Blog',
+    url: `${SITE_URL}/blog`,
+    inLanguage: 'en',
+    blogPost: posts.map((p) => ({
+      '@type': 'BlogPosting',
+      headline: p.title,
+      url: `${SITE_URL}/blog/${p.slug}`,
+      datePublished: p.publishedAt?.toISOString(),
+    })),
+  };
   return (
     <ContentPage
       title="Blog"
       intro="Guides and notes from the Bohra Taaruf team."
-      jsonLd={[breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Blog', path: '/blog' }])]}
+      breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Blog', path: '/blog' }]}
+      jsonLd={posts.length ? [blogLd] : []}
     >
       {posts.length === 0 ? (
         <p className="text-muted">The first posts are coming soon.</p>

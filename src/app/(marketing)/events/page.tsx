@@ -5,7 +5,7 @@ import { MapPin, Calendar as CalendarIcon, ArrowRight, Users as UsersIcon } from
 import { db } from '@/lib/db';
 import { taarufPrograms } from '@/lib/db/schema';
 import { eq } from 'drizzle-orm';
-import { breadcrumbJsonLd } from '@/lib/seo';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 import { DateBadge } from '@/components/marketing/DateBadge';
 import { formatDateRange } from '@/lib/formatDate';
 
@@ -29,15 +29,8 @@ export default async function EventsHubPage() {
   const upcoming = programs.filter(p => p.startDate >= today);
   const past = programs.filter(p => p.startDate < today);
 
-  const breadcrumb = breadcrumbJsonLd([
-    { name: 'Home', path: '/' },
-    { name: 'Taaruf Programs', path: '/events' },
-  ]);
-
   return (
     <div className="bg-background min-h-screen">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
-
       {/* Hero — same bronze dot-matrix treatment as the homepage hero, so
           this reads as part of the same site rather than a bolted-on page. */}
       <section className="relative pt-28 md:pt-32 pb-16 overflow-hidden px-6">
@@ -51,6 +44,7 @@ export default async function EventsHubPage() {
           }}
         />
         <div className="container mx-auto max-w-4xl">
+          <Breadcrumbs items={[{ name: 'Home', path: '/' }, { name: 'Taaruf Programs', path: '/events' }]} />
           <span className="inline-block py-1 px-3 rounded-full bg-accent-light/50 text-primary font-medium text-sm mb-5 border border-accent/20">
             In person, not just in the app
           </span>

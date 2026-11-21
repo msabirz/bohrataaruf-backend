@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { SITE_URL, breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
+import { DEFAULT_SHARE_IMAGE, SITE_URL, pageMetadata } from '@/lib/seo';
 import { getPublishedPost, readingMinutes } from '@/lib/blog';
+import { firstImageSrc, parseStoredBody } from '@/lib/blogDoc';
 import { BlogContent } from '@/components/BlogContent';
 import { ContentPage } from '@/components/marketing/ContentPage';
 import { formatDate } from '@/lib/formatDate';
@@ -29,12 +30,17 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   const post = await getPublishedPost(slug);
   if (!post) notFound();
 
+  const firstImage = firstImageSrc(parseStoredBody(post.body));
+  // A name such as "The Bohra Taaruf team" is an organisation, not a person.
+  const authorType = /\b(team|taaruf)\b/i.test(post.authorName) ? 'Organization' : 'Person';
   const articleLd = {
     '@context': 'https://schema.org',
-    '@type': 'Article',
+    '@type': 'BlogPosting',
     headline: post.title,
     description: post.excerpt || undefined,
-    author: { '@type': 'Person', name: post.authorName },
+    image: [firstImage ? `${SITE_URL}${firstImage}` : DEFAULT_SHARE_IMAGE.url],
+    inLanguage: 'en',
+    author: { '@type': authorType, name: post.authorName },
     publisher: { '@type': 'Organization', name: 'Bohra Taaruf', logo: { '@type': 'ImageObject', url: `${SITE_URL}/logo-light.svg` } },
     datePublished: post.publishedAt?.toISOString(),
     dateModified: post.updatedAt.toISOString(),
@@ -44,7 +50,8 @@ export default async function BlogPostPage({ params }: { params: Promise<{ slug:
   return (
     <ContentPage
       title={post.title}
-      jsonLd={[breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Blog', path: '/blog' }, { name: post.title, path: `/blog/${post.slug}` }]), articleLd]}
+      breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'Blog', path: '/blog' }, { name: post.title, path: `/blog/${post.slug}` }]}
+      jsonLd={[articleLd]}
     >
       <p className="-mt-2 mb-8 text-sm text-muted">
         By {post.authorName}

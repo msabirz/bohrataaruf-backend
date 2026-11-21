@@ -1,4 +1,4 @@
-import { breadcrumbJsonLd, pageMetadata } from '@/lib/seo';
+import { pageMetadata } from '@/lib/seo';
 import { getSiteMode } from '@/lib/modeGuard';
 import { ContentPage } from '@/components/marketing/ContentPage';
 
@@ -25,7 +25,7 @@ export default async function HowItWorksPage() {
     <ContentPage
       title="How Bohra Taaruf works"
       intro="A short walk through the steps, and what stays private at each one. Everything here is free."
-      jsonLd={[breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'How it works', path: '/how-it-works' }])]}
+      breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'How it works', path: '/how-it-works' }]}
     >
       {preLaunch && (
         <p className="mb-8 rounded-xl border border-[#E5E0D8] bg-[#F8F5F0] p-4 text-sm leading-relaxed text-muted">

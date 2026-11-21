@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { breadcrumbJsonLd, faqJsonLd, pageMetadata, INDEPENDENCE_SHORT } from '@/lib/seo';
+import { faqJsonLd, pageMetadata, INDEPENDENCE_SHORT } from '@/lib/seo';
 import { ContentPage } from '@/components/marketing/ContentPage';
 
 export const metadata = pageMetadata({
@@ -26,7 +26,8 @@ export default function FaqPage() {
     <ContentPage
       title="Frequently asked questions"
       intro="Short answers about how Bohra Taaruf works and what stays private."
-      jsonLd={[breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'FAQ', path: '/faq' }]), faqJsonLd(FAQS)]}
+      breadcrumbs={[{ name: 'Home', path: '/' }, { name: 'FAQ', path: '/faq' }]}
+      jsonLd={[faqJsonLd(FAQS)]}
     >
       <div className="space-y-8">
         {FAQS.map((f) => (
