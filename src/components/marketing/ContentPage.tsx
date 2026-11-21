@@ -1,15 +1,16 @@
 import React from 'react';
 import Link from 'next/link';
 import { CARD_NAME, CARD_PATH } from '@/lib/share/campaignContent';
+import { Breadcrumbs, type Crumb } from './Breadcrumbs';
+import { JsonLd } from './JsonLd';
 
 /** Shared frame for the plain content pages (How it works, Glossary, FAQ, blog). */
-export function ContentPage({ title, intro, children, jsonLd }: { title: string; intro?: string; children: React.ReactNode; jsonLd?: object[] }) {
+export function ContentPage({ title, intro, children, jsonLd, breadcrumbs }: { title: string; intro?: string; children: React.ReactNode; jsonLd?: object[]; breadcrumbs?: Crumb[] }) {
   return (
     <div className="bg-background min-h-screen pt-24 pb-24 px-6">
-      {(jsonLd ?? []).map((d, i) => (
-        <script key={i} type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(d).replace(/</g, '\\u003c') }} />
-      ))}
+      {(jsonLd ?? []).map((d, i) => <JsonLd key={i} data={d} />)}
       <div className="container mx-auto max-w-3xl">
+        {breadcrumbs && <Breadcrumbs items={breadcrumbs} />}
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">{title}</h1>
         {intro && <p className="text-lg text-muted leading-relaxed mb-10">{intro}</p>}
         {children}

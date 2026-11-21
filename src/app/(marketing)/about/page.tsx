@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
-import { breadcrumbJsonLd, INDEPENDENCE_LONG } from '@/lib/seo';
+import { INDEPENDENCE_LONG } from '@/lib/seo';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -10,16 +11,16 @@ export const metadata: Metadata = {
   alternates: { canonical: '/about' },
 };
 
-const breadcrumb = breadcrumbJsonLd([
+const CRUMBS = [
   { name: 'Home', path: '/' },
   { name: 'About Us', path: '/about' },
-]);
+];
 
 export default function AboutPage() {
   return (
     <div className="bg-background min-h-screen pt-24 pb-32 px-6">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
       <div className="container mx-auto max-w-3xl">
+        <Breadcrumbs items={CRUMBS} />
         <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-12">About Us</h1>
         
         <div className="max-w-none text-lg">

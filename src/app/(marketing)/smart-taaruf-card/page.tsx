@@ -1,5 +1,7 @@
 import Link from 'next/link';
-import { SITE_URL, breadcrumbJsonLd, faqJsonLd, pageMetadata } from '@/lib/seo';
+import { SITE_URL, faqJsonLd, pageMetadata } from '@/lib/seo';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { JsonLd } from '@/components/marketing/JsonLd';
 import { CARD_PATH, FAQS, INSTAGRAM_URL, OLD_VS_NEW, SAFETY_NOTES, STEPS } from '@/lib/share/campaignContent';
 
 // Title is the search listing: "Smart Taaruf Card: Share Your Biodata Privately | Bohra Taaruf".
@@ -47,16 +49,13 @@ const ghostBtn = 'inline-flex items-center justify-center min-h-12 px-7 rounded-
 export default function MyTaarufCardPage() {
   return (
     <>
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd(FAQS)) }} />
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd([{ name: 'Home', path: '/' }, { name: 'Smart Taaruf Card', path: CARD_PATH }])) }}
-      />
+      <JsonLd data={faqJsonLd(FAQS)} />
 
       {/* Hero */}
       <section className="relative text-white text-center overflow-hidden" style={{ background: 'linear-gradient(135deg, #3F2A16, #6E4520)' }}>
         <Lattice />
         <div className="relative container mx-auto max-w-[900px] px-6 py-16 sm:py-24">
+          <Breadcrumbs tone="dark" align="center" items={[{ name: 'Home', path: '/' }, { name: 'Smart Taaruf Card', path: CARD_PATH }]} />
           <p className="text-xs sm:text-sm tracking-[0.2em] uppercase text-[#E8D3A8] font-semibold">Bohra Taaruf Introduces the Smart Taaruf Card</p>
           <h1 className="mt-4 text-5xl sm:text-7xl leading-[1.05] font-semibold" style={SERIF}>
             Your Profile.<br />Your Taaruf.

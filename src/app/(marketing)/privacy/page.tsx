@@ -1,6 +1,7 @@
 import React from 'react';
 import { Metadata } from 'next';
 import { formatDate } from '@/lib/formatDate';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
 
@@ -13,6 +14,7 @@ export const metadata: Metadata = {
 export default function PrivacyPage() {
   return (
     <div className="container mx-auto px-6 py-24 max-w-3xl">
+      <Breadcrumbs items={[{ name: 'Home', path: '/' }, { name: 'Privacy Policy', path: '/privacy' }]} />
       <h1 className="text-4xl font-bold mb-8">Privacy Policy</h1>
       
       <div className="prose prose-zinc max-w-none text-muted space-y-6">

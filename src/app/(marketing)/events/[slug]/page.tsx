@@ -1,9 +1,8 @@
 import React from 'react';
 import { Metadata } from 'next';
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import {
-  ArrowLeft, MapPin, Calendar as CalendarIcon, Users as UsersIcon, Heart, Clock,
+  MapPin, Calendar as CalendarIcon, Users as UsersIcon, Heart, Clock,
 } from 'lucide-react';
 import { db } from '@/lib/db';
 import { taarufPrograms, taarufProgramApplications } from '@/lib/db/schema';
@@ -12,7 +11,8 @@ import { getAuthenticatedUserFromCookie } from '@/lib/api/pageAuth';
 import { isValidFormSchema } from '@/lib/programFormSchema';
 import { ProgramApplyForm } from '@/components/marketing/ProgramApplyForm';
 import { DateBadge } from '@/components/marketing/DateBadge';
-import { breadcrumbJsonLd } from '@/lib/seo';
+import { Breadcrumbs } from '@/components/marketing/Breadcrumbs';
+import { JsonLd } from '@/components/marketing/JsonLd';
 import { formatDate, formatDateRange } from '@/lib/formatDate';
 
 const APP_NAME = process.env.APP_DISPLAY_NAME ?? 'Bohra Taaruf';
@@ -71,20 +71,13 @@ export default async function ProgramDetailPage(props: { params: Promise<{ slug:
     organizer: { '@type': 'Organization', name: APP_NAME, url: 'https://bohrataaruf.com' },
   };
 
-  const breadcrumb = breadcrumbJsonLd([
-    { name: 'Home', path: '/' },
-    { name: 'Taaruf Programs', path: '/events' },
-    { name: program.title, path: `/events/${program.slug}` },
-  ]);
-
   const ageRange = program.ageMinMale && program.ageMinFemale
     ? `${Math.min(program.ageMinMale, program.ageMinFemale)}–${Math.max(program.ageMaxMale ?? 0, program.ageMaxFemale ?? 0)}`
     : null;
 
   return (
     <div className="bg-background min-h-screen">
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(eventJsonLd) }} />
-      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumb) }} />
+      <JsonLd data={eventJsonLd} />
 
       {/* Hero */}
       <section className="relative pt-28 md:pt-32 pb-12 overflow-hidden px-6">
@@ -98,9 +91,7 @@ export default async function ProgramDetailPage(props: { params: Promise<{ slug:
           }}
         />
         <div className="container mx-auto max-w-5xl">
-          <Link href="/events" className="text-sm font-medium text-muted hover:text-foreground inline-flex items-center gap-1.5 mb-6 transition-colors">
-            <ArrowLeft className="w-4 h-4" /> All Taaruf Programs
-          </Link>
+          <Breadcrumbs items={[{ name: 'Home', path: '/' }, { name: 'Taaruf Programs', path: '/events' }, { name: program.title, path: `/events/${program.slug}` }]} />
 
           <div className="flex items-start gap-5">
             <DateBadge date={program.startDate} size="lg" />

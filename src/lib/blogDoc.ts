@@ -119,6 +119,16 @@ export function parseStoredBody(body: string): Doc {
   }
 }
 
+/** The address of the first picture in a post, or null. Used as the post's image in structured data. */
+export function firstImageSrc(node: Doc | DocNode): string | null {
+  if (node.type === 'image') return (node as DocNode).attrs?.src ?? null;
+  for (const child of node.content ?? []) {
+    const found = firstImageSrc(child);
+    if (found) return found;
+  }
+  return null;
+}
+
 /** All the plain text of a document, for reading time and summaries. */
 export function docText(node: Doc | DocNode): string {
   if ('text' in node && node.text) return node.text;
